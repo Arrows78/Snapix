@@ -1,0 +1,184 @@
+import AppKit
+
+@MainActor
+final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
+    private var statusItem: NSStatusItem!
+    private var busy = false
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        Pref.register()
+        NSApp.setActivationPolicy(.accessory)
+        buildMainMenu()
+        buildStatusItem()
+        reloadHotkeys()
+        if !CGPreflightScreenCaptureAccess() { CGRequestScreenCaptureAccess() }
+    }
+
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
+
+    func application(_ application: NSApplication, open urls: [URL]) {
+        for url in urls {
+            if url.scheme == "snapix" { handle(url: url) } else if url.isFileURL { EditorWindowController.openFiles([url]) }
+        }
+    }
+
+    // MARK: URL scheme  —  snapix://area?then=copy,save,edit,pin
+
+    private func handle(url: URL) {
+        let name = url.host ?? url.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        let map: [String: Action] = [
+            "area": .area, "fullscreen": .fullscreen, "window": .window, "active-window": .activeWindow, "delayed": .delayed,
+            "repeat": .repeatArea, "scrolling": .scrolling, "scrolling-up": .scrollingUp, "scrolling-manual": .scrollingManual, "ocr": .ocr,
+            "pick-color": .pickColor, "contrast": .contrast, "clipboard": .clipboard, "library": .library,
+        ]
+        guard let action = map[name] else { return }
+        var then: [After]?
+        if let q = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first(where: { $0.name == "then" })?.value {
+            then = q.split(separator: ",").compactMap { After(rawValue: String($0)) }
+        }
+        perform(action, then: then)
+    }
+
+    // MARK: Hotkeys
+
+    func reloadHotkeys() {
+        HotKeyCenter.shared.unregisterAll()
+        for a in Action.allCases {
+            if let combo = a.combo { HotKeyCenter.shared.register(combo) { [weak self] in self?.perform(a) } }
+        }
+        refreshMenuShortcuts()
+    }
+
+    // MARK: Menu bar
+
+    private func buildStatusItem() {
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        statusItem.button?.image = NSImage(systemSymbolName: "viewfinder", accessibilityDescription: "Snapix")
+        let menu = NSMenu()
+        menu.delegate = self
+        statusItem.menu = menu
+        refreshMenuShortcuts()
+    }
+
+    func menuNeedsUpdate(_ menu: NSMenu) { refreshMenuShortcuts() }
+
+    private func refreshMenuShortcuts() {
+        guard let menu = statusItem?.menu else { return }
+        menu.removeAllItems()
+        func add(_ a: Action) {
+            let item = NSMenuItem(title: a.title, action: #selector(menuAction(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = a.rawValue
+            if let c = a.combo { item.attributedTitle = NSAttributedString(string: "\(a.title)\t\(c.display)") }
+            menu.addItem(item)
+        }
+        [Action.area, .fullscreen, .window, .activeWindow, .delayed, .repeatArea].forEach(add)
+        menu.addItem(.separator())
+        [Action.scrolling, .scrollingUp, .scrollingManual].forEach(add)
+        menu.addItem(.separator())
+        [Action.ocr, .pickColor, .contrast].forEach(add)
+        menu.addItem(.separator())
+        add(.clipboard)
+        add(.library)
+        let open = NSMenuItem(title: L("Open Image…"), action: #selector(openFile), keyEquivalent: "")
+        open.target = self
+        menu.addItem(open)
+        menu.addItem(.separator())
+        let prefs = NSMenuItem(title: L("Preferences…"), action: #selector(showPreferences), keyEquivalent: ",")
+        prefs.target = self
+        menu.addItem(prefs)
+        menu.addItem(withTitle: L("Quit Snapix"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+    }
+
+    @objc private func menuAction(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String, let a = Action(rawValue: raw) else { return }
+        // Let the menu finish closing so it isn't part of the screenshot.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { self.perform(a) }
+    }
+
+    @objc private func openFile() { EditorWindowController.openFile() }
+    @objc func showPreferences() { PreferencesWindow.show() }
+
+    private func buildMainMenu() {
+        let main = NSMenu()
+        func submenu(_ title: String, _ items: [NSMenuItem]) {
+            let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
+            let m = NSMenu(title: title)
+            items.forEach(m.addItem)
+            item.submenu = m
+            main.addItem(item)
+        }
+        func mi(_ title: String, _ sel: String, _ key: String, _ mods: NSEvent.ModifierFlags = .command) -> NSMenuItem {
+            let i = NSMenuItem(title: title, action: Selector((sel)), keyEquivalent: key)
+            i.keyEquivalentModifierMask = mods
+            return i
+        }
+        submenu(L("Snapix"), [mi(L("Preferences…"), "showPreferences", ","), .separator(),
+                           mi(L("Hide Snapix"), "hide:", "h"), mi(L("Quit Snapix"), "terminate:", "q")])
+        main.items[0].submenu?.items[0].target = self
+        submenu(L("File"), [mi(L("Save"), "saveDocument:", "s"), mi(L("Save As…"), "saveDocumentAs:", "S", [.command, .shift]),
+                         mi(L("Upload"), "uploadImage:", "u"), .separator(),
+                         mi(L("Print…"), "printDocument:", "p"), mi(L("Close"), "performClose:", "w")])
+        submenu(L("Edit"), [mi(L("Undo"), "undo:", "z"), mi(L("Redo"), "redo:", "Z", [.command, .shift]), .separator(),
+                         mi(L("Cut"), "cut:", "x"), mi(L("Copy"), "copy:", "c"), mi(L("Paste"), "paste:", "v"), mi(L("Select All"), "selectAll:", "a")])
+        submenu(L("View"), [mi(L("Zoom In"), "zoomInAction:", "+"), mi(L("Zoom Out"), "zoomOutAction:", "-"),
+                         mi(L("Actual Size"), "zoomActualAction:", "0"), mi(L("Fit to Window"), "zoomFitAction:", "9")])
+        submenu(L("Image"), [mi(L("Resize Image…"), "resizeImage:", "r", [.command, .option]), mi(L("Uncrop"), "uncropAction:", "u", [.command, .option]),
+                          mi(L("Merge Annotations Into Image"), "rasterizeAction:", "m", [.command, .option]), .separator(),
+                          mi(L("Overlay Image From Clipboard"), "overlayAction:", "i", [.command, .option]),
+                          mi(L("Check Contrast of Selection"), "contrastAction:", "k", [.command, .option])])
+        NSApp.mainMenu = main
+    }
+
+    // MARK: Orchestration
+
+    func perform(_ action: Action, then override: [After]? = nil) {
+        guard !busy else { return }
+        switch action {
+        case .pickColor: ColorTools.pickAndCopy(); return
+        case .contrast: ColorTools.contrastCheck(); return
+        case .clipboard: EditorWindowController.openFromClipboard(); return
+        case .library: LibraryWindow.show(); return
+        default: break
+        }
+        guard Capture.ensurePermission() else { Capture.showPermissionAlert(); return }
+
+        busy = true
+        Task { @MainActor in
+            defer { busy = false }
+            do {
+                switch action {
+                case .area: if let s = try await Capture.area() { deliver(s, override) }
+                case .fullscreen: deliver(try await Capture.fullscreen(), override)
+                case .window: if let s = try await Capture.interactiveWindow() { deliver(s, override) }
+                case .activeWindow: deliver(try await Capture.activeWindow(), override)
+                case .repeatArea: deliver(try await Capture.repeatArea(), override)
+                case .delayed:
+                    for n in [3, 2, 1] { Toast.show(LF("Capturing in %d…", n), duration: 1); try? await Task.sleep(nanoseconds: 1_000_000_000) }
+                    if let s = try await Capture.area() { deliver(s, override) }
+                case .scrolling: if let s = try await ScrollCapture.run(auto: true) { deliver(s, override) }
+                case .scrollingUp: if let s = try await ScrollCapture.run(auto: true, up: true) { deliver(s, override) }
+                case .scrollingManual: if let s = try await ScrollCapture.run(auto: false) { deliver(s, override) }
+                case .ocr: if let s = try await Capture.area(remember: false) { OCR.recognizeAndCopy(s.image) }
+                default: break
+                }
+            } catch CaptureError.noPermission {
+                Capture.showPermissionAlert()
+            } catch CaptureError.notFound {
+                Toast.show(L("Nothing to capture"), duration: 2)
+            } catch {
+                Toast.show(LF("Capture failed: %@", error.localizedDescription), duration: 3)
+            }
+        }
+    }
+
+    private func deliver(_ shot: Shot, _ override: [After]?) {
+        if Pref.bool("keepHistory") { History.add(shot) }
+        var actions = override ?? After.fromPreferences()
+        if actions.isEmpty { actions = [.edit] }
+        if actions.contains(.copy) { Exporter.copy(shot.image, scale: shot.scale, quiet: actions.count > 1) }
+        if actions.contains(.save) { Exporter.save(shot.image, scale: shot.scale, quiet: actions.contains(.copy)) }
+        if actions.contains(.pin) { PinController.pin(shot) }
+        if actions.contains(.edit) { EditorWindowController.open(shot) }
+    }
+}
