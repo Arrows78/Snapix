@@ -43,6 +43,10 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
     private var dirty = false
     private var backdropPopover: NSPopover?
     private var backdropModel: BackdropModel?
+    private let sidebarModel = SidebarModel()
+    private var sidebarView: NSView?
+    private var scrollLeading: NSLayoutConstraint!
+    private var sidebarOpen = false
 
     // MARK: Entry points
 
@@ -104,6 +108,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         w.setFrameAutosaveName("")
 
         if let preset = BackdropPreset.defaultPreset { doc.state.backdrop = preset.config; doc.state.backdrop.enabled = true }
+        wireSidebar()
         doc.onChange = { [weak self] in self?.documentChanged() }
         canvas.onCursorMove = { [weak self] p, c in self?.updateCursor(p, c) }
         canvas.onEscape = { [weak self] in self?.finishWithEscape() }
@@ -223,7 +228,17 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
 
         for v in [topBar, bar, topLine, checker, scroll, options] as [NSView] { v.translatesAutoresizingMaskIntoConstraints = false }
         for v in [checker, scroll, topBar, topLine, bar, options] as [NSView] { content.addSubview(v) } // options above the canvas
+        scrollLeading = scroll.leadingAnchor.constraint(equalTo: content.leadingAnchor)
+        let side = SidebarHost.makeView(model: sidebarModel)
+        side.translatesAutoresizingMaskIntoConstraints = false
+        side.isHidden = true
+        content.addSubview(side)
+        sidebarView = side
         NSLayoutConstraint.activate([
+            side.leadingAnchor.constraint(equalTo: content.leadingAnchor),
+            side.topAnchor.constraint(equalTo: topLine.bottomAnchor),
+            side.bottomAnchor.constraint(equalTo: content.bottomAnchor),
+            side.widthAnchor.constraint(equalToConstant: 220),
             topBar.topAnchor.constraint(equalTo: content.topAnchor),
             topBar.leadingAnchor.constraint(equalTo: content.leadingAnchor),
             topBar.trailingAnchor.constraint(equalTo: content.trailingAnchor),
@@ -237,7 +252,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
             topLine.trailingAnchor.constraint(equalTo: content.trailingAnchor),
             topLine.heightAnchor.constraint(equalToConstant: 1),
             scroll.topAnchor.constraint(equalTo: topLine.bottomAnchor),
-            scroll.leadingAnchor.constraint(equalTo: content.leadingAnchor),
+            scrollLeading,
             scroll.trailingAnchor.constraint(equalTo: content.trailingAnchor),
             scroll.bottomAnchor.constraint(equalTo: content.bottomAnchor),
             checker.topAnchor.constraint(equalTo: topLine.bottomAnchor),
@@ -257,6 +272,14 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         w.center()
         if Pref.bool("editorOnTop") { w.level = .floating }
         colorChip.set("—", caption: L("Tab to copy"))
+        let click = NSClickGestureRecognizer(target: self, action: #selector(toggleSizeUnit))
+        sizeChip.addGestureRecognizer(click)
+        sizeChip.toolTip = L("Switch between pixels and points")
+    }
+
+    @objc private func toggleSizeUnit() {
+        UserDefaults.standard.set(!Pref.bool("sizeInPoints"), forKey: "sizeInPoints")
+        updateStatus()
     }
 
     // MARK: "More" menu
@@ -289,6 +312,8 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         menu.addItem(presets)
         menu.addItem(.separator())
         add(L("Zoom to Selection"), #selector(zoomSelectionAction(_:)), symbol: "plus.magnifyingglass")
+        add(L("Toggle Sidebar"), #selector(toggleSidebar(_:)), symbol: "sidebar.left")
+        menu.items.last?.state = sidebarOpen ? .on : .off
         add(L("Keep Window on Top"), #selector(toggleOnTop(_:)), symbol: "pin.circle")
         menu.items.last?.state = window?.level == .floating ? .on : .off
         add(L("Annotation Shadows"), #selector(toggleShadows(_:)), symbol: "shadow")
@@ -394,6 +419,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
 
     private func documentChanged() {
         dirty = true
+        refreshSidebar()
         canvas.documentChanged()
         refreshTitle()
         updateStatus()
@@ -422,12 +448,46 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
 
     private func updateStatus() {
         let pct = Int((scroll.magnification * (window?.backingScaleFactor ?? 2) * 100).rounded())
-        sizeChip.set("\(doc.state.image.width)×\(doc.state.image.height)px", caption: L("Image size"))
+        if Pref.bool("sizeInPoints") {
+            let k = max(1, doc.scale)
+            sizeChip.set("\(Int((CGFloat(doc.state.image.width) / k).rounded()))×\(Int((CGFloat(doc.state.image.height) / k).rounded()))pt", caption: L("Size · click for px"))
+        } else {
+            sizeChip.set("\(doc.state.image.width)×\(doc.state.image.height)px", caption: L("Size · click for pt"))
+        }
         zoomChip.set("\(pct)%", caption: L("Zoom"))
         backdropButton?.isOn = doc.state.backdrop.enabled
     }
 
+    private func refreshSidebar() { sidebarModel.reload(from: doc.state.annotations, selected: canvas.selectedAnnotation?.id) }
+
+    @objc func toggleSidebar(_ sender: Any?) {
+        sidebarOpen.toggle()
+        sidebarView?.isHidden = !sidebarOpen
+        scrollLeading.constant = sidebarOpen ? 220 : 0
+        refreshSidebar()
+        fitToWindow()
+    }
+
+    private func wireSidebar() {
+        sidebarModel.onSelect = { [weak self] id in
+            guard let self else { return }
+            self.selectTool(.select)
+            self.canvas.select(id)
+        }
+        sidebarModel.onDelete = { [weak self] id in
+            guard let self else { return }
+            self.doc.mutate { $0.annotations.removeAll { $0.id == id } }
+        }
+        sidebarModel.onMove = { [weak self] id, dir in
+            guard let self, let i = self.doc.state.annotations.firstIndex(where: { $0.id == id }) else { return }
+            let j = i + dir
+            guard self.doc.state.annotations.indices.contains(j) else { return }
+            self.doc.mutate { $0.annotations.swapAt(i, j) }
+        }
+    }
+
     private func selectionChanged(_ a: Annotation?) {
+        sidebarModel.selected = a?.id
         guard let a else { refreshOptions(for: canvas.tool); return }
         refreshOptions(for: a.tool, from: a)
         options.setColor(a.color)

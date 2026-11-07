@@ -64,6 +64,12 @@ final class CanvasView: NSView, NSTextFieldDelegate {
     }
 
     private func index(of id: UUID) -> Int? { doc.state.annotations.firstIndex { $0.id == id } }
+    /// Selects an annotation by id (used by the sidebar); the select tool must be active.
+    func select(_ id: UUID?) {
+        selectedID = id
+        needsDisplay = true
+    }
+
     var selectedAnnotation: Annotation? { selectedID.flatMap { id in doc.state.annotations.first { $0.id == id } } }
 
     private func applyToSelection(_ change: (inout Annotation) -> Void) {

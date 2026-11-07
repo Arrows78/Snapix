@@ -13,6 +13,7 @@ enum Pref {
         "previewCorner": "bottomRight",
         "previewSize": "medium",
         "snapHighlight": true,
+        "sizeInPoints": false,
         "quickActions": "edit,copy,save,ocr,pin",
         "quickAccessStyle": "stack",
         "ocrEngine": "builtin",

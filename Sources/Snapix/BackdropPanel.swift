@@ -1,4 +1,5 @@
 import AppKit
+import ImageIO
 import SwiftUI
 
 @MainActor
@@ -24,6 +25,25 @@ final class BackdropModel: ObservableObject {
 
     @Published var hasImage = false
     @Published var presets = BackdropPreset.saved()
+    @Published var folderImages: [URL] = BackdropFolder.images(in: URL(fileURLWithPath: Pref.string("backdropFolder")))
+
+    func chooseFolder() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true; panel.canChooseFiles = false
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        UserDefaults.standard.set(url.path, forKey: "backdropFolder")
+        folderImages = BackdropFolder.images(in: url)
+    }
+
+    func useImage(at url: URL) {
+        guard let src = CGImageSourceCreateWithURL(url as CFURL, nil),
+              let cg = CGImageSourceCreateThumbnailAtIndex(src, 0, [kCGImageSourceCreateThumbnailFromImageAlways: true, kCGImageSourceCreateThumbnailWithTransform: true,
+                                                                     kCGImageSourceThumbnailMaxPixelSize: 3000] as CFDictionary) else { return }
+        doc.state.backdropImage = cg
+        hasImage = true
+        cfg.enabled = true
+        refresh()
+    }
 
     func apply(_ p: BackdropPreset) {
         var c = p.config
@@ -166,6 +186,23 @@ struct BackdropPanel: View {
                         .frame(width: 70, height: 42)
                     }
                     .buttonStyle(.plain)
+                }
+            }
+            HStack {
+                Button("Folder…", action: model.chooseFolder).controlSize(.small)
+                if model.folderImages.isEmpty { Text("Pick a folder of pictures to use as backgrounds.").font(.caption).foregroundStyle(.secondary) }
+            }
+            if !model.folderImages.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        ForEach(model.folderImages, id: \.self) { url in
+                            Button { model.useImage(at: url) } label: {
+                                if let cg = History.thumbnail(for: url, maxPixel: 120) {
+                                    Image(decorative: cg, scale: 2).resizable().scaledToFill().frame(width: 56, height: 36).clipShape(RoundedRectangle(cornerRadius: 5))
+                                } else { RoundedRectangle(cornerRadius: 5).fill(Color.gray.opacity(0.3)).frame(width: 56, height: 36) }
+                            }.buttonStyle(.plain).help(url.lastPathComponent)
+                        }
+                    }
                 }
             }
             HStack {

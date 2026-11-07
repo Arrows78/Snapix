@@ -567,3 +567,13 @@
 "The stack keeps your last captures on screen; the strip is a scrollable row of recent screenshots and recordings." = "La pile garde vos dernières captures à l'écran ; la bande est une rangée défilante des captures et enregistrements récents.";
 "A stack" = "Une pile";
 "A strip" = "Une bande";
+"Layers" = "Calques";
+"Annotations you add appear here." = "Les annotations ajoutées apparaissent ici.";
+"Bring forward" = "Avancer";
+"Send backward" = "Reculer";
+"Toggle Sidebar" = "Afficher / masquer la barre latérale";
+"Size · click for px" = "Taille · cliquez pour px";
+"Size · click for pt" = "Taille · cliquez pour pt";
+"Switch between pixels and points" = "Basculer entre pixels et points";
+"Folder…" = "Dossier…";
+"Pick a folder of pictures to use as backgrounds." = "Choisissez un dossier d'images à utiliser comme fonds.";

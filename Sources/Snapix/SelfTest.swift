@@ -354,6 +354,16 @@ enum SelfTest {
         check(QuickAction.serialize([.pin, .edit]) == "edit,pin", "quick actions serialize canonically")
         check(RecentStrip.width(cards: 1, screenWidth: 1440) == 240 && RecentStrip.width(cards: 6, screenWidth: 1440) == 1238 && RecentStrip.width(cards: 16, screenWidth: 1440) == 1360, "recent strip width")
 
+        // Backdrop folder and sidebar rows.
+        let bfDir = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("snapix-bf-\(UUID().uuidString)")
+        try? FileManager.default.createDirectory(at: bfDir, withIntermediateDirectories: true)
+        for n in ["b10.png", "b2.JPG", "a.heic", "notes.txt", ".hidden.png"] { FileManager.default.createFile(atPath: bfDir.appendingPathComponent(n).path, contents: Data([0])) }
+        check(BackdropFolder.images(in: bfDir).map(\.lastPathComponent) == ["a.heic", "b2.JPG", "b10.png"], "backdrop folder lists images in natural order")
+        try? FileManager.default.removeItem(at: bfDir)
+        var textNote = Annotation(tool: .text, p1: .zero, p2: .zero, color: .red, width: 3); textNote.text = "A rather long caption that will be cut short"
+        var counterNote = Annotation(tool: .counter, p1: .zero, p2: .zero, color: .red, width: 3); counterNote.number = 4
+        check(SidebarModel.summary(for: textNote).count == 28 && SidebarModel.summary(for: counterNote) == "\(Tool.counter.title) 4", "sidebar row summaries")
+
         // Export formats.
         let enc = Exporter.data(for: strip, as: .pdf, scale: 2)
         check(enc.map { $0.starts(with: Data("%PDF".utf8)) } == true, "PDF export")

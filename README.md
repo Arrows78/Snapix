@@ -52,6 +52,7 @@ Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 - **Snapping**: edge snapping for boxes and crop (hold ⌥ to bypass), and *Snap to Similar Region* (right-click a shape).
 - **Image**: resize, rotate and flip, trim uniform borders, crop (Return to apply) with Uncrop, merge annotations into the image, print, drag the result out of the editor into other apps.
 - **More editing**: hexagonal pixelation, *Add Empty Space* around the image, adhesive tape on the corners, eight built-in wallpapers, a soft glow, background patterns (dots, grid, lines) and a confirmation before closing an edited image.
+- **Sidebar and units**: a layers sidebar (More menu › Toggle Sidebar) lists every annotation with select, reorder and delete; click the size read-out to switch between pixels and points; point the backdrop at a folder of your own pictures.
 - **Smart helpers**: highlights snap to the text line they cover, *Auto-balance* picks a well-proportioned backdrop, one of your saved backdrop styles can be applied to every new screenshot, and any editor window can be kept on top.
 - **Watermark**: an optional text stamp (position, size, opacity) added to everything that leaves the app.
 - **Image overlay**: lay a clipboard image over the screenshot, drag to align, a slider sets the opacity.
