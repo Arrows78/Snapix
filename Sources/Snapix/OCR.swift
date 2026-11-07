@@ -36,6 +36,15 @@ enum OCR {
         }
     }
 
+    /// All recognised text of an image, synchronously (call it off the main thread). `fast` trades accuracy for speed.
+    nonisolated static func plainText(of image: CGImage, fast: Bool) -> String {
+        let req = VNRecognizeTextRequest()
+        req.recognitionLevel = fast ? .fast : .accurate
+        req.usesLanguageCorrection = !fast
+        try? VNImageRequestHandler(cgImage: image, options: [:]).perform([req])
+        return (req.results ?? []).compactMap { $0.topCandidates(1).first?.string }.joined(separator: "\n")
+    }
+
     /// Line-level boxes of the text found in `region`, in image pixel coordinates (top-left origin).
     static func textBoxes(in image: CGImage, region: CGRect, completion: @escaping ([CGRect]) -> Void) {
         let r = region.integral.intersection(CGRect(x: 0, y: 0, width: image.width, height: image.height))

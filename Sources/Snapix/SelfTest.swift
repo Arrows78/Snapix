@@ -218,6 +218,17 @@ enum SelfTest {
         // Review speed.
         check(RecordingReview.outputDuration(range: 10, speed: 2) == 5 && RecordingReview.outputDuration(range: 10, speed: 0.5) == 20 && RecordingReview.outputDuration(range: 10, speed: 0) == 10, "review output duration")
 
+        // Library text search.
+        check(TextIndex.matches("invoice total", in: "Facture\nInvoice no. 42\nTotal: 10") && !TextIndex.matches("invoice refund", in: "Invoice no. 42"), "text search needs every word")
+        check(TextIndex.matches("  ", in: "anything") && !TextIndex.matches("absent", in: "some text") && TextIndex.matches("cafe", in: "Café du coin"), "text search is case and accent insensitive")
+        let ocrImage = CGContext(data: nil, width: 600, height: 120, bitsPerComponent: 8, bytesPerRow: 0, space: Renderer.sRGB, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+        ocrImage.setFillColor(CGColor(srgbRed: 1, green: 1, blue: 1, alpha: 1)); ocrImage.fill(CGRect(x: 0, y: 0, width: 600, height: 120))
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(cgContext: ocrImage, flipped: false)
+        NSAttributedString(string: "Snapix invoice 2026", attributes: [.font: NSFont.systemFont(ofSize: 56, weight: .bold), .foregroundColor: NSColor.black]).draw(at: NSPoint(x: 20, y: 30))
+        NSGraphicsContext.restoreGraphicsState()
+        check(TextIndex.matches("invoice", in: OCR.plainText(of: ocrImage.makeImage()!, fast: true)), "OCR reads rendered text")
+
         // Export formats.
         let enc = Exporter.data(for: strip, as: .pdf, scale: 2)
         check(enc.map { $0.starts(with: Data("%PDF".utf8)) } == true, "PDF export")

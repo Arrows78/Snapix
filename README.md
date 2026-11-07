@@ -53,6 +53,7 @@ Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 - **Image overlay**: lay a clipboard image over the screenshot, drag to align, a slider sets the opacity.
 - **Hide sensitive data** (More menu): finds emails, card numbers, IBANs, phone numbers, API tokens and IP addresses with on-device OCR and pixelates each one.
 - **Remove background**: isolates the main subject on a transparent background (on-device), in the editor or straight from a capture; combine it with the backdrop.
+- **Library search**: type words to find screenshots by the text they contain (read on your Mac in the background, cached next to the images).
 - **Library**: every capture is kept (last 200, optionally deleted after 7, 30 or 90 days). Click thumbnails to select them, then reopen, copy, pin, delete, or combine them vertically or horizontally into one image, with an adjustable gap.
 
 ### 🔎 Analysis

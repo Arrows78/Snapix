@@ -11,6 +11,10 @@ enum History {
         return v == 0 ? 200 : (v < 0 ? Int.max : v)
     }
 
+    nonisolated static var folderURL: URL {
+        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Snapix/History", isDirectory: true)
+    }
+
     static var folder: URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         return base.appendingPathComponent("Snapix/History", isDirectory: true)
@@ -78,7 +82,48 @@ enum History {
         items().reduce(0) { $0 + ((try? $1.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0) }
     }
 
-    static func clear() { items().forEach { try? FileManager.default.removeItem(at: $0) } }
+    static func clear() { items().forEach { try? FileManager.default.removeItem(at: $0) }; TextIndex.clear() }
+}
+
+/// Text found in each Library screenshot, so the Library can be searched. Stored next to the images and built in the background.
+enum TextIndex {
+    private static var file: URL { History.folderURL.appendingPathComponent("index.json") }
+
+    nonisolated static func load() -> [String: String] {
+        guard let data = try? Data(contentsOf: History.folderURL.appendingPathComponent("index.json")),
+              let dict = try? JSONDecoder().decode([String: String].self, from: data) else { return [:] }
+        return dict
+    }
+
+    nonisolated static func save(_ dict: [String: String]) {
+        if let data = try? JSONEncoder().encode(dict) { try? data.write(to: History.folderURL.appendingPathComponent("index.json")) }
+    }
+
+    static func clear() { try? FileManager.default.removeItem(at: file) }
+
+    /// True when every word of `query` appears in `text`, ignoring case and accents.
+    nonisolated static func matches(_ query: String, in text: String) -> Bool {
+        let words = query.split(whereSeparator: \.isWhitespace).map(String.init)
+        guard !words.isEmpty else { return true }
+        let opts: String.CompareOptions = [.caseInsensitive, .diacriticInsensitive]
+        return words.allSatisfy { text.range(of: $0, options: opts) != nil }
+    }
+
+    /// Recognises the text of every screenshot missing from the index, saving after each one; `onUpdate` receives the fresh index.
+    nonisolated static func build(for urls: [URL], onUpdate: @escaping @Sendable ([String: String]) -> Void) async {
+        var dict = load()
+        let existing = Set(urls.map(\.lastPathComponent))
+        dict = dict.filter { existing.contains($0.key) }
+        for url in urls where dict[url.lastPathComponent] == nil {
+            if Task.isCancelled { break }
+            let text = History.thumbnail(for: url, maxPixel: 1800).map { OCR.plainText(of: $0, fast: true) } ?? ""
+            dict[url.lastPathComponent] = text
+            save(dict)
+            onUpdate(dict)
+        }
+        save(dict)
+        onUpdate(dict)
+    }
 }
 
 private struct Thumb: View {
@@ -101,6 +146,25 @@ private struct Thumb: View {
 
 private struct LibraryView: View {
     @State private var items = History.items()
+    @State private var query = ""
+    @State private var index: [String: String] = TextIndex.load()
+    @State private var indexing = false
+
+    /// Screenshots whose recognised text (or date stamp) contains every word typed in the search field.
+    private var visible: [URL] {
+        guard !query.trimmingCharacters(in: .whitespaces).isEmpty else { return items }
+        return items.filter { TextIndex.matches(query, in: (index[$0.lastPathComponent] ?? "") + " " + $0.lastPathComponent) }
+    }
+
+    private func refreshIndex() {
+        let urls = items
+        guard !urls.isEmpty, !indexing, urls.contains(where: { index[$0.lastPathComponent] == nil }) else { return }
+        indexing = true
+        Task.detached(priority: .utility) {
+            await TextIndex.build(for: urls) { dict in DispatchQueue.main.async { index = dict } }
+            DispatchQueue.main.async { indexing = false }
+        }
+    }
     /// In the order the user clicked, which is the order images are combined in.
     @State private var selection: [URL] = []
     @AppStorage("combineGap") private var gap = 0
@@ -121,6 +185,8 @@ private struct LibraryView: View {
         VStack(spacing: 0) {
             HStack {
                 Text(LF("%d screenshot(s)", items.count)).foregroundStyle(.secondary)
+                TextField(L("Search text in screenshots"), text: $query).textFieldStyle(.roundedBorder).frame(width: 200)
+                if indexing { ProgressView().controlSize(.small).help(L("Reading the text of your screenshots…")) }
                 Spacer()
                 if !selection.isEmpty {
                     Text(LF("%d selected", selection.count)).foregroundStyle(.secondary)
@@ -139,12 +205,12 @@ private struct LibraryView: View {
             }
             .padding(10)
             Divider()
-            if items.isEmpty {
-                Spacer(); Text("Screenshots you take will appear here.").foregroundStyle(.secondary); Spacer()
+            if items.isEmpty || visible.isEmpty {
+                Spacer(); Text(items.isEmpty ? "Screenshots you take will appear here." : "No screenshot matches your search.").foregroundStyle(.secondary); Spacer()
             } else {
                 ScrollView {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 170), spacing: 12)], spacing: 12) {
-                        ForEach(items, id: \.self) { url in
+                        ForEach(visible, id: \.self) { url in
                             VStack(spacing: 4) {
                                 Thumb(url: url)
                                     .overlay(alignment: .topLeading) {
@@ -175,8 +241,8 @@ private struct LibraryView: View {
             }
         }
         .frame(minWidth: 560, minHeight: 380)
-        .onAppear { items = History.items() }
-        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { _ in items = History.items() }
+        .onAppear { items = History.items(); refreshIndex() }
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { _ in items = History.items(); refreshIndex() }
     }
 }
 
