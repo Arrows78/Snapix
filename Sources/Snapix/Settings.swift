@@ -13,6 +13,7 @@ enum Pref {
         "previewCorner": "bottomRight",
         "previewSize": "medium",
         "snapHighlight": true,
+        "libraryIndexFolder": true,
         "uploadService": "http",
         "s3Endpoint": "", "s3Region": "", "s3Bucket": "", "s3AccessKey": "", "s3Prefix": "", "s3PublicBase": "",
         "s3LinkMode": "none", "s3ExpiryDays": 7,

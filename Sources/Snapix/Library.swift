@@ -69,6 +69,12 @@ struct LibraryItem: Identifiable, Hashable {
         }
     }
 
+    /// Image and video types the Library lists when it indexes the screenshots folder.
+    nonisolated static let folderExtensions: Set<String> = ["png", "jpg", "jpeg", "heic", "tiff", "gif", "mp4", "mov", "m4v"]
+
+    /// True for files Snapix keeps itself (its history); the others belong to the user and go to the Trash, never get deleted.
+    nonisolated var isStored: Bool { url.path.hasPrefix(History.folderURL.path) }
+
     /// "20261107-231905-123@2x" -> its date.
     nonisolated static func date(ofHistoryFile url: URL) -> Date {
         let stamp = url.deletingPathExtension().lastPathComponent.components(separatedBy: "@").first ?? ""
@@ -109,7 +115,22 @@ enum LibraryItems {
             let url = URL(fileURLWithPath: e.path)
             return LibraryItem(url: url, kind: LibraryItem.kind(of: url), date: e.date)
         }
-        return (shots + recs).sorted { $0.date > $1.date }
+        var all = shots + recs
+        if Pref.bool("libraryIndexFolder") {
+            let known = Set(all.map(\.url.path))
+            all += folderItems(in: URL(fileURLWithPath: Pref.string("saveFolder"), isDirectory: true)).filter { !known.contains($0.url.path) }
+        }
+        return all.sorted { $0.date > $1.date }
+    }
+
+    /// Images and videos directly inside `folder` (not its sub-folders), newest 500, dated by their modification time.
+    nonisolated static func folderItems(in folder: URL, limit: Int = 500) -> [LibraryItem] {
+        let keys: [URLResourceKey] = [.contentModificationDateKey]
+        let files = (try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: keys, options: [.skipsHiddenFiles, .skipsSubdirectoryDescendants])) ?? []
+        let items = files.filter { LibraryItem.folderExtensions.contains($0.pathExtension.lowercased()) }.map { url in
+            LibraryItem(url: url, kind: LibraryItem.kind(of: url), date: (try? url.resourceValues(forKeys: Set(keys)).contentModificationDate) ?? .distantPast)
+        }
+        return Array(items.sorted { $0.date > $1.date }.prefix(limit))
     }
 }
 
@@ -191,7 +212,7 @@ private struct LibraryView: View {
     }
 
     private func remove(_ list: [LibraryItem]) {
-        let recordings = list.filter { $0.kind != .screenshot }
+        let recordings = list.filter { $0.kind != .screenshot || !$0.isStored }
         if !recordings.isEmpty {
             let alert = NSAlert()
             alert.messageText = LF("Move %d recording file(s) to the Trash?", recordings.count)
@@ -202,7 +223,7 @@ private struct LibraryView: View {
             guard alert.runModal() == .alertFirstButtonReturn else { return }
         }
         for item in list {
-            if item.kind == .screenshot { try? FileManager.default.removeItem(at: item.url) }
+            if item.kind == .screenshot && item.isStored { try? FileManager.default.removeItem(at: item.url) }
             else { try? FileManager.default.trashItem(at: item.url, resultingItemURL: nil); RecordingLog.remove(path: item.url.path) }
         }
         selection.removeAll { u in list.contains { $0.url == u } }
@@ -275,9 +296,10 @@ private struct LibraryView: View {
                                     Button("Open") { open(item) }
                                     Button("Copy as File") { copyFile(item.url) }
                                 }
+                                Button("Open in Default App") { NSWorkspace.shared.open(item.url) }
                                 Button("Reveal in Finder") { NSWorkspace.shared.activateFileViewerSelecting([item.url]) }
                                 Divider()
-                                Button(item.kind == .screenshot ? "Delete" : "Move to Trash", role: .destructive) { remove([item]) }
+                                Button(item.kind == .screenshot && item.isStored ? "Delete" : "Move to Trash", role: .destructive) { remove([item]) }
                             }
                         }
                     }

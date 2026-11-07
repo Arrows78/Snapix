@@ -288,6 +288,7 @@ struct PreferencesView: View {
     @AppStorage("defaultTool") private var defaultTool = "arrow"
     @AppStorage("rememberTool") private var rememberTool = false
     @AppStorage("snapHighlight") private var snapHighlight = true
+    @AppStorage("libraryIndexFolder") private var libraryIndexFolder = true
     @AppStorage("windowBackground") private var windowBackground = "transparent"
     @AppStorage("windowBackgroundColor") private var windowBackgroundColor = 0x1B1B1E
     @AppStorage("quickActions") private var quickActions = "edit,copy,save,ocr,pin"
@@ -523,7 +524,8 @@ struct PreferencesView: View {
             Card(title: "Library") {
                 ToggleRow("Keep a history of screenshots in the Library", isOn: $keepHistory, last: !keepHistory)
                 if keepHistory {
-                    Row(title: "Library opens on") {
+                    ToggleRow("Also list the files of the screenshots folder", "Pictures and videos you saved appear in the Library too. Deleting one moves it to the Trash.", isOn: $libraryIndexFolder)
+                Row(title: "Library opens on") {
                     Picker("", selection: $libraryFilter) { ForEach(LibraryFilter.allCases, id: \.rawValue) { Text($0.title).tag($0.rawValue) } }.labelsHidden().frame(width: 140)
                 }
                 Row(title: "Maximum number of screenshots") {

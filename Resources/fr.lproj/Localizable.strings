@@ -635,3 +635,6 @@
 "Save Two-Frame GIF" = "Enregistrer un GIF à deux images";
 "Capture added" = "Capture ajoutée";
 "Add an image overlay first (clipboard image), then save the GIF" = "Ajoutez d'abord une image en superposition (image du presse-papiers), puis enregistrez le GIF";
+"Also list the files of the screenshots folder" = "Lister aussi les fichiers du dossier des captures";
+"Pictures and videos you saved appear in the Library too. Deleting one moves it to the Trash." = "Les images et vidéos enregistrées apparaissent aussi dans la bibliothèque. Supprimer l'une d'elles la met à la corbeille.";
+"Open in Default App" = "Ouvrir dans l'app par défaut";

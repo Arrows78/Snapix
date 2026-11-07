@@ -416,6 +416,16 @@ enum SelfTest {
         } else { check(false, "GIF data") }
         check(GIFMaker.data(frames: [], delay: 1) == nil, "GIF needs at least one frame")
 
+        // Library lists the screenshots folder.
+        let libDir = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("snapix-lib-\(UUID().uuidString)")
+        try? FileManager.default.createDirectory(at: libDir.appendingPathComponent("sub"), withIntermediateDirectories: true)
+        for n in ["old.png", "new.JPG", "clip.mp4", "notes.txt", "sub/deep.png", ".hid.png"] { FileManager.default.createFile(atPath: libDir.appendingPathComponent(n).path, contents: Data([0])) }
+        try? FileManager.default.setAttributes([.modificationDate: Date(timeIntervalSince1970: 1000)], ofItemAtPath: libDir.appendingPathComponent("old.png").path)
+        let listed = LibraryItems.folderItems(in: libDir)
+        check(Set(listed.map(\.url.lastPathComponent)) == ["old.png", "new.JPG", "clip.mp4"] && listed.last?.url.lastPathComponent == "old.png", "library lists folder pictures and videos, newest first, no sub-folders")
+        check(listed.first { $0.url.lastPathComponent == "clip.mp4" }?.kind == .video && listed.allSatisfy { !$0.isStored }, "folder items are videos or screenshots and not owned by Snapix")
+        try? FileManager.default.removeItem(at: libDir)
+
         // Export formats.
         let enc = Exporter.data(for: strip, as: .pdf, scale: 2)
         check(enc.map { $0.starts(with: Data("%PDF".utf8)) } == true, "PDF export")

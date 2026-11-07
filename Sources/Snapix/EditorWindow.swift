@@ -323,6 +323,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         menu.addItem(.separator())
         add(L("Add Capture Below…"), #selector(addCaptureBelow(_:)), symbol: "rectangle.bottomhalf.inset.filled")
         add(L("Add Capture to the Right…"), #selector(addCaptureRight(_:)), symbol: "rectangle.righthalf.inset.filled")
+        add(L("Open in Default App"), #selector(openInDefaultApp(_:)), symbol: "arrow.up.forward.app")
         add(L("Save Two-Frame GIF"), #selector(saveTwoFrameGIF(_:)), symbol: "photo.stack")
         add(L("Share…"), #selector(shareAction(_:)), symbol: "square.and.arrow.up")
         add(L("Upload"), #selector(uploadImage(_:)), symbol: "icloud.and.arrow.up")
@@ -946,6 +947,18 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
             Toast.show(LF("Saved %@", url.lastPathComponent), symbol: "checkmark.circle.fill")
             RecordingLog.add(url)
         } catch { Toast.show(LF("Could not save: %@", error.localizedDescription), symbol: "exclamationmark.triangle.fill") }
+    }
+
+    /// Writes the picture to a temporary file and opens it with whatever app macOS associates with it (Preview, for instance).
+    @objc func openInDefaultApp(_ sender: Any?) {
+        guard let img = flattened() else { return }
+        let prepared = Exporter.prepared(img, scale: doc.scale)
+        guard let (data, ext) = Exporter.encode(prepared.image, forceLossless: Exporter.hasTransparency(prepared.image)) else { return }
+        let dir = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("SnapixOpen", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let url = dir.appendingPathComponent(Exporter.filename(ext: ext))
+        guard (try? data.write(to: url)) != nil else { return }
+        NSWorkspace.shared.open(url)
     }
 
     @objc func trimAction(_ sender: Any?) {
