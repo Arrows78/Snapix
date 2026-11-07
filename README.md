@@ -60,6 +60,7 @@ Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 ### 📤 Output
 
 - **Copy**, **save** (PNG, JPEG, or automatic by content), **save as** (PNG, JPEG, HEIC, PDF), **share** (system share sheet), downscale Retina, filename template, **upload** to your own HTTP endpoint.
+- **Quick Access**: the floating preview after a capture now sits in the corner you choose (4 corners, 3 sizes), has a *More* menu (save as, share, copy as file, upload, hide sensitive data, delete) and answers to keys while hovered (⌘C, ⌘S, ⌘E, ⌘P, Delete, Esc). `⇧⌘6` brings back your last four captures as a persistent stack.
 - **Pin to screen**: drag, scroll to resize, ⌥-scroll for opacity, double-click to edit, right-click menu.
 - **Menu bar**: a *Recent Captures* submenu with thumbnails (open, copy, pin, reveal).
 - **Capture options**: optionally hide desktop icons from screenshots and recordings.
@@ -75,6 +76,7 @@ Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 | `⇧⌘1` | Fullscreen screenshot |
 | `⇧⌘2` | Area capture |
 | `⇧⌘7` | Capture any window |
+| `⇧⌘6` | Show Quick Access |
 | `⇧⌘8` | Recognize text / QR code |
 | `⇧⌘9` | Scrolling capture |
 | `⇧⌘0` | Delayed screenshot |
@@ -83,7 +85,7 @@ The other actions (active window, repeat last area, scrolling upwards or manuall
 
 ### 🔗 URL scheme
 
-`snapix://area`, `fullscreen`, `window`, `active-window`, `element`, `delayed`, `repeat`, `scrolling`, `scrolling-up`, `scrolling-manual`, `library`, `shortcuts`, `ocr`, `cutout`, `record`, `record-gif`, `pick-color`, `contrast`, `clipboard`, with an optional `?then=copy,save,edit,pin`.
+`snapix://area`, `fullscreen`, `window`, `active-window`, `element`, `delayed`, `repeat`, `scrolling`, `scrolling-up`, `scrolling-manual`, `library`, `shortcuts`, `quick-access`, `ocr`, `cutout`, `record`, `record-gif`, `pick-color`, `contrast`, `clipboard`, with an optional `?then=copy,save,edit,pin`.
 
 ```bash
 open "snapix://area?then=copy"

@@ -66,6 +66,11 @@ private final class ThumbView: NSView {
 private final class PreviewContent: NSVisualEffectView, NSDraggingSource {
     var onEnter: (() -> Void)?
     var onExit: (() -> Void)?
+    /// Receives a key typed while the pointer is over the preview; returns true when handled.
+    var onKey: ((NSEvent) -> Bool)?
+
+    override var acceptsFirstResponder: Bool { true }
+    override func keyDown(with event: NSEvent) { if onKey?(event) != true { super.keyDown(with: event) } }
 
     override init(frame: NSRect) {
         super.init(frame: frame)
@@ -83,7 +88,7 @@ private final class PreviewContent: NSVisualEffectView, NSDraggingSource {
 
     required init?(coder: NSCoder) { fatalError() }
 
-    override func mouseEntered(with event: NSEvent) { onEnter?() }
+    override func mouseEntered(with event: NSEvent) { window?.makeKey(); window?.makeFirstResponder(self); onEnter?() }
     override func mouseExited(with event: NSEvent) { onExit?() }
     func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation { .copy }
 }
@@ -92,8 +97,14 @@ private final class PreviewContent: NSVisualEffectView, NSDraggingSource {
 @MainActor
 final class PreviewController: NSObject {
     private static var open: [PreviewController] = []
-    private static let width: CGFloat = 232
+    private static var scaleFactor: CGFloat {
+        switch Pref.string("previewSize") { case "small": return 0.8; case "large": return 1.25; default: return 1 }
+    }
+    private static var width: CGFloat { (232 * scaleFactor).rounded() }
     private static let margin: CGFloat = 20
+    /// Quick Access (re-shown Library items) stays until dismissed.
+    private let persistent: Bool
+    private static var showingRecent = false
 
     private let shot: Shot
     private let panel: PreviewWindow
@@ -104,13 +115,29 @@ final class PreviewController: NSObject {
     private let height: CGFloat
     private var closeWork: DispatchWorkItem?
 
-    static func show(_ shot: Shot) {
-        let c = PreviewController(shot: shot)
+    static func show(_ shot: Shot, persistent: Bool = false) {
+        let c = PreviewController(shot: shot, persistent: persistent)
         open.append(c)
         c.present()
     }
 
-    private init(shot: Shot) {
+    /// Quick Access: the latest Library captures stacked in the corner, or closed again when already shown.
+    static func toggleRecent() {
+        if showingRecent { dismissAll(); return }
+        let urls = Array(History.items().prefix(4))
+        guard !urls.isEmpty else { Toast.show(L("Screenshots you take will appear here."), symbol: "exclamationmark.triangle.fill"); return }
+        showingRecent = true
+        // Oldest first so the newest ends up nearest the corner.
+        for url in urls.reversed() { if let s = History.shot(for: url) { show(s, persistent: true) } }
+    }
+
+    static func dismissAll() {
+        showingRecent = false
+        for c in open { c.dismiss() }
+    }
+
+    private init(shot: Shot, persistent: Bool) {
+        self.persistent = persistent
         self.shot = shot
         anchor = shot.placeAtRegion ? shot.screenRect : nil
         anchorPoint = shot.placeAtRegion ? shot.anchorPoint : nil
@@ -119,7 +146,8 @@ final class PreviewController: NSObject {
 
         // Thumbnail box: fits 208 x 230 keeping the aspect ratio.
         let iw = CGFloat(shot.image.width), ih = CGFloat(shot.image.height)
-        let k = min(208 / iw, 230 / ih, 1.5 / shot.scale * shot.scale)
+        let f = Self.scaleFactor
+        let k = min(208 * f / iw, 230 * f / ih, 1.5)
         let tw = max(60, (iw * k).rounded()), th = max(40, (ih * k).rounded())
         height = 52 + th + 18 + 56
         let w = Self.width
@@ -156,16 +184,18 @@ final class PreviewController: NSObject {
             ("square.and.arrow.down", "Save", #selector(saveTapped)),
             ("text.viewfinder", "Recognize text / QR code", #selector(ocrTapped)),
             ("pin", "Pin to screen", #selector(pinTapped)),
+            ("ellipsis", "More tools and actions", #selector(moreTapped(_:))),
         ]
-        let bw: CGFloat = 40
-        let gap = (w - 24 - bw * CGFloat(actions.count)) / CGFloat(actions.count - 1)
+        let bw: CGFloat = 32
+        let gap = max(0, (w - 24 - bw * CGFloat(actions.count)) / CGFloat(actions.count - 1))
         for (i, a) in actions.enumerated() {
-            let b = IconButton(symbol: a.0, tip: L(a.1), target: self, action: a.2, size: NSSize(width: bw, height: 36), pointSize: 17)
+            let b = IconButton(symbol: a.0, tip: L(a.1), target: self, action: a.2, size: NSSize(width: bw, height: 36), pointSize: 15)
             b.translatesAutoresizingMaskIntoConstraints = true
             b.frame = NSRect(x: 12 + CGFloat(i) * (bw + gap), y: 14, width: bw, height: 36)
             content.addSubview(b)
         }
 
+        content.onKey = { [weak self] e in self?.handleKey(e) ?? false }
         content.onEnter = { [weak self] in self?.closeWork?.cancel() }
         content.onExit = { [weak self] in self?.scheduleClose() }
     }
@@ -208,15 +238,33 @@ final class PreviewController: NSObject {
         return NSRect(origin: o, size: size)
     }
 
+    private enum Corner {
+        case bottomRight, bottomLeft, topRight, topLeft
+        init() { self = Corner(rawValue: Pref.string("previewCorner")) ?? .bottomRight }
+        init?(rawValue: String) {
+            switch rawValue {
+            case "bottomRight": self = .bottomRight
+            case "bottomLeft": self = .bottomLeft
+            case "topRight": self = .topRight
+            case "topLeft": self = .topLeft
+            default: return nil
+            }
+        }
+        var onRight: Bool { self == .bottomRight || self == .topRight }
+        var onBottom: Bool { self == .bottomRight || self == .bottomLeft }
+    }
+
     private func present() {
         let vf = screen.visibleFrame
+        let corner = Corner()
         if var start = anchoredTarget(size: NSSize(width: Self.width, height: height), visible: vf) {
             // Fade in on the spot, rising a few points.
             start.origin.y -= 14
             panel.setFrame(start, display: false)
         } else {
             // Corner previews slide in from the right edge.
-            panel.setFrame(NSRect(x: vf.maxX, y: vf.minY + Self.margin, width: Self.width, height: height), display: false)
+            panel.setFrame(NSRect(x: corner.onRight ? vf.maxX : vf.minX - Self.width, y: corner.onBottom ? vf.minY + Self.margin : vf.maxY - Self.margin - height,
+                                  width: Self.width, height: height), display: false)
         }
         panel.alphaValue = 0
         panel.orderFrontRegardless()
@@ -227,6 +275,7 @@ final class PreviewController: NSObject {
     /// Stacks previews bottom-up in the corner of their screen (newest at the bottom).
     private static func layoutAll() {
         var offsets: [ObjectIdentifier: CGFloat] = [:]
+        let corner = Corner()
         for c in open.reversed() {
             let key = ObjectIdentifier(c.screen)
             let y = offsets[key] ?? 0
@@ -235,7 +284,9 @@ final class PreviewController: NSObject {
             if let t = c.anchoredTarget(size: NSSize(width: width, height: c.height), visible: vf) {
                 target = t
             } else {
-                target = NSRect(x: vf.maxX - width - margin, y: vf.minY + margin + y, width: width, height: c.height)
+                let x = corner.onRight ? vf.maxX - width - margin : vf.minX + margin
+                let ty = corner.onBottom ? vf.minY + margin + y : vf.maxY - margin - y - c.height
+                target = NSRect(x: x, y: ty, width: width, height: c.height)
                 offsets[key] = y + c.height + 12
             }
             NSAnimationContext.runAnimationGroup { ctx in
@@ -249,6 +300,7 @@ final class PreviewController: NSObject {
 
     private func scheduleClose() {
         closeWork?.cancel()
+        guard !persistent else { return }
         let setting = Pref.string("previewClosing")
         guard setting != "never", let secs = Double(setting) else { return }
         let work = DispatchWorkItem { [weak self] in self?.dismiss() }
@@ -262,7 +314,8 @@ final class PreviewController: NSObject {
         Self.open.removeAll { $0 === self }
         let vf = screen.visibleFrame
         var out = panel.frame
-        if anchor != nil || anchorPoint != nil { out.origin.y -= 14 } else { out.origin.x = vf.maxX + 10 }
+        if anchor != nil || anchorPoint != nil { out.origin.y -= 14 } else { out.origin.x = Corner().onRight ? vf.maxX + 10 : vf.minX - out.width - 10 }
+        if Self.open.isEmpty { Self.showingRecent = false }
         NSAnimationContext.runAnimationGroup({ ctx in
             ctx.duration = 0.22
             panel.animator().setFrame(out, display: true)
@@ -279,6 +332,89 @@ final class PreviewController: NSObject {
     }
 
     private func edit() { EditorWindowController.open(shot); dismiss() }
+
+    /// Typed while hovering: ⌘C copy, ⌘S save, ⌘E or Return edit, ⌘P pin, ⌫ delete from the Library, Esc close.
+    private func handleKey(_ e: NSEvent) -> Bool {
+        let cmd = e.modifierFlags.contains(.command)
+        switch (e.charactersIgnoringModifiers ?? "", e.keyCode) {
+        case (_, 53): dismiss()
+        case (_, 36): edit()
+        case ("c", _) where cmd: copyTapped()
+        case ("s", _) where cmd: saveTapped()
+        case ("e", _) where cmd: edit()
+        case ("p", _) where cmd: pinTapped()
+        case (_, 51), (_, 117): deleteFromLibrary()
+        default: return false
+        }
+        return true
+    }
+
+    @objc private func moreTapped(_ sender: NSButton) {
+        closeWork?.cancel()
+        let menu = NSMenu()
+        func add(_ title: String, _ sel: Selector, _ symbol: String) {
+            let i = NSMenuItem(title: L(title), action: sel, keyEquivalent: "")
+            i.target = self
+            i.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
+            menu.addItem(i)
+        }
+        add("Save As…", #selector(saveAsTapped), "square.and.arrow.down.on.square")
+        add("Share…", #selector(shareTapped(_:)), "square.and.arrow.up")
+        add("Copy as File", #selector(copyFileTapped), "doc.badge.arrow.up")
+        add("Upload", #selector(uploadTapped), "icloud.and.arrow.up")
+        add("Hide Sensitive Data", #selector(redactTapped), "eye.slash")
+        menu.addItem(.separator())
+        if shot.historyURL != nil { add("Delete from Library", #selector(deleteTapped), "trash") }
+        add("Close All", #selector(closeAllTapped), "xmark.circle")
+        menu.popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height + 4), in: sender)
+        scheduleClose()
+    }
+
+    private func deleteFromLibrary() {
+        guard let url = shot.historyURL else { return }
+        try? FileManager.default.removeItem(at: url)
+        Toast.show(L("Deleted from the Library"), symbol: "checkmark.circle.fill")
+        dismiss()
+    }
+
+    @objc private func saveAsTapped() { Exporter.saveAs(shot.image, scale: shot.scale, window: nil) }
+    @objc private func shareTapped(_ sender: NSButton) {
+        let size = NSSize(width: CGFloat(shot.image.width) / shot.scale, height: CGFloat(shot.image.height) / shot.scale)
+        NSSharingServicePicker(items: [NSImage(cgImage: shot.image, size: size)]).show(relativeTo: sender.bounds, of: sender, preferredEdge: .minY)
+    }
+    @objc private func copyFileTapped() {
+        let prepared = Exporter.prepared(shot.image, scale: shot.scale)
+        guard let (data, ext) = Exporter.encode(prepared.image, forceLossless: Exporter.hasTransparency(prepared.image)) else { return }
+        let dir = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("SnapixCopy", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let url = dir.appendingPathComponent(Exporter.filename(ext: ext))
+        guard (try? data.write(to: url)) != nil else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.writeObjects([url as NSURL])
+        Toast.show(L("Copied as file"), symbol: "checkmark.circle.fill")
+    }
+    @objc private func uploadTapped() { Exporter.upload(shot.image, scale: shot.scale) }
+    /// Opens the editor with every sensitive piece of text already pixelated.
+    @objc private func redactTapped() {
+        Redaction.findBoxes(in: shot.image) { [shot] boxes in
+            guard !boxes.isEmpty else { Toast.show(L("No sensitive data found")); return }
+            var out = shot.image
+            let doc = DocState(image: shot.image, annotations: boxes.map {
+                let b = $0.insetBy(dx: -4, dy: -3)
+                return Annotation(tool: .blur, p1: CGPoint(x: b.minX, y: b.minY), p2: CGPoint(x: b.maxX, y: b.maxY), color: .black, width: 8)
+            })
+            var plain = doc
+            plain.backdrop.enabled = false
+            if let img = Renderer.render(plain) { out = img }
+            var redacted = shot
+            redacted.image = out
+            Exporter.copy(out, scale: shot.scale, quiet: true)
+            Toast.show(LF("%d sensitive regions hidden", boxes.count) + " · " + L("Copied to the clipboard"), duration: 2.5, symbol: "checkmark.circle.fill")
+            EditorWindowController.open(redacted)
+        }
+    }
+    @objc private func deleteTapped() { deleteFromLibrary() }
+    @objc private func closeAllTapped() { Self.dismissAll() }
 
     @objc private func closeTapped() { dismiss() }
     @objc private func editTapped() { edit() }

@@ -10,6 +10,8 @@ enum Pref {
         "afterEdit": false,
         "afterPreview": true,
         "previewClosing": "8",
+        "previewCorner": "bottomRight",
+        "previewSize": "medium",
         "afterPin": false,
         "saveFolder": (NSHomeDirectory() as NSString).appendingPathComponent("Pictures/Snapix"),
         "filenameTemplate": "Snapix {date} at {time}",
@@ -101,7 +103,7 @@ enum Pref {
 /// Everything the user can trigger from the menu bar, a hotkey or a `snapix://` URL.
 enum Action: String, CaseIterable {
     case area, fullscreen, window, activeWindow, delayed, repeatArea
-    case scrolling, scrollingUp, scrollingManual, element, ocr, cutout, record, recordGIF, pickColor, contrast, clipboard, library, shortcuts
+    case scrolling, scrollingUp, scrollingManual, quickAccess, element, ocr, cutout, record, recordGIF, pickColor, contrast, clipboard, library, shortcuts
 
     var title: String {
         switch self {
@@ -115,6 +117,7 @@ enum Action: String, CaseIterable {
         case .scrollingUp: return L("Scrolling Capture Upwards")
         case .scrollingManual: return L("Manual Scrolling Capture")
         case .ocr: return L("Recognize Text / QR Code")
+        case .quickAccess: return L("Show Quick Access")
         case .element: return L("Capture Interface Element")
         case .cutout: return L("Capture Subject Without Background")
         case .record: return L("Record Screen Area")
@@ -133,6 +136,7 @@ enum Action: String, CaseIterable {
         case .fullscreen: return KeyCombo(keyCode: UInt32(kVK_ANSI_1), modifiers: flags, label: "1")
         case .area: return KeyCombo(keyCode: UInt32(kVK_ANSI_2), modifiers: flags, label: "2")
         case .window: return KeyCombo(keyCode: UInt32(kVK_ANSI_7), modifiers: flags, label: "7")
+        case .quickAccess: return KeyCombo(keyCode: UInt32(kVK_ANSI_6), modifiers: flags, label: "6")
         case .ocr: return KeyCombo(keyCode: UInt32(kVK_ANSI_8), modifiers: flags, label: "8")
         case .scrolling: return KeyCombo(keyCode: UInt32(kVK_ANSI_9), modifiers: flags, label: "9")
         case .delayed: return KeyCombo(keyCode: UInt32(kVK_ANSI_0), modifiers: flags, label: "0")

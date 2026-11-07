@@ -63,7 +63,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let name = url.host ?? url.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         let map: [String: Action] = [
             "area": .area, "fullscreen": .fullscreen, "window": .window, "active-window": .activeWindow, "delayed": .delayed,
-            "repeat": .repeatArea, "scrolling": .scrolling, "scrolling-up": .scrollingUp, "scrolling-manual": .scrollingManual, "ocr": .ocr, "cutout": .cutout, "element": .element, "record": .record, "record-gif": .recordGIF,
+            "repeat": .repeatArea, "scrolling": .scrolling, "scrolling-up": .scrollingUp, "scrolling-manual": .scrollingManual, "ocr": .ocr, "cutout": .cutout, "quick-access": .quickAccess, "element": .element, "record": .record, "record-gif": .recordGIF,
             "pick-color": .pickColor, "contrast": .contrast, "clipboard": .clipboard, "library": .library, "shortcuts": .shortcuts,
         ]
         guard let action = map[name] else { return }
@@ -113,7 +113,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(.separator())
         [Action.record, .recordGIF].forEach(add)
         menu.addItem(.separator())
-        [Action.ocr, .cutout, .pickColor, .contrast].forEach(add)
+        [Action.quickAccess, .ocr, .cutout, .pickColor, .contrast].forEach(add)
         menu.addItem(.separator())
         add(.clipboard)
         add(.library)
@@ -239,6 +239,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         case .clipboard: EditorWindowController.openFromClipboard(); return
         case .library: LibraryWindow.show(); return
         case .shortcuts: ShortcutSheet.show(); return
+        case .quickAccess: PreviewController.toggleRecent(); return
         default: break
         }
         guard Capture.ensurePermission() else { Capture.showPermissionAlert(); return }

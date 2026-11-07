@@ -12,6 +12,8 @@ struct Shot {
     var placeAtRegion = false
     /// Where an area selection ended (AppKit global coordinates); the preview appears next to it.
     var anchorPoint: CGPoint?
+    /// Set when the shot comes from the Library, so Quick Access can delete the file.
+    var historyURL: URL?
 }
 
 @MainActor

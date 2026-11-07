@@ -199,6 +199,8 @@ struct PreferencesView: View {
     @AppStorage("afterPreview") private var afterPreview = true
     @AppStorage("previewClosing") private var previewClosing = "8"
     @AppStorage("afterPin") private var afterPin = false
+    @AppStorage("previewCorner") private var previewCorner = "bottomRight"
+    @AppStorage("previewSize") private var previewSize = "medium"
     @AppStorage("saveFolder") private var saveFolder = ""
     @AppStorage("filenameTemplate") private var template = ""
     @AppStorage("format") private var format = "auto"
@@ -304,6 +306,19 @@ struct PreferencesView: View {
                 }
                 ToggleRow("Show in editor", isOn: $afterEdit)
                 ToggleRow("Pin to screen", isOn: $afterPin, last: true)
+            }
+            Card(title: "Quick Access") {
+                Row(title: "Position") {
+                    Picker("", selection: $previewCorner) {
+                        Text("Bottom right").tag("bottomRight"); Text("Bottom left").tag("bottomLeft")
+                        Text("Top right").tag("topRight"); Text("Top left").tag("topLeft")
+                    }.labelsHidden().frame(width: 160)
+                }
+                Row(title: "Size", subtitle: "Hover a preview and press ⌘C to copy, ⌘S to save, ⌘E or Return to edit, ⌘P to pin, Delete to remove it, Esc to close.", last: true) {
+                    Picker("", selection: $previewSize) {
+                        Text("Small").tag("small"); Text("Medium").tag("medium"); Text("Large").tag("large")
+                    }.labelsHidden().frame(width: 160)
+                }
             }
             Card(title: "When closing the editor with Esc") {
                 ToggleRow("Copy to clipboard", isOn: $escCopy)

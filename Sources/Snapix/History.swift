@@ -58,7 +58,7 @@ enum History {
 
     static func shot(for url: URL) -> Shot? {
         guard let src = CGImageSourceCreateWithURL(url as CFURL, nil), let img = CGImageSourceCreateImageAtIndex(src, 0, nil) else { return nil }
-        return Shot(image: img, scale: scale(of: url), screenRect: nil)
+        return Shot(image: img, scale: scale(of: url), screenRect: nil, historyURL: url)
     }
 
     nonisolated static func thumbnail(for url: URL, maxPixel: Int) -> CGImage? {
