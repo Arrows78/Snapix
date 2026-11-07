@@ -74,6 +74,8 @@ enum Renderer {
         drawSpotlights(s.annotations.filter { $0.tool == .spotlight }, size: imgSize, in: ctx)
         ctx.restoreGState()
 
+        if s.backdrop.enabled, let kind = s.backdrop.tape, kind > 0 { drawTape(kind, imageSize: imgSize, in: ctx) }
+
         for a in s.annotations where a.tool != .spotlight && a.id != skipID {
             draw(a, image: s.image, shadow: s.shadows, in: ctx)
         }
@@ -135,6 +137,45 @@ enum Renderer {
             ctx.setFillColor(NSColor.white.cgColor)
             ctx.addPath(CGPath(roundedRect: imageRect, cornerWidth: b.innerRadius, cornerHeight: b.innerRadius, transform: nil))
             ctx.fillPath()
+            ctx.restoreGState()
+        }
+    }
+
+    /// Two translucent adhesive strips holding the top corners of the screenshot (the context origin is the image's top-left).
+    static func drawTape(_ kind: Int, imageSize: CGSize, in ctx: CGContext) {
+        let palette: [(UInt32, UInt32)] = [(0x9EE3D8, 0x4FB8A8), (0xFFC9A8, 0xF08F5E), (0xCDB8F5, 0x8E6FD6), (0xFFF1D0, 0xD9BE7E)]
+        let (base, ink) = palette[max(0, min(palette.count - 1, kind - 1))]
+        let w = min(max(imageSize.width * 0.2, 70), 170), h = w * 0.3
+        for (corner, angle) in [(CGPoint(x: 6, y: 6), -0.62), (CGPoint(x: imageSize.width - 6, y: 6), 0.62)] as [(CGPoint, CGFloat)] {
+            ctx.saveGState()
+            ctx.translateBy(x: corner.x, y: corner.y)
+            ctx.rotate(by: angle)
+            let strip = CGRect(x: -w / 2, y: -h / 2, width: w, height: h)
+            ctx.setShadow(offset: CGSize(width: 0, height: 2), blur: 4, color: NSColor.black.withAlphaComponent(0.25).cgColor)
+            ctx.setFillColor(NSColor(hex: base, alpha: 0.88).cgColor)
+            ctx.fill(strip)
+            ctx.setShadow(offset: .zero, blur: 0, color: nil)
+            ctx.clip(to: strip)
+            ctx.setStrokeColor(NSColor(hex: ink, alpha: 0.45).cgColor)
+            ctx.setFillColor(NSColor(hex: ink, alpha: 0.45).cgColor)
+            ctx.setLineWidth(max(1, h * 0.06))
+            let step = h * 0.32
+            switch kind {
+            case 1: // dots
+                for y in stride(from: strip.minY + step / 2, to: strip.maxY, by: step) { for x in stride(from: strip.minX + step / 2, to: strip.maxX, by: step) {
+                    ctx.fillEllipse(in: CGRect(x: x - step * 0.14, y: y - step * 0.14, width: step * 0.28, height: step * 0.28)) } }
+            case 2: // grid
+                for x in stride(from: strip.minX, through: strip.maxX, by: step) { ctx.move(to: CGPoint(x: x, y: strip.minY)); ctx.addLine(to: CGPoint(x: x, y: strip.maxY)) }
+                for y in stride(from: strip.minY, through: strip.maxY, by: step) { ctx.move(to: CGPoint(x: strip.minX, y: y)); ctx.addLine(to: CGPoint(x: strip.maxX, y: y)) }
+                ctx.strokePath()
+            case 3: // diagonal
+                for k in stride(from: strip.minX - h, through: strip.maxX, by: step) { ctx.move(to: CGPoint(x: k, y: strip.maxY)); ctx.addLine(to: CGPoint(x: k + h, y: strip.minY)) }
+                ctx.strokePath()
+            default: // gingham
+                ctx.setFillColor(NSColor(hex: ink, alpha: 0.22).cgColor)
+                for (i, x) in stride(from: strip.minX, to: strip.maxX, by: step).enumerated() where i % 2 == 0 { ctx.fill(CGRect(x: x, y: strip.minY, width: step, height: strip.height)) }
+                for (i, y) in stride(from: strip.minY, to: strip.maxY, by: step).enumerated() where i % 2 == 0 { ctx.fill(CGRect(x: strip.minX, y: y, width: strip.width, height: step)) }
+            }
             ctx.restoreGState()
         }
     }

@@ -100,7 +100,7 @@ enum SelfTest {
         do {
             var gs = DocState(image: page(rows: 0..<240))
             gs.backdrop = BackdropConfig(enabled: true, padding: 70, innerRadius: 14)
-            gs.backdrop.glow = true; gs.backdrop.pattern = 1; gs.backdrop.windowFrame = true; gs.backdrop.ratio = 16.0 / 9
+            gs.backdrop.glow = true; gs.backdrop.pattern = 1; gs.backdrop.tape = 3; gs.backdrop.ratio = 16.0 / 9
             if let img = Renderer.render(gs) { write(img, "\(outDir)/glow.png"); check(img.width > 400, "glow backdrop renders") }
         }
 
@@ -293,6 +293,22 @@ enum SelfTest {
         ToolStyle.forget(in: ts)
         check(ToolStyle.load(.arrow, from: ts) == nil, "tool style forget")
         ts.removePersistentDomain(forName: "snapix.selftest6")
+
+        // Tape and wallpapers.
+        var tp = DocState(image: page(rows: 0..<200))
+        tp.backdrop = BackdropConfig(enabled: true, padding: 60, innerRadius: 0, shadow: false, gradient: false)
+        let noTape = Renderer.render(tp)
+        tp.backdrop.tape = 1
+        let withTape = Renderer.render(tp)
+        var tapeChanged = false, farChanged = false
+        if let a = noTape.flatMap(PixelBuffer.init), let b = withTape.flatMap(PixelBuffer.init) {
+            for y in 40..<110 { for x in 40..<120 where a.color(x: x, y: y)?.hexValue != b.color(x: x, y: y)?.hexValue { tapeChanged = true } }
+            for y in 150..<190 { for x in 150..<250 where a.color(x: x, y: y)?.hexValue != b.color(x: x, y: y)?.hexValue { farChanged = true } }
+        }
+        check(tapeChanged && !farChanged, "tape is drawn on the screenshot's top corner only")
+        let wp = BackdropConfig().applying(wallpaper: 4)
+        check(wp.enabled && wp.glow == true && wp.fromHex == 0x0F2027 && wp.pattern == 1 && BackdropConfig().applying(wallpaper: 99) == BackdropConfig(), "wallpaper preset applies colours, glow and pattern")
+        check((try? JSONDecoder().decode(BackdropConfig.self, from: old))?.tape == nil, "old backdrop settings have no tape")
 
         // Export formats.
         let enc = Exporter.data(for: strip, as: .pdf, scale: 2)

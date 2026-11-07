@@ -128,6 +128,9 @@ struct BackdropPanel: View {
                     if model.cfg.gradient { ColorPicker("To", selection: colorBinding(\.toHex)) }
                 }
                 if model.cfg.gradient { slider("Angle", $model.cfg.angle, 0...360) }
+                Picker("Tape", selection: Binding(get: { model.cfg.tape ?? 0 }, set: { model.cfg.tape = $0 == 0 ? nil : $0 })) {
+                    Text("None").tag(0); Text("Teal").tag(1); Text("Peach").tag(2); Text("Lavender").tag(3); Text("Cream").tag(4)
+                }
                 Toggle("Glow", isOn: Binding(get: { model.cfg.glow == true }, set: { model.cfg.glow = $0 ? true : nil }))
                 Picker("Pattern", selection: Binding(get: { model.cfg.pattern ?? 0 }, set: { model.cfg.pattern = $0 == 0 ? nil : $0 })) {
                     Text("None").tag(0); Text("Dots").tag(1); Text("Grid").tag(2); Text("Lines").tag(3)
@@ -147,6 +150,20 @@ struct BackdropPanel: View {
                             .fill(LinearGradient(colors: [Color(nsColor: NSColor(hex: p.0)), Color(nsColor: NSColor(hex: p.1))],
                                                  startPoint: .topLeading, endPoint: .bottomTrailing))
                             .frame(width: 48, height: 30)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            Text("Wallpapers").font(.caption).foregroundStyle(.secondary)
+            LazyVGrid(columns: Array(repeating: GridItem(.fixed(70), spacing: 8), count: 4), spacing: 8) {
+                ForEach(Array(BackdropConfig.wallpapers.enumerated()), id: \.offset) { i, w in
+                    Button { model.cfg = model.cfg.applying(wallpaper: i) } label: {
+                        ZStack(alignment: .bottomLeading) {
+                            RoundedRectangle(cornerRadius: 7)
+                                .fill(LinearGradient(colors: [Color(nsColor: NSColor(hex: w.from)), Color(nsColor: NSColor(hex: w.to))], startPoint: .topLeading, endPoint: .bottomTrailing))
+                            Text(LocalizedStringKey(w.name)).font(.system(size: 9, weight: .semibold)).foregroundStyle(.white).padding(4)
+                        }
+                        .frame(width: 70, height: 42)
                     }
                     .buttonStyle(.plain)
                 }

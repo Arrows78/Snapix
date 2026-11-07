@@ -213,6 +213,8 @@ struct BackdropConfig: Codable, Equatable {
     var pattern: Int?
     /// Soft overlapping colour blobs over the background ("glow"). Optional so older saved settings still decode.
     var glow: Bool?
+    /// Adhesive tape on the top corners of the screenshot: 1 teal, 2 peach, 3 lavender, 4 cream. Optional for older saved settings.
+    var tape: Int?
 
     static let ratios: [(name: String, value: CGFloat?)] = [
         ("Auto", nil), ("1:1", 1), ("4:3", 4.0 / 3), ("3:2", 1.5), ("16:9", 16.0 / 9), ("2:1", 2), ("9:16", 9.0 / 16),
@@ -227,6 +229,23 @@ struct BackdropConfig: Codable, Equatable {
         c.innerRadius = min(60, max(6, (short * 0.012).rounded()))
         c.shadow = true
         c.ratio = nil
+        return c
+    }
+
+    /// Ready-made backgrounds: colours, glow and texture together.
+    static let wallpapers: [(name: String, from: UInt32, to: UInt32, pattern: Int?)] = [
+        ("Sunset", 0xFF8A00, 0xE52E71, nil), ("Ocean", 0x00C6FF, 0x0072FF, nil), ("Forest", 0x11998E, 0x38EF7D, 3),
+        ("Aurora", 0x4568DC, 0xB06AB3, nil), ("Midnight", 0x0F2027, 0x2C5364, 1), ("Peach", 0xFFB199, 0xFF0844, nil),
+        ("Graphite", 0x232526, 0x414345, 2), ("Lavender", 0xA18CD1, 0xFBC2EB, nil),
+    ]
+
+    /// This config with a wallpaper's colours, glow and texture applied (backdrop switched on).
+    func applying(wallpaper index: Int) -> BackdropConfig {
+        guard BackdropConfig.wallpapers.indices.contains(index) else { return self }
+        let w = BackdropConfig.wallpapers[index]
+        var c = self
+        c.enabled = true; c.gradient = true; c.radial = false
+        c.fromHex = w.from; c.toHex = w.to; c.glow = true; c.pattern = w.pattern
         return c
     }
 
