@@ -12,6 +12,7 @@ enum Pref {
         "previewClosing": "8",
         "previewCorner": "bottomRight",
         "previewSize": "medium",
+        "snapHighlight": true,
         "showMenuBarIcon": true,
         "urlScheme": true,
         "historyLimit": 200,

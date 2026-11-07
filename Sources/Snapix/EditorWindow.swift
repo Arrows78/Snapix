@@ -103,6 +103,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         w.title = "Snapix"
         w.setFrameAutosaveName("")
 
+        if let preset = BackdropPreset.defaultPreset { doc.state.backdrop = preset.config; doc.state.backdrop.enabled = true }
         doc.onChange = { [weak self] in self?.documentChanged() }
         canvas.onCursorMove = { [weak self] p, c in self?.updateCursor(p, c) }
         canvas.onEscape = { [weak self] in self?.finishWithEscape() }
@@ -110,6 +111,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         canvas.onToggleBackdrop = { [weak self] in self?.toggleBackdrop() }
         canvas.onSelectionChanged = { [weak self] a in self?.selectionChanged(a) }
         canvas.onCopyColor = { [weak self] in self?.copyCursorColor() }
+        canvas.onHighlightFinished = { [weak self] a in self?.snapHighlight(a) }
         canvas.color = NSColor(hex: 0xFF3B30)
         buildUI(in: w, size: shot)
         selectTool(Pref.bool("rememberTool") ? Tool(rawValue: Pref.string("lastTool")) ?? .arrow : Tool(rawValue: Pref.string("defaultTool")) ?? .arrow)
@@ -287,6 +289,8 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         menu.addItem(presets)
         menu.addItem(.separator())
         add(L("Zoom to Selection"), #selector(zoomSelectionAction(_:)), symbol: "plus.magnifyingglass")
+        add(L("Keep Window on Top"), #selector(toggleOnTop(_:)), symbol: "pin.circle")
+        menu.items.last?.state = window?.level == .floating ? .on : .off
         add(L("Annotation Shadows"), #selector(toggleShadows(_:)), symbol: "shadow")
         menu.items.last?.state = doc.state.shadows ? .on : .off
         add(L("Copy as File"), #selector(copyAsFile(_:)), symbol: "doc.badge.arrow.up")
@@ -781,6 +785,28 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
             s.overlay?.origin.y += CGFloat(v[0])
         }
         fitToWindow()
+    }
+
+    /// Replaces a freehand highlight with a clean band over the text line it covers (undoable).
+    private func snapHighlight(_ a: Annotation) {
+        guard Pref.bool("snapHighlight"), a.points.count > 1 else { return }
+        let xs = a.points.map(\.x), ys = a.points.map(\.y)
+        let stroke = CGRect(x: xs.min()!, y: ys.min()!, width: xs.max()! - xs.min()!, height: ys.max()! - ys.min()!)
+        OCR.textBoxes(in: doc.state.image, region: stroke.insetBy(dx: -16, dy: -16)) { [weak self] boxes in
+            guard let self, let snap = HighlightSnap.snapped(stroke: stroke, boxes: boxes),
+                  let i = self.doc.state.annotations.firstIndex(where: { $0.id == a.id }) else { return }
+            self.doc.mutate { s in
+                s.annotations[i].points = snap.points
+                s.annotations[i].p1 = snap.points[0]
+                s.annotations[i].p2 = snap.points[1]
+                s.annotations[i].width = snap.width
+            }
+        }
+    }
+
+    @objc func toggleOnTop(_ sender: Any?) {
+        guard let w = window else { return }
+        w.level = w.level == .floating ? .normal : .floating
     }
 
     @objc func trimAction(_ sender: Any?) {

@@ -21,6 +21,8 @@ final class CanvasView: NSView, NSTextFieldDelegate {
     var onToolShortcut: ((Tool) -> Void)?
     var onToggleBackdrop: (() -> Void)?
     var onCopyColor: (() -> Void)?
+    /// Called with a highlighter stroke the user just finished, so it can be snapped to text.
+    var onHighlightFinished: ((Annotation) -> Void)?
     var onSelectionChanged: ((Annotation?) -> Void)?
 
     private(set) var selectedID: UUID? { didSet { if oldValue != selectedID { onSelectionChanged?(selectedAnnotation) } } }
@@ -323,6 +325,7 @@ final class CanvasView: NSView, NSTextFieldDelegate {
             doc.discardCheckpoint()
         } else {
             selectedID = id
+            if a.tool == .highlighter { onHighlightFinished?(a) }
         }
     }
 

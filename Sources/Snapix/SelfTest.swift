@@ -249,6 +249,17 @@ enum SelfTest {
             }
         }
 
+        // Highlight snapping.
+        let lineBox = CGRect(x: 100, y: 200, width: 300, height: 20)
+        let sn = HighlightSnap.snapped(stroke: CGRect(x: 120, y: 195, width: 200, height: 30), boxes: [CGRect(x: 100, y: 300, width: 300, height: 20), lineBox])
+        check(sn?.points == [CGPoint(x: 120, y: 210), CGPoint(x: 320, y: 210)] && abs((sn?.width ?? 0) - 23) < 0.01, "highlight snaps to the matching line")
+        check(HighlightSnap.snapped(stroke: CGRect(x: 0, y: 0, width: 50, height: 10), boxes: [lineBox]) == nil, "highlight far from text is left alone")
+
+        // Auto-balance.
+        let bal = BackdropConfig().balanced(for: CGSize(width: 1000, height: 600))
+        check(bal.enabled && bal.padding == 48 && bal.innerRadius == 7 && bal.shadow && bal.ratio == nil, "auto-balance proportions")
+        check(BackdropConfig().balanced(for: CGSize(width: 40, height: 40)).padding == 24, "auto-balance minimum padding")
+
         // Export formats.
         let enc = Exporter.data(for: strip, as: .pdf, scale: 2)
         check(enc.map { $0.starts(with: Data("%PDF".utf8)) } == true, "PDF export")

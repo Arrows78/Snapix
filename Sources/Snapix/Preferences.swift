@@ -263,6 +263,7 @@ struct PreferencesView: View {
     @AppStorage("windowShadow") private var windowShadow = false
     @AppStorage("defaultTool") private var defaultTool = "arrow"
     @AppStorage("rememberTool") private var rememberTool = false
+    @AppStorage("snapHighlight") private var snapHighlight = true
     @AppStorage("recordMicrophone") private var recordMicrophone = false
     @AppStorage("recordReveal") private var recordReveal = false
     @AppStorage("recordCountdown") private var recordCountdown = 3
@@ -514,6 +515,7 @@ struct PreferencesView: View {
                         .labelsHidden().frame(width: 180)
                 }
                 ToggleRow("Ask before closing an edited image", "Offers to save when you close the editor window with unsaved changes.", isOn: $confirmClose)
+                ToggleRow("Snap highlights to text", "A highlighter stroke over text becomes a clean band on that line. Undo restores the stroke.", isOn: $snapHighlight)
                 ToggleRow("Remember the last tool", "Open the editor with the tool you used last instead of the default one.", isOn: $rememberTool)
                 ToggleRow("Snap shapes to edges in the screenshot (hold ⌥ to disable)", isOn: $snapEdges)
                 ToggleRow("Mouse wheel zooms the image (trackpad scrolls, ⌥ or ⌘ swaps)", isOn: $wheelZoom)

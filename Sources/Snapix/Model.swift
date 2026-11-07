@@ -216,6 +216,18 @@ struct BackdropConfig: Codable, Equatable {
         ("Auto", nil), ("1:1", 1), ("4:3", 4.0 / 3), ("3:2", 1.5), ("16:9", 16.0 / 9), ("2:1", 2), ("9:16", 9.0 / 16),
     ]
 
+    /// A well-proportioned look for a screenshot of `size`: padding about 8 % of the short side, corners and shadow to match.
+    func balanced(for size: CGSize) -> BackdropConfig {
+        var c = self
+        let short = min(size.width, size.height)
+        c.enabled = true
+        c.padding = min(240, max(24, (short * 0.08).rounded()))
+        c.innerRadius = min(60, max(6, (short * 0.012).rounded()))
+        c.shadow = true
+        c.ratio = nil
+        return c
+    }
+
     var from: NSColor { NSColor(hex: fromHex) }
     var to: NSColor { NSColor(hex: toHex) }
 

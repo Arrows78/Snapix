@@ -42,6 +42,10 @@ final class BackdropModel: ObservableObject {
         presets = BackdropPreset.saved()
     }
 
+    func autoBalance() {
+        cfg = cfg.balanced(for: CGSize(width: doc.state.image.width, height: doc.state.image.height))
+    }
+
     func reverse() { (cfg.fromHex, cfg.toHex) = (cfg.toHex, cfg.fromHex) }
 
     func loadImage() {
@@ -153,12 +157,21 @@ struct BackdropPanel: View {
                     Divider()
                     Button("Save Current Style…") { askPresetName() }
                     if !model.presets.isEmpty {
+                        Menu("Use for New Screenshots") {
+                            Button((BackdropPreset.defaultName.isEmpty ? "✓ " : "") + L("None (keep the last one)")) { BackdropPreset.defaultName = ""; model.objectWillChange.send() }
+                            ForEach(model.presets, id: \.name) { p in
+                                Button((BackdropPreset.defaultName == p.name ? "✓ " : "") + p.name) { BackdropPreset.defaultName = p.name; model.objectWillChange.send() }
+                            }
+                        }
+                    }
+                    if !model.presets.isEmpty {
                         Menu("Delete Style") { ForEach(model.presets, id: \.name) { p in Button(p.name, role: .destructive) { model.deletePreset(p.name) } } }
                     }
                 }
                 .menuStyle(.borderlessButton).fixedSize()
             }
             HStack {
+                Button("Auto-balance", action: model.autoBalance)
                 Button("Randomize", action: model.randomize).disabled(!model.cfg.enabled)
                 Button("Image…", action: model.loadImage)
                 if model.hasImage { Button("Remove image", action: model.removeImage) }

@@ -24,7 +24,16 @@ struct BackdropPreset: Codable, Equatable {
         return true
     }
 
+    /// The style new screenshots start with ("" = none): the last used backdrop is kept instead.
+    static var defaultName: String {
+        get { UserDefaults.standard.string(forKey: "defaultBackdropPreset") ?? "" }
+        set { UserDefaults.standard.set(newValue, forKey: "defaultBackdropPreset") }
+    }
+
+    static var defaultPreset: BackdropPreset? { saved().first { $0.name == defaultName } }
+
     static func delete(named name: String, in store: UserDefaults = .standard) {
         if let data = try? JSONEncoder().encode(saved(in: store).filter { $0.name != name }) { store.set(data, forKey: key) }
+        if store === UserDefaults.standard, defaultName == name { defaultName = "" }
     }
 }

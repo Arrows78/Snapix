@@ -490,3 +490,9 @@
 "Reading the text of your screenshots…" = "Lecture du texte de vos captures…";
 "No screenshot matches your search." = "Aucune capture ne correspond à la recherche.";
 "Pencil" = "Crayon";
+"Snap highlights to text" = "Caler les surlignages sur le texte";
+"A highlighter stroke over text becomes a clean band on that line. Undo restores the stroke." = "Un trait de surligneur sur du texte devient une bande nette sur cette ligne. Annuler rétablit le trait.";
+"Keep Window on Top" = "Garder la fenêtre au premier plan";
+"Auto-balance" = "Équilibrer";
+"Use for New Screenshots" = "Utiliser pour les nouvelles captures";
+"None (keep the last one)" = "Aucun (garder le dernier)";
