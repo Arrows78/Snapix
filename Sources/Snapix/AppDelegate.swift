@@ -66,6 +66,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             "repeat": .repeatArea, "scrolling": .scrolling, "scrolling-up": .scrollingUp, "scrolling-manual": .scrollingManual, "ocr": .ocr, "cutout": .cutout, "quick-access": .quickAccess, "element": .element, "record": .record, "record-gif": .recordGIF,
             "pick-color": .pickColor, "contrast": .contrast, "clipboard": .clipboard, "library": .library, "shortcuts": .shortcuts,
         ]
+        switch name {
+        case "preferences": showPreferences(); return
+        case "home": HomeWindow.show(); return
+        default: break
+        }
         guard let action = map[name] else { return }
         var then: [After]?
         if let q = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first(where: { $0.name == "then" })?.value {

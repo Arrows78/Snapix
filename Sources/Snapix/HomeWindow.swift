@@ -103,11 +103,15 @@ private struct HomeView: View {
                 Button(action: onPreferences) { Image(systemName: "gearshape").font(.system(size: 14)) }
                     .buttonStyle(.plain).focusEffectDisabled().foregroundStyle(.white.opacity(0.6)).help(L("Preferences…"))
             }
-            section("Capture", [.area, .fullscreen, .window, .activeWindow, .element, .delayed, .repeatArea])
-            section("Scrolling", [.scrolling, .scrollingUp, .scrollingManual])
-            section("Recording", [.record, .recordGIF])
-            section("Tools", [.quickAccess, .ocr, .cutout, .pickColor, .contrast])
-            Spacer(minLength: 0)
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 18) {
+                    section("Capture", [.area, .fullscreen, .window, .activeWindow, .element, .delayed, .repeatArea])
+                    section("Scrolling", [.scrolling, .scrollingUp, .scrollingManual])
+                    section("Recording", [.record, .recordGIF])
+                    section("Tools", [.quickAccess, .ocr, .cutout, .pickColor, .contrast])
+                }
+                .padding(.vertical, 2)
+            }
             HStack(spacing: 10) {
                 pill("photo.on.rectangle", L("Open Library")) { onAction(.library) }
                 pill("doc.on.clipboard", L("Open From Clipboard")) { onAction(.clipboard) }
@@ -128,7 +132,7 @@ private struct HomeView: View {
 
     private func pill(_ symbol: String, _ title: String, _ run: @escaping () -> Void) -> some View {
         Button(action: run) {
-            Label(title, systemImage: symbol).font(.system(size: 12, weight: .medium))
+            Label(title, systemImage: symbol).font(.system(size: 12, weight: .medium)).lineLimit(1).fixedSize()
                 .padding(.horizontal, 10).padding(.vertical, 6)
                 .background(RoundedRectangle(cornerRadius: 8).fill(Color.white.opacity(0.08)))
         }
@@ -160,7 +164,8 @@ final class HomeWindow: NSObject, NSWindowDelegate {
             w.appearance = NSAppearance(named: .darkAqua)
             w.backgroundColor = Theme.window
             w.isMovableByWindowBackground = true
-            w.setContentSize(NSSize(width: 780, height: 700))
+            w.setContentSize(NSSize(width: 780, height: 640))
+            w.contentMinSize = NSSize(width: 640, height: 480)
             w.isReleasedWhenClosed = false
             w.delegate = self
             w.center()

@@ -166,7 +166,7 @@ private struct ToggleRow: View {
     }
 
     var body: some View {
-        Row(title: title, subtitle: subtitle, last: last) { Toggle("", isOn: $isOn).labelsHidden().toggleStyle(.switch).controlSize(.small) }
+        Row(title: title, subtitle: subtitle, last: last) { Toggle("", isOn: $isOn).labelsHidden().toggleStyle(.switch).controlSize(.small).tint(Color(nsColor: Theme.accent)) }
     }
 }
 
@@ -315,12 +315,14 @@ struct PreferencesView: View {
                         Text("Top right").tag("topRight"); Text("Top left").tag("topLeft")
                     }.labelsHidden().frame(width: 160)
                 }
-                Row(title: "Size", subtitle: "Hover a preview and press ⌘C to copy, ⌘S to save, ⌘E or Return to edit, ⌘P to pin, Delete to remove it, Esc to close.", last: true) {
+                Row(title: "Size", last: true) {
                     Picker("", selection: $previewSize) {
                         Text("Small").tag("small"); Text("Medium").tag("medium"); Text("Large").tag("large")
                     }.labelsHidden().frame(width: 160)
                 }
             }
+            Text("Hover a preview and press ⌘C to copy, ⌘S to save, ⌘E or Return to edit, ⌘P to pin, Delete to remove it, Esc to close.")
+                .font(.system(size: 11)).foregroundStyle(.white.opacity(0.45))
             Card(title: "When closing the editor with Esc") {
                 ToggleRow("Copy to clipboard", isOn: $escCopy)
                 ToggleRow("Save to folder", isOn: $escSave, last: true)
