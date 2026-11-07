@@ -473,3 +473,11 @@
 "Dim outside the selection" = "Assombrir hors de la sélection";
 "Show the pixel magnifier" = "Afficher la loupe de pixels";
 "Magnifier size" = "Taille de la loupe";
+"Camera" = "Caméra";
+"Show the camera in the recording" = "Afficher la caméra dans l'enregistrement";
+"A floating bubble you can drag while recording." = "Une bulle flottante que vous pouvez déplacer pendant l'enregistrement.";
+"Shape" = "Forme";
+"Circle" = "Cercle";
+"Square" = "Carré";
+"Mirror the camera" = "Effet miroir";
+"Camera unavailable or access denied: recording without it" = "Caméra indisponible ou accès refusé : enregistrement sans caméra";

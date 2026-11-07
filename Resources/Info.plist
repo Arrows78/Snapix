@@ -33,6 +33,8 @@
 	<true/>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Snapix can show your camera in a bubble over a screen recording.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Snapix can record your voice along with a screen recording.</string>
 	<key>NSScreenCaptureUsageDescription</key>

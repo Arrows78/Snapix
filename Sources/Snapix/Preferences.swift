@@ -237,6 +237,11 @@ struct PreferencesView: View {
     @AppStorage("recordAudio") private var recordAudio = false
     @AppStorage("recordCursor") private var recordCursor = true
     @AppStorage("recordClicks") private var recordClicks = false
+    @AppStorage("recordCamera") private var recordCamera = false
+    @AppStorage("cameraShape") private var cameraShape = "circle"
+    @AppStorage("cameraSize") private var cameraSize = "medium"
+    @AppStorage("cameraCorner") private var cameraCorner = "bottomRight"
+    @AppStorage("cameraMirror") private var cameraMirror = true
     @AppStorage("clickColor") private var clickColor = 0x5B8CFF
     @AppStorage("clickSize") private var clickSize = 54.0
     @AppStorage("clickDuration") private var clickDuration = 0.55
@@ -479,6 +484,19 @@ struct PreferencesView: View {
                 ToggleRow("Record the microphone (macOS 15 or later)", "The voice is a separate audio track; players that show a track picker let you choose it.", isOn: $recordMicrophone)
                 ToggleRow("Review and trim before saving", "Opens the recording in a player where you can cut the start and the end.", isOn: $recordReview)
                 ToggleRow("Show the file in Finder when done", isOn: $recordReveal, last: true)
+            }
+            Card(title: "Camera") {
+                ToggleRow("Show the camera in the recording", "A floating bubble you can drag while recording.", isOn: $recordCamera, last: !recordCamera)
+                if recordCamera {
+                    Row(title: "Shape") { Picker("", selection: $cameraShape) { Text("Circle").tag("circle"); Text("Square").tag("square") }.labelsHidden().frame(width: 140) }
+                    Row(title: "Size") { Picker("", selection: $cameraSize) { Text("Small").tag("small"); Text("Medium").tag("medium"); Text("Large").tag("large") }.labelsHidden().frame(width: 140) }
+                    Row(title: "Position") {
+                        Picker("", selection: $cameraCorner) {
+                            Text("Bottom right").tag("bottomRight"); Text("Bottom left").tag("bottomLeft"); Text("Top right").tag("topRight"); Text("Top left").tag("topLeft")
+                        }.labelsHidden().frame(width: 140)
+                    }
+                    ToggleRow("Mirror the camera", isOn: $cameraMirror, last: true)
+                }
             }
             Text("Press the shortcut again, or click Stop, to end a recording. The file is saved in your screenshots folder and copied to the clipboard.")
                 .font(.system(size: 11)).foregroundStyle(.white.opacity(0.45))

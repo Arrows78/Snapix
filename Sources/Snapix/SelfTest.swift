@@ -209,6 +209,12 @@ enum SelfTest {
         ["clickSize", "clickDuration", "overlayDim"].forEach { UserDefaults.standard.removeObject(forKey: $0) }
         check(ClickStyle.current == ClickStyle() && Overlay.dim == 0.4, "overlay preferences default")
 
+        // Camera bubble placement.
+        let area = CGRect(x: 100, y: 200, width: 800, height: 600)
+        check(CameraBubble.frame(side: 180, corner: "bottomRight", in: area) == CGRect(x: 704, y: 216, width: 180, height: 180), "camera bottom right")
+        check(CameraBubble.frame(side: 180, corner: "topLeft", in: area) == CGRect(x: 116, y: 604, width: 180, height: 180), "camera top left")
+        check(CameraBubble.side(for: "small") == 120 && CameraBubble.side(for: "large") == 260 && CameraBubble.side(for: "x") == 180, "camera sizes")
+
         // Export formats.
         let enc = Exporter.data(for: strip, as: .pdf, scale: 2)
         check(enc.map { $0.starts(with: Data("%PDF".utf8)) } == true, "PDF export")

@@ -46,7 +46,15 @@ final class RecordingOverlays {
     private var lastKey = Date.distantPast
     private var hideWork: DispatchWorkItem?
 
-    var windowIDs: Set<CGWindowID> { Set(windows.map { CGWindowID($0.windowNumber) }) }
+    private var camera: CameraBubble?
+
+    var windowIDs: Set<CGWindowID> {
+        var ids = Set(windows.map { CGWindowID($0.windowNumber) })
+        if let camera { ids.insert(CGWindowID(camera.window.windowNumber)) }
+        return ids
+    }
+
+    func attach(camera: CameraBubble) { self.camera = camera }
 
     init(rect: CGRect, screen: NSScreen, clicks: Bool, keys: Bool) {
         if clicks { addClickOverlay(screen: screen) }
@@ -154,6 +162,7 @@ final class RecordingOverlays {
     func stop() {
         monitors.forEach(NSEvent.removeMonitor)
         monitors = []
+        camera?.stop(); camera = nil
         hideWork?.cancel()
         windows.forEach { $0.orderOut(nil) }
         windows = []

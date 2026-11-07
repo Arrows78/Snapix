@@ -180,9 +180,15 @@ final class Recorder {
         }
         // The indicators go up first so the content list below includes their windows and can leave them out of the video.
         showIndicators(rect: rect, screen: screen)
-        if format == .video || Pref.bool("recordClicks") {
-            let clicks = Pref.bool("recordClicks"), keys = format == .video && Pref.bool("recordKeystrokes")
-            if clicks || keys { overlays = RecordingOverlays(rect: rect, screen: screen, clicks: clicks, keys: keys) }
+        let clicks = Pref.bool("recordClicks"), keys = format == .video && Pref.bool("recordKeystrokes")
+        if clicks || keys { overlays = RecordingOverlays(rect: rect, screen: screen, clicks: clicks, keys: keys) }
+        if Pref.bool("recordCamera") {
+            if let bubble = await CameraBubble.make(in: rect) {
+                if overlays == nil { overlays = RecordingOverlays(rect: rect, screen: screen, clicks: false, keys: false) }
+                overlays?.attach(camera: bubble)
+            } else {
+                Toast.show(L("Camera unavailable or access denied: recording without it"), duration: 3, symbol: "exclamationmark.triangle.fill")
+            }
         }
         // Give the windows a moment to reach the window server so the filter below sees them.
         try? await Task.sleep(nanoseconds: 150_000_000)
