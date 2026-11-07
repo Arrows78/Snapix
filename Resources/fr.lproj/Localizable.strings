@@ -313,3 +313,12 @@
 "Review and trim before saving" = "Relire et découper avant d'enregistrer";
 "Opens the recording in a player where you can cut the start and the end." = "Ouvre l'enregistrement dans un lecteur où vous pouvez couper le début et la fin.";
 "Recent Captures" = "Captures récentes";
+"Rotate Left" = "Pivoter à gauche";
+"Rotate Right" = "Pivoter à droite";
+"Flip Horizontally" = "Retourner horizontalement";
+"Flip Vertically" = "Retourner verticalement";
+"Share…" = "Partager…";
+"Format:" = "Format :";
+"Could not encode the image" = "Impossible d'encoder l'image";
+"Ratio" = "Ratio";
+"Auto" = "Auto";

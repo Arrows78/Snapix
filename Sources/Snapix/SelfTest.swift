@@ -66,6 +66,36 @@ enum SelfTest {
         check(Pref.restore(Data("nope".utf8)) == nil, "backup rejects garbage")
         suite.removePersistentDomain(forName: "snapix.selftest")
 
+        // Rotation and mirroring.
+        let strip = page(rows: 0..<100) // 400 wide, 100 tall
+        if let cw = ImageTransform.rotated(strip, clockwise: true) {
+            check(cw.width == 100 && cw.height == 400, "rotate swaps dimensions")
+            check(PixelBuffer(cw)?.color(x: 99, y: 5)?.hexValue == PixelBuffer(strip)?.color(x: 5, y: 0)?.hexValue, "rotate clockwise moves top-left to top-right")
+        } else { check(false, "rotate clockwise") }
+        if let ccw = ImageTransform.rotated(strip, clockwise: false) {
+            check(PixelBuffer(ccw)?.color(x: 0, y: 394)?.hexValue == PixelBuffer(strip)?.color(x: 5, y: 0)?.hexValue, "rotate counter-clockwise moves top-left to bottom-left")
+        } else { check(false, "rotate counter-clockwise") }
+        if let fh = ImageTransform.flipped(strip, horizontal: true), let fv = ImageTransform.flipped(strip, horizontal: false) {
+            check(PixelBuffer(fh)?.color(x: 394, y: 3)?.hexValue == PixelBuffer(strip)?.color(x: 5, y: 3)?.hexValue, "flip horizontal")
+            check(PixelBuffer(fv)?.color(x: 5, y: 96)?.hexValue == PixelBuffer(strip)?.color(x: 5, y: 3)?.hexValue, "flip vertical")
+        } else { check(false, "flip") }
+
+        // Backdrop aspect ratio.
+        var ds = DocState(image: strip)
+        ds.backdrop = BackdropConfig(enabled: true, padding: 10)
+        ds.backdrop.ratio = 1
+        let sq = Renderer.canvasSize(ds)
+        check(sq.width == sq.height && sq.width == 420, "backdrop 1:1 canvas \(sq)")
+        check(Renderer.origin(ds) == CGPoint(x: 10, y: 160), "backdrop keeps the screenshot centred \(Renderer.origin(ds))")
+        ds.backdrop.ratio = 16.0 / 9
+        let wide = Renderer.canvasSize(ds)
+        check(abs(wide.width / wide.height - 16.0 / 9) < 0.01 && wide.height >= 120, "backdrop 16:9 canvas \(wide)")
+
+        // Export formats.
+        let enc = Exporter.data(for: strip, as: .pdf, scale: 2)
+        check(enc.map { $0.starts(with: Data("%PDF".utf8)) } == true, "PDF export")
+        check(Exporter.data(for: strip, as: .png, scale: 1).map { $0.starts(with: Data([0x89, 0x50])) } == true, "PNG export")
+
         // Resetting settings.
         let rs = UserDefaults(suiteName: "snapix.selftest4")!
         rs.removePersistentDomain(forName: "snapix.selftest4")

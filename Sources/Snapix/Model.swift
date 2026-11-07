@@ -200,6 +200,12 @@ struct BackdropConfig: Codable, Equatable {
     var toHex: UInt32 = 0x2CB1BC
     var angle: CGFloat = 45
     var radial = false
+    /// Width / height of the final picture (nil = as big as the padding makes it); the screenshot stays centred.
+    var ratio: CGFloat?
+
+    static let ratios: [(name: String, value: CGFloat?)] = [
+        ("Auto", nil), ("1:1", 1), ("4:3", 4.0 / 3), ("3:2", 1.5), ("16:9", 16.0 / 9), ("2:1", 2), ("9:16", 9.0 / 16),
+    ]
 
     var from: NSColor { NSColor(hex: fromHex) }
     var to: NSColor { NSColor(hex: toHex) }
@@ -208,6 +214,8 @@ struct BackdropConfig: Codable, Equatable {
         (0x7F5AF0, 0x2CB1BC), (0xFF8A00, 0xE52E71), (0x00C6FF, 0x0072FF),
         (0x11998E, 0x38EF7D), (0xF857A6, 0xFF5858), (0x232526, 0x414345),
         (0xFDC830, 0xF37335), (0x667EEA, 0x764BA2),
+        (0x0F2027, 0x2C5364), (0xEE9CA7, 0xFFDDE1), (0x4568DC, 0xB06AB3), (0x1D976C, 0x93F9B9),
+        (0xFC466B, 0x3F5EFB), (0xF7971E, 0xFFD200), (0xDA22FF, 0x9733EE), (0xE0EAFC, 0xCFDEF3),
     ]
 
     private static let key = "backdropConfig"

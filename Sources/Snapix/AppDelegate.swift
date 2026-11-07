@@ -212,7 +212,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         submenu(L("View"), [mi(L("Zoom In"), "zoomInAction:", "+"), mi(L("Zoom Out"), "zoomOutAction:", "-"),
                          mi(L("Actual Size"), "zoomActualAction:", "0"), mi(L("Fit to Window"), "zoomFitAction:", "9")])
         submenu(L("Image"), [mi(L("Resize Image…"), "resizeImage:", "r", [.command, .option]), mi(L("Uncrop"), "uncropAction:", "u", [.command, .option]),
-                          mi(L("Merge Annotations Into Image"), "rasterizeAction:", "m", [.command, .option]), .separator(),
+                          mi(L("Merge Annotations Into Image"), "rasterizeAction:", "m", [.command, .option]),
+                          mi(L("Rotate Left"), "rotateLeftAction:", "[", .command), mi(L("Rotate Right"), "rotateRightAction:", "]", .command),
+                          mi(L("Flip Horizontally"), "flipHorizontalAction:", "h", [.command, .option]),
+                          mi(L("Flip Vertically"), "flipVerticalAction:", "v", [.command, .option]), .separator(),
                           mi(L("Overlay Image From Clipboard"), "overlayAction:", "i", [.command, .option]),
                           mi(L("Check Contrast of Selection"), "contrastAction:", "k", [.command, .option])])
         NSApp.mainMenu = main

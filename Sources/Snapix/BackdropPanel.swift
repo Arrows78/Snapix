@@ -88,10 +88,13 @@ struct BackdropPanel: View {
                     if model.cfg.gradient { ColorPicker("To", selection: colorBinding(\.toHex)) }
                 }
                 if model.cfg.gradient { slider("Angle", $model.cfg.angle, 0...360) }
+                Picker("Ratio", selection: Binding(get: { model.cfg.ratio ?? 0 }, set: { model.cfg.ratio = $0 > 0 ? $0 : nil })) {
+                    ForEach(Array(BackdropConfig.ratios.enumerated()), id: \.offset) { _, r in Text(LocalizedStringKey(r.name)).tag(r.value ?? 0) }
+                }
             }
             .disabled(!model.cfg.enabled)
 
-            LazyVGrid(columns: Array(repeating: GridItem(.fixed(52), spacing: 8), count: 4), spacing: 8) {
+            LazyVGrid(columns: Array(repeating: GridItem(.fixed(48), spacing: 8), count: 5), spacing: 8) {
                 ForEach(Array(BackdropConfig.presets.enumerated()), id: \.offset) { _, p in
                     Button {
                         model.cfg.fromHex = p.0; model.cfg.toHex = p.1; model.cfg.gradient = true; model.cfg.enabled = true
@@ -99,7 +102,7 @@ struct BackdropPanel: View {
                         RoundedRectangle(cornerRadius: 8)
                             .fill(LinearGradient(colors: [Color(nsColor: NSColor(hex: p.0)), Color(nsColor: NSColor(hex: p.1))],
                                                  startPoint: .topLeading, endPoint: .bottomTrailing))
-                            .frame(width: 52, height: 32)
+                            .frame(width: 48, height: 30)
                     }
                     .buttonStyle(.plain)
                 }
@@ -111,6 +114,6 @@ struct BackdropPanel: View {
             }
         }
         .padding(16)
-        .frame(width: 320)
+        .frame(width: 340)
     }
 }

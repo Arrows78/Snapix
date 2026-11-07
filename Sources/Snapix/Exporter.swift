@@ -120,17 +120,57 @@ enum Exporter {
         }
     }
 
+    /// Bytes of the image in the requested format (PNG, JPEG, HEIC or a one-page PDF).
+    static func data(for image: CGImage, as type: UTType, scale: CGFloat) -> Data? {
+        if type == .pdf {
+            let data = NSMutableData()
+            var box = CGRect(x: 0, y: 0, width: CGFloat(image.width) / scale, height: CGFloat(image.height) / scale)
+            guard let consumer = CGDataConsumer(data: data), let ctx = CGContext(consumer: consumer, mediaBox: &box, nil) else { return nil }
+            ctx.beginPDFPage(nil)
+            ctx.draw(image, in: box)
+            ctx.endPDFPage()
+            ctx.closePDF()
+            return data as Data
+        }
+        let out = NSMutableData()
+        guard let dest = CGImageDestinationCreateWithData(out, type.identifier as CFString, 1, nil) else { return nil }
+        let props: [CFString: Any] = type == .png ? [:] : [kCGImageDestinationLossyCompressionQuality: Pref.double("jpegQuality")]
+        CGImageDestinationAddImage(dest, image, props as CFDictionary)
+        return CGImageDestinationFinalize(dest) ? out as Data : nil
+    }
+
     static func saveAs(_ image: CGImage, scale: CGFloat, window: NSWindow?) {
-        let (img, _) = prepared(image, scale: scale)
-        guard let (data, ext) = encode(img, forceLossless: hasTransparency(img)) else { return }
+        let (img, sc) = prepared(image, scale: scale)
+        let transparent = hasTransparency(img)
+        let defaultType: UTType = encode(img, forceLossless: transparent)?.ext == "png" ? .png : .jpeg
+        let formats: [UTType] = [.png, .jpeg, .heic, .pdf]
+
         let panel = NSSavePanel()
-        panel.allowedContentTypes = [ext == "png" ? .png : .jpeg]
-        panel.nameFieldStringValue = filename(ext: ext)
+        panel.allowedContentTypes = [defaultType]
+        panel.nameFieldStringValue = filename(ext: defaultType.preferredFilenameExtension ?? "png")
         panel.directoryURL = URL(fileURLWithPath: Pref.string("saveFolder"))
+        let popup = NSPopUpButton(frame: NSRect(x: 0, y: 0, width: 160, height: 26), pullsDown: false)
+        popup.addItems(withTitles: ["PNG", "JPEG", "HEIC", "PDF"])
+        popup.selectItem(at: formats.firstIndex(of: defaultType) ?? 0)
+        let label = NSTextField(labelWithString: L("Format:"))
+        let accessory = NSStackView(views: [label, popup])
+        accessory.spacing = 8
+        accessory.edgeInsets = NSEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
+        panel.accessoryView = accessory
+        let picker = FormatPicker(panel: panel, formats: formats)
+        popup.target = picker
+        popup.action = #selector(FormatPicker.changed(_:))
+
         let finish: (NSApplication.ModalResponse) -> Void = { resp in
-            guard resp == .OK, let url = panel.url else { return }
-            do { try data.write(to: url); Toast.show(LF("Saved %@", url.lastPathComponent), symbol: "checkmark.circle.fill") }
-            catch { Toast.show(LF("Could not save: %@", error.localizedDescription), duration: 3, symbol: "exclamationmark.triangle.fill") }
+            withExtendedLifetime(picker) {
+                guard resp == .OK, let url = panel.url else { return }
+                let type = formats[max(0, popup.indexOfSelectedItem)]
+                guard let data = data(for: img, as: type, scale: sc) else {
+                    Toast.show(L("Could not encode the image"), duration: 3, symbol: "exclamationmark.triangle.fill"); return
+                }
+                do { try data.write(to: url); Toast.show(LF("Saved %@", url.lastPathComponent), symbol: "checkmark.circle.fill") }
+                catch { Toast.show(LF("Could not save: %@", error.localizedDescription), duration: 3, symbol: "exclamationmark.triangle.fill") }
+            }
         }
         if let window { panel.beginSheetModal(for: window, completionHandler: finish) } else { finish(panel.runModal()) }
     }
@@ -175,5 +215,21 @@ enum Exporter {
                 Toast.show(link.isEmpty ? L("Uploaded") : LF("Link copied: %@", link), duration: 3)
             }
         }.resume()
+    }
+}
+
+/// Keeps the save panel's file type and extension in step with the format popup.
+@MainActor
+private final class FormatPicker: NSObject {
+    let panel: NSSavePanel
+    let formats: [UTType]
+
+    init(panel: NSSavePanel, formats: [UTType]) { self.panel = panel; self.formats = formats }
+
+    @objc func changed(_ sender: NSPopUpButton) {
+        let type = formats[max(0, sender.indexOfSelectedItem)]
+        panel.allowedContentTypes = [type]
+        let base = (panel.nameFieldStringValue as NSString).deletingPathExtension
+        panel.nameFieldStringValue = base + "." + (type.preferredFilenameExtension ?? "png")
     }
 }

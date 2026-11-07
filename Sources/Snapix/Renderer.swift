@@ -21,12 +21,18 @@ enum Renderer {
 
     static func canvasSize(_ s: DocState) -> CGSize {
         let p = s.backdrop.enabled ? s.backdrop.padding : 0
-        return CGSize(width: CGFloat(s.image.width) + 2 * p, height: CGFloat(s.image.height) + 2 * p)
+        var w = CGFloat(s.image.width) + 2 * p, h = CGFloat(s.image.height) + 2 * p
+        if s.backdrop.enabled, let r = s.backdrop.ratio, r > 0 {
+            // Grow the short side so the picture reaches the ratio; the screenshot never shrinks.
+            if w / h < r { w = (h * r).rounded() } else { h = (w / r).rounded() }
+        }
+        return CGSize(width: w, height: h)
     }
 
     static func origin(_ s: DocState) -> CGPoint {
-        let p = s.backdrop.enabled ? s.backdrop.padding : 0
-        return CGPoint(x: p, y: p)
+        guard s.backdrop.enabled else { return .zero }
+        let size = canvasSize(s)
+        return CGPoint(x: ((size.width - CGFloat(s.image.width)) / 2).rounded(), y: ((size.height - CGFloat(s.image.height)) / 2).rounded())
     }
 
     // MARK: Whole document

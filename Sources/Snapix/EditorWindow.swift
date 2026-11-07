@@ -262,6 +262,10 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         add(L("Check Contrast of Selection"), #selector(contrastAction(_:)), symbol: "circle.lefthalf.filled")
         add(L("Resize Image…"), #selector(resizeImage(_:)), symbol: "arrow.up.left.and.arrow.down.right")
         add(L("Uncrop"), #selector(uncropAction(_:)), symbol: "arrow.uturn.left")
+        add(L("Rotate Left"), #selector(rotateLeftAction(_:)), symbol: "rotate.left")
+        add(L("Rotate Right"), #selector(rotateRightAction(_:)), symbol: "rotate.right")
+        add(L("Flip Horizontally"), #selector(flipHorizontalAction(_:)), symbol: "arrow.left.and.right.righttriangle.left.righttriangle.right")
+        add(L("Flip Vertically"), #selector(flipVerticalAction(_:)), symbol: "arrow.up.and.down.righttriangle.up.righttriangle.down")
         add(L("Merge Annotations Into Image"), #selector(rasterizeAction(_:)), symbol: "square.stack.3d.down.right")
         add(L("Erase Text in Selection"), #selector(eraseTextAction(_:)), symbol: "text.badge.minus")
         add(L("Hide Sensitive Data"), #selector(redactAction(_:)), symbol: "eye.slash")
@@ -276,6 +280,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         menu.items.last?.state = doc.state.shadows ? .on : .off
         add(L("Copy as File"), #selector(copyAsFile(_:)), symbol: "doc.badge.arrow.up")
         menu.addItem(.separator())
+        add(L("Share…"), #selector(shareAction(_:)), symbol: "square.and.arrow.up")
         add(L("Upload"), #selector(uploadImage(_:)), symbol: "icloud.and.arrow.up")
         add(L("Print…"), #selector(printDocument(_:)), symbol: "printer")
         menu.popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height + 4), in: sender)
@@ -621,6 +626,30 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
     }
 
     @objc func uncropAction(_ sender: Any?) { canvas.uncrop() }
+
+    // MARK: Rotate, flip, share
+
+    /// Annotations cannot follow a turn, so they are merged into the pixels first.
+    private func transform(_ change: (CGImage) -> CGImage?) {
+        var s = doc.state
+        s.backdrop.enabled = false
+        guard let flat = Renderer.render(s), let out = change(flat) else { return }
+        doc.mutate { $0.image = out; $0.annotations = []; $0.overlay = nil; $0.uncrop = nil }
+        fitToWindow()
+    }
+
+    @objc func rotateLeftAction(_ sender: Any?) { transform { ImageTransform.rotated($0, clockwise: false) } }
+    @objc func rotateRightAction(_ sender: Any?) { transform { ImageTransform.rotated($0, clockwise: true) } }
+    @objc func flipHorizontalAction(_ sender: Any?) { transform { ImageTransform.flipped($0, horizontal: true) } }
+    @objc func flipVerticalAction(_ sender: Any?) { transform { ImageTransform.flipped($0, horizontal: false) } }
+
+    /// The system share sheet (Messages, Mail, AirDrop, Notes…).
+    @objc func shareAction(_ sender: Any?) {
+        guard let img = flattened(), let view = window?.contentView else { return }
+        let size = NSSize(width: CGFloat(img.width) / doc.scale, height: CGFloat(img.height) / doc.scale)
+        let picker = NSSharingServicePicker(items: [NSImage(cgImage: img, size: size)])
+        picker.show(relativeTo: NSRect(x: view.bounds.maxX - 60, y: view.bounds.maxY - 46, width: 1, height: 1), of: view, preferredEdge: .minY)
+    }
 
     /// Bakes annotations (and overlay) into the pixels so they can no longer be moved.
     @objc func rasterizeAction(_ sender: Any?) {
