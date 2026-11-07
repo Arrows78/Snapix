@@ -81,7 +81,7 @@ Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 - **Menu bar**: a *Recent Captures* submenu with thumbnails (open, copy, pin, reveal).
 - **Capture options**: optionally hide desktop icons from screenshots and recordings.
 - **After-capture actions**, Esc to copy or save, launch at login, optional shutter sound.
-- **First-run welcome tour** (permissions and shortcuts) and a manual *Check for Updates*.
+- **First-run welcome tour** (permissions and shortcuts) and a manual *Check for Updates* that can download the new release into your Downloads folder (installing stays manual).
 - **Preferences**: app language (English or French, independent of macOS), optional menu bar icon, Library size limit and storage tools, and a switch for `snapix://` links.
 - **Overlay and ring tuning**: how dark the area outside a selection is, the pixel magnifier (on/off, size) and the click ring colour, size and duration.
 - **Shortcuts cheat sheet** and **settings backup**: list every shortcut in one floating sheet; export or import preferences (never the upload credential) from **Preferences › Backup**.

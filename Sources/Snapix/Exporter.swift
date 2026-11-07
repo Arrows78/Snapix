@@ -101,6 +101,15 @@ enum Exporter {
         return "\(name)\(suffix).\(ext)"
     }
 
+    /// Same as `uniqueURL`, callable off the main actor (it only touches the file system).
+    nonisolated static func uniqueURLUnchecked(in folder: URL, name: String) -> URL {
+        var url = folder.appendingPathComponent(name)
+        let base = url.deletingPathExtension().lastPathComponent, ext = url.pathExtension
+        var n = 2
+        while FileManager.default.fileExists(atPath: url.path) { url = folder.appendingPathComponent("\(base) \(n).\(ext)"); n += 1 }
+        return url
+    }
+
     static func uniqueURL(in folder: URL, name: String) -> URL {
         var url = folder.appendingPathComponent(name)
         let base = url.deletingPathExtension().lastPathComponent, ext = url.pathExtension

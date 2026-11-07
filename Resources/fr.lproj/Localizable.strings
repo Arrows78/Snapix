@@ -638,3 +638,7 @@
 "Also list the files of the screenshots folder" = "Lister aussi les fichiers du dossier des captures";
 "Pictures and videos you saved appear in the Library too. Deleting one moves it to the Trash." = "Les images et vidéos enregistrées apparaissent aussi dans la bibliothèque. Supprimer l'une d'elles la met à la corbeille.";
 "Open in Default App" = "Ouvrir dans l'app par défaut";
+"Download" = "Télécharger";
+"Downloading the update…" = "Téléchargement de la mise à jour…";
+"The download failed" = "Le téléchargement a échoué";
+"Downloaded %@" = "%@ téléchargé";

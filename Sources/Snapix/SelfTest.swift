@@ -426,6 +426,12 @@ enum SelfTest {
         check(listed.first { $0.url.lastPathComponent == "clip.mp4" }?.kind == .video && listed.allSatisfy { !$0.isStored }, "folder items are videos or screenshots and not owned by Snapix")
         try? FileManager.default.removeItem(at: libDir)
 
+        // Update asset choice.
+        func release(_ names: [(String, String)]) -> [String: Any] { ["assets": names.map { ["name": $0.0, "browser_download_url": $0.1] }] }
+        check(UpdateCheck.pickAsset(from: release([("Snapix.zip", "https://github.com/x/y/releases/download/v1/Snapix.zip"), ("Snapix.dmg", "https://github.com/x/y/releases/download/v1/Snapix.dmg")]))?.name == "Snapix.dmg", "update prefers the dmg")
+        check(UpdateCheck.pickAsset(from: release([("Snapix.zip", "https://objects.githubusercontent.com/a/Snapix.zip")]))?.name == "Snapix.zip", "update falls back to the zip")
+        check(UpdateCheck.pickAsset(from: release([("Snapix.dmg", "http://github.com/Snapix.dmg"), ("Snapix.zip", "https://evil.example.com/Snapix.zip")])) == nil && UpdateCheck.pickAsset(from: [:]) == nil, "update refuses non-GitHub or non-https downloads")
+
         // Export formats.
         let enc = Exporter.data(for: strip, as: .pdf, scale: 2)
         check(enc.map { $0.starts(with: Data("%PDF".utf8)) } == true, "PDF export")
