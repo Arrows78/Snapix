@@ -52,6 +52,17 @@ enum SelfTest {
         if case .noMatch = Stitcher(first: page(rows: 0..<frameH))!.add(page(rows: 2000..<(2000 + frameH))) { check(true, "unrelated frame rejected") }
         else { check(false, "unrelated frame rejected") }
 
+        // Sensitive-data detection.
+        func hits(_ t: String) -> [String] { Redaction.ranges(in: t).map { String(t[$0]) } }
+        check(hits("write to jane.doe@example.com now") == ["jane.doe@example.com"], "redaction: email")
+        check(hits("card 4111 1111 1111 1111 ok") == ["4111 1111 1111 1111"], "redaction: card (Luhn)")
+        check(hits("card 4111 1111 1111 1112").isEmpty, "redaction: bad card number ignored")
+        check(hits("FR76 3000 6000 0112 3456 7890 189") == ["FR76 3000 6000 0112 3456 7890 189"], "redaction: IBAN")
+        check(hits("token ghp_abcdefghijklmnopqrstuvwxyz0123456789").count == 1, "redaction: API token")
+        check(hits("host 192.168.1.42 up") == ["192.168.1.42"], "redaction: IPv4")
+        check(hits("+33 6 12 34 56 78").count == 1, "redaction: phone")
+        check(hits("released on 2024-11-07 in version 3.14159").isEmpty, "redaction: dates and decimals ignored")
+
         // Render every tool onto a gradient screenshot with backdrop.
         let base = page(rows: 0..<600)
         let doc = Document(image: base, scale: 2)

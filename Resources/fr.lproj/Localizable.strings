@@ -189,3 +189,6 @@
 "Zoom" = "Zoom";
 "Options" = "Options";
 "Mouse wheel zooms the image (trackpad scrolls, ⌥ or ⌘ swaps)" = "La molette zoome l'image (le trackpad défile, ⌥ ou ⌘ inverse)";
+"Hide Sensitive Data" = "Masquer les données sensibles";
+"No sensitive data found" = "Aucune donnée sensible trouvée";
+"%d sensitive regions hidden" = "%d zones sensibles masquées";

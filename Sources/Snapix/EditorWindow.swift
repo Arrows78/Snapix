@@ -264,6 +264,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         add(L("Uncrop"), #selector(uncropAction(_:)), symbol: "arrow.uturn.left")
         add(L("Merge Annotations Into Image"), #selector(rasterizeAction(_:)), symbol: "square.stack.3d.down.right")
         add(L("Erase Text in Selection"), #selector(eraseTextAction(_:)), symbol: "text.badge.minus")
+        add(L("Hide Sensitive Data"), #selector(redactAction(_:)), symbol: "eye.slash")
         menu.addItem(.separator())
         add(L("Zoom to Selection"), #selector(zoomSelectionAction(_:)), symbol: "plus.magnifyingglass")
         add(L("Annotation Shadows"), #selector(toggleShadows(_:)), symbol: "shadow")
@@ -587,6 +588,21 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
                 }
             }
             Toast.show(LF("%d text regions erased", boxes.count))
+        }
+    }
+
+    /// Pixelates every email, card or bank number, phone number, secret and IP address found in the image.
+    @objc func redactAction(_ sender: Any?) {
+        Toast.show(L("Recognizing…"), duration: 1)
+        Redaction.findBoxes(in: doc.state.image) { [weak self] boxes in
+            guard let self else { return }
+            guard !boxes.isEmpty else { Toast.show(L("No sensitive data found")); return }
+            self.doc.mutate { s in
+                for b in boxes.map({ $0.insetBy(dx: -4, dy: -3) }) {
+                    s.annotations.append(Annotation(tool: .blur, p1: CGPoint(x: b.minX, y: b.minY), p2: CGPoint(x: b.maxX, y: b.maxY), color: .black, width: 8))
+                }
+            }
+            Toast.show(LF("%d sensitive regions hidden", boxes.count))
         }
     }
 
