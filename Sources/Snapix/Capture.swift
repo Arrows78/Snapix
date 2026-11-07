@@ -72,11 +72,24 @@ enum Capture {
         catch { throw CaptureError.noPermission }
     }
 
+    /// The filter used for every capture: optionally without the desktop icons and without our own windows.
+    static func filter(display: SCDisplay, content: SCShareableContent, excludingSelf: Bool) -> SCContentFilter {
+        guard Pref.bool("hideDesktopIcons") else {
+            let apps = excludingSelf ? content.applications.filter { $0.processID == getpid() } : []
+            return SCContentFilter(display: display, excludingApplications: apps, exceptingWindows: [])
+        }
+        let iconLevel = Int(CGWindowLevelForKey(.desktopIconWindow))
+        let hidden = content.windows.filter { w in
+            (w.owningApplication?.bundleIdentifier == "com.apple.finder" && w.windowLayer == iconLevel)
+                || (excludingSelf && w.owningApplication?.processID == getpid())
+        }
+        return SCContentFilter(display: display, excludingWindows: hidden)
+    }
+
     static func captureRegion(_ rect: CGRect, on screen: NSScreen, excludingSelf: Bool) async throws -> CGImage {
         let content = try await content()
         guard let display = content.displays.first(where: { $0.displayID == displayID(screen) }) else { throw CaptureError.notFound }
-        let apps = excludingSelf ? content.applications.filter { $0.processID == getpid() } : []
-        let filter = SCContentFilter(display: display, excludingApplications: apps, exceptingWindows: [])
+        let filter = filter(display: display, content: content, excludingSelf: excludingSelf)
         let cfg = SCStreamConfiguration()
         let scale = screen.backingScaleFactor
         cfg.sourceRect = CGRect(x: rect.minX - screen.frame.minX, y: screen.frame.maxY - rect.maxY, width: rect.width, height: rect.height)

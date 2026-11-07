@@ -86,6 +86,15 @@ final class Recorder {
 
     func start(format: Format) async throws {
         guard !isRecording, let (rect, screen) = try await Capture.selectRegion() else { return }
+        let countdown = UserDefaults.standard.integer(forKey: "recordCountdown")
+        for n in stride(from: countdown, through: 1, by: -1) {
+            Toast.show(LF("Recording in %d…", n), duration: 1)
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+        }
+        // The indicators go up first so the content list below includes their windows and can leave them out of the video.
+        showIndicators(rect: rect, screen: screen)
+        var started = false
+        defer { if !started { hideIndicators() } }
         let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
         guard let display = content.displays.first(where: { $0.displayID == Capture.displayID(screen) }) else { throw CaptureError.notFound }
 
@@ -108,8 +117,7 @@ final class Recorder {
         cfg.queueDepth = 6
         if withAudio { cfg.capturesAudio = true; cfg.excludesCurrentProcessAudio = true }
 
-        let apps = content.applications.filter { $0.processID == getpid() }
-        let filter = SCContentFilter(display: display, excludingApplications: apps, exceptingWindows: [])
+        let filter = Capture.filter(display: display, content: content, excludingSelf: true)
         let s = SCStream(filter: filter, configuration: cfg, delegate: writer)
         let queue = DispatchQueue(label: "snapix.recorder")
         try s.addStreamOutput(writer, type: .screen, sampleHandlerQueue: queue)
@@ -120,7 +128,7 @@ final class Recorder {
         frames = writer
         outputURL = url
         self.format = format
-        showIndicators(rect: rect, screen: screen)
+        started = true
         Feedback.recordingChime(start: true)
     }
 
