@@ -83,6 +83,8 @@ struct PreferencesView: View {
     @AppStorage("showDockIcon") private var showDockIcon = false
     @AppStorage("wheelZoom") private var wheelZoom = true
     @AppStorage("keepHistory") private var keepHistory = true
+    @AppStorage("captureSound") private var captureSound = true
+    @AppStorage("captureDelay") private var captureDelay = 3
     @AppStorage("uploadURL") private var uploadURL = ""
     @AppStorage("uploadField") private var uploadField = "file"
     @AppStorage("uploadAuthHeader") private var uploadAuth = ""
@@ -116,6 +118,12 @@ struct PreferencesView: View {
                 }
                 Toggle("Show in editor", isOn: $afterEdit)
                 Toggle("Pin to screen", isOn: $afterPin)
+            }
+            Section("Capture") {
+                Toggle("Play a sound when a screenshot is taken", isOn: $captureSound)
+                Picker("Delayed screenshot timer", selection: $captureDelay) {
+                    ForEach([3, 5, 10, 15], id: \.self) { Text("\($0) s").tag($0) }
+                }
             }
             Section("Area selection") {
                 Toggle("Adjust the selection before capturing", isOn: $areaAdjust)

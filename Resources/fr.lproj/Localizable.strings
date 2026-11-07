@@ -28,7 +28,7 @@
 "Fullscreen Screenshot" = "Capture plein écran";
 "Capture Any Window" = "Capturer une fenêtre";
 "Capture Active Window" = "Capturer la fenêtre active";
-"Delayed Screenshot (3s)" = "Capture différée (3 s)";
+"Delayed Screenshot (%ds)" = "Capture différée (%d s)";
 "Repeat Last Area" = "Répéter la dernière zone";
 "Scrolling Capture" = "Capture défilante";
 "Scrolling Capture Upwards" = "Capture défilante vers le haut";
@@ -196,3 +196,5 @@
 "Removing background…" = "Suppression de l'arrière-plan…";
 "No subject found" = "Aucun sujet trouvé";
 "Background removed" = "Arrière-plan supprimé";
+"Play a sound when a screenshot is taken" = "Jouer un son lors d'une capture";
+"Delayed screenshot timer" = "Minuteur de la capture différée";

@@ -31,7 +31,7 @@
 Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 
 - **Area**: frozen screen, pixel loupe, live W×H.
-- **Fullscreen**, **any window** (hover to pick), **active window**, **3 s delayed**, **repeat last area**.
+- **Fullscreen**, **any window** (hover to pick), **active window**, **delayed (3–15 s)**, **repeat last area**.
 - **Scrolling capture**: automatic down or up (synthetic scroll and frame stitching), or manual (scroll either way, press Done).
 - **Adjustable selection** (optional): handles, move by dragging or holding Space, arrow-key nudge, Return or double-click to capture.
 - **Open an image** from the clipboard or a file.
@@ -68,7 +68,7 @@ Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 | `⇧⌘7` | Capture any window |
 | `⇧⌘8` | Recognize text / QR code |
 | `⇧⌘9` | Scrolling capture |
-| `⇧⌘0` | Delayed screenshot (3 s) |
+| `⇧⌘0` | Delayed screenshot |
 
 The other actions (active window, repeat last area, scrolling upwards or manually, colour picker, contrast checker, open from clipboard, Library) have no default shortcut: assign one in **Preferences › Shortcuts**, or call them from the URL scheme below. Turn off the macOS screenshot shortcuts in **System Settings › Keyboard › Keyboard Shortcuts › Screenshots** if they clash.
 

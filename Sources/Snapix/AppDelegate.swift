@@ -192,7 +192,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 case .activeWindow: deliver(try await Capture.activeWindow(), override)
                 case .repeatArea: deliver(try await Capture.repeatArea(), override)
                 case .delayed:
-                    for n in [3, 2, 1] { Toast.show(LF("Capturing in %d…", n), duration: 1); try? await Task.sleep(nanoseconds: 1_000_000_000) }
+                    for n in stride(from: Pref.delay, through: 1, by: -1) { Toast.show(LF("Capturing in %d…", n), duration: 1); try? await Task.sleep(nanoseconds: 1_000_000_000) }
                     if let s = try await Capture.area() { deliver(s, override) }
                 case .scrolling: if let s = try await ScrollCapture.run(auto: true) { deliver(s, override) }
                 case .scrollingUp: if let s = try await ScrollCapture.run(auto: true, up: true) { deliver(s, override) }
@@ -211,6 +211,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func deliver(_ shot: Shot, _ override: [After]?) {
+        Feedback.shutter()
         if Pref.bool("keepHistory") { History.add(shot) }
         var actions = override ?? After.fromPreferences()
         if actions.isEmpty { actions = [.edit] }

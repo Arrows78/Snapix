@@ -28,6 +28,8 @@ enum Pref {
         "hideHome": false,
         "wheelZoom": true,
         "keepHistory": true,
+        "captureSound": true,
+        "captureDelay": 3,
         "uploadURL": "",
         "uploadField": "file",
         "uploadAuthHeader": "",
@@ -37,6 +39,9 @@ enum Pref {
     static func bool(_ k: String) -> Bool { UserDefaults.standard.bool(forKey: k) }
     static func string(_ k: String) -> String { UserDefaults.standard.string(forKey: k) ?? "" }
     static func double(_ k: String) -> Double { UserDefaults.standard.double(forKey: k) }
+
+    /// Seconds of the countdown before a delayed capture.
+    static var delay: Int { max(1, UserDefaults.standard.integer(forKey: "captureDelay")) }
 
     static func setLaunchAtLogin(_ on: Bool) {
         do {
@@ -60,7 +65,7 @@ enum Action: String, CaseIterable {
         case .fullscreen: return L("Fullscreen Screenshot")
         case .window: return L("Capture Any Window")
         case .activeWindow: return L("Capture Active Window")
-        case .delayed: return L("Delayed Screenshot (3s)")
+        case .delayed: return LF("Delayed Screenshot (%ds)", Pref.delay)
         case .repeatArea: return L("Repeat Last Area")
         case .scrolling: return L("Scrolling Capture")
         case .scrollingUp: return L("Scrolling Capture Upwards")
