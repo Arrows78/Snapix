@@ -2,8 +2,11 @@
 # Builds Snapix and wraps it into build/Snapix.app (signed with the local identity when available).
 set -euo pipefail
 cd "$(dirname "$0")"
-swift build -c release
-BIN="$(swift build -c release --show-bin-path)/Snapix"
+# SNAPIX_UNIVERSAL=1 builds for Apple Silicon and Intel (used by the release workflow).
+ARCHS=()
+[ "${SNAPIX_UNIVERSAL:-0}" = 1 ] && ARCHS=(--arch arm64 --arch x86_64)
+swift build -c release "${ARCHS[@]}"
+BIN="$(swift build -c release "${ARCHS[@]}" --show-bin-path)/Snapix"
 APP=build/Snapix.app
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"

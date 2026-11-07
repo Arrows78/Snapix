@@ -2,36 +2,65 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>CFBundleDevelopmentRegion</key><string>en</string>
-	<key>CFBundleLocalizations</key><array><string>en</string><string>fr</string></array>
-	<key>CFBundleExecutable</key><string>Snapix</string>
-	<key>CFBundleIdentifier</key><string>com.labs.snapix</string>
-	<key>CFBundleIconFile</key><string>AppIcon</string>
-	<key>CFBundleName</key><string>Snapix</string>
-	<key>CFBundleDisplayName</key><string>Snapix</string>
-	<key>CFBundlePackageType</key><string>APPL</string>
-	<key>CFBundleShortVersionString</key><string>1.0.0</string>
-	<key>CFBundleVersion</key><string>1</string>
-	<key>LSMinimumSystemVersion</key><string>14.0</string>
-	<key>LSUIElement</key><true/>
-	<key>NSHighResolutionCapable</key><true/>
-	<key>NSPrincipalClass</key><string>NSApplication</string>
-	<key>NSScreenCaptureUsageDescription</key><string>Snapix needs to record your screen to take screenshots.</string>
-	<key>LSApplicationCategoryType</key><string>public.app-category.utilities</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>fr</string>
+	</array>
+	<key>CFBundleExecutable</key>
+	<string>Snapix</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.labs.snapix</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
+	<key>CFBundleName</key>
+	<string>Snapix</string>
+	<key>CFBundleDisplayName</key>
+	<string>Snapix</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0.0</string>
+	<key>CFBundleVersion</key>
+	<string>2</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>14.0</string>
+	<key>LSUIElement</key>
+	<true/>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<key>NSPrincipalClass</key>
+	<string>NSApplication</string>
+	<key>NSScreenCaptureUsageDescription</key>
+	<string>Snapix needs to record your screen to take screenshots.</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.utilities</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
-			<key>CFBundleURLName</key><string>Snapix URL</string>
-			<key>CFBundleURLSchemes</key><array><string>snapix</string></array>
+			<key>CFBundleURLName</key>
+			<string>Snapix URL</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>snapix</string>
+			</array>
 		</dict>
 	</array>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
-			<key>CFBundleTypeRole</key><string>Editor</string>
-			<key>LSHandlerRank</key><string>Alternate</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
 			<key>LSItemContentTypes</key>
-			<array><string>public.png</string><string>public.jpeg</string><string>com.compuserve.gif</string></array>
+			<array>
+				<string>public.png</string>
+				<string>public.jpeg</string>
+				<string>com.compuserve.gif</string>
+			</array>
 		</dict>
 	</array>
 </dict>

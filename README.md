@@ -44,3 +44,7 @@ URL scheme: `snapix://area`, `fullscreen`, `window`, `active-window`, `delayed`,
 with an optional `?then=copy,save,edit,pin`.
 
 UI languages: English and French (Resources/fr.lproj; follows the macOS language).
+
+## Releasing
+
+Versions and `CHANGELOG.md` are generated from [Conventional Commit](https://www.conventionalcommits.org) messages by `scripts/release.py`; pushing a `v*` tag publishes a universal build as a GitHub release. `scripts/ci.sh` runs the same checks as CI. See [docs/RELEASING.md](docs/RELEASING.md).
