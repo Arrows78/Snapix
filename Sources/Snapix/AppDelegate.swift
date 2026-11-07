@@ -7,14 +7,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     /// Set when macOS refuses to show our menu bar icon (crowded or restricted menu bar): the Dock becomes the entry point.
     static var forceDock = false
-    static var restingPolicy: NSApplication.ActivationPolicy { (forceDock || Pref.bool("showDockIcon")) ? .regular : .accessory }
+    static var restingPolicy: NSApplication.ActivationPolicy { (forceDock || Pref.bool("showDockIcon") || !Pref.bool("showMenuBarIcon")) ? .regular : .accessory }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         Pref.register()
         NSApp.setActivationPolicy(Self.restingPolicy)
         buildMainMenu()
         buildStatusItem()
-        checkStatusItemVisibility()
+        applyMenuBarVisibility()
+        if Pref.bool("showMenuBarIcon") { checkStatusItemVisibility() }
         if Onboarding.needed { Onboarding.show() } else if !Pref.bool("hideHome") { HomeWindow.show() }
         reloadHotkeys()
         History.pruneNow()
@@ -29,6 +30,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         if !flag { HomeWindow.show() }
         return true
+    }
+
+    /// Shows or hides the menu bar icon; without it the Dock icon becomes the way in.
+    func applyMenuBarVisibility() {
+        statusItem?.isVisible = Pref.bool("showMenuBarIcon")
+        NSApp.setActivationPolicy(Self.restingPolicy)
     }
 
     private func checkStatusItemVisibility() {
@@ -60,6 +67,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     // MARK: URL scheme  —  snapix://area?then=copy,save,edit,pin
 
     private func handle(url: URL) {
+        guard Pref.bool("urlScheme") else { return }
         let name = url.host ?? url.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         let map: [String: Action] = [
             "area": .area, "fullscreen": .fullscreen, "window": .window, "active-window": .activeWindow, "delayed": .delayed,

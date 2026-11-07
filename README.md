@@ -53,7 +53,7 @@ Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 - **Image overlay**: lay a clipboard image over the screenshot, drag to align, a slider sets the opacity.
 - **Hide sensitive data** (More menu): finds emails, card numbers, IBANs, phone numbers, API tokens and IP addresses with on-device OCR and pixelates each one.
 - **Remove background**: isolates the main subject on a transparent background (on-device), in the editor or straight from a capture; combine it with the backdrop.
-- **Library**: every capture is kept (last 200, optionally deleted after 7, 30 or 90 days). Click thumbnails to select them, then reopen, copy, pin, delete, or combine them vertically or horizontally into one image.
+- **Library**: every capture is kept (last 200, optionally deleted after 7, 30 or 90 days). Click thumbnails to select them, then reopen, copy, pin, delete, or combine them vertically or horizontally into one image, with an adjustable gap.
 
 ### 🔎 Analysis
 
@@ -70,6 +70,7 @@ Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 - **Capture options**: optionally hide desktop icons from screenshots and recordings.
 - **After-capture actions**, Esc to copy or save, launch at login, optional shutter sound.
 - **First-run welcome tour** (permissions and shortcuts) and a manual *Check for Updates*.
+- **Preferences**: app language (English or French, independent of macOS), optional menu bar icon, Library size limit and storage tools, and a switch for `snapix://` links.
 - **Shortcuts cheat sheet** and **settings backup**: list every shortcut in one floating sheet; export or import preferences (never the upload credential) from **Preferences › Backup**.
 - **Languages**: English and French, following macOS.
 

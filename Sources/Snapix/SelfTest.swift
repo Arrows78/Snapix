@@ -173,6 +173,11 @@ enum SelfTest {
         // Links in recognised text.
         check(OCR.links(in: "see https://example.com/a and www.example.org, mail me@x.io, https://example.com/a").map(\.absoluteString) == ["https://example.com/a", "https://www.example.org"], "OCR links")
 
+        // Library limit preference.
+        UserDefaults.standard.set(-1, forKey: "historyLimit"); check(History.limit == Int.max, "history: no limit")
+        UserDefaults.standard.set(50, forKey: "historyLimit"); check(History.limit == 50, "history: custom limit")
+        UserDefaults.standard.removeObject(forKey: "historyLimit"); check(History.limit == 200, "history: default limit")
+
         // Export formats.
         let enc = Exporter.data(for: strip, as: .pdf, scale: 2)
         check(enc.map { $0.starts(with: Data("%PDF".utf8)) } == true, "PDF export")

@@ -5,7 +5,11 @@ import SwiftUI
 /// Every capture is kept as a PNG under Application Support so the Library can reopen it later.
 @MainActor
 enum History {
-    nonisolated static let limit = 200
+    /// Most captures kept in the Library: the "historyLimit" preference (-1 = no limit), 200 by default.
+    nonisolated static var limit: Int {
+        let v = UserDefaults.standard.integer(forKey: "historyLimit")
+        return v == 0 ? 200 : (v < 0 ? Int.max : v)
+    }
 
     static var folder: URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -70,6 +74,10 @@ enum History {
         ] as CFDictionary)
     }
 
+    static func totalBytes() -> Int {
+        items().reduce(0) { $0 + ((try? $1.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0) }
+    }
+
     static func clear() { items().forEach { try? FileManager.default.removeItem(at: $0) } }
 }
 
@@ -95,10 +103,11 @@ private struct LibraryView: View {
     @State private var items = History.items()
     /// In the order the user clicked, which is the order images are combined in.
     @State private var selection: [URL] = []
+    @AppStorage("combineGap") private var gap = 0
 
     private func combine(horizontal: Bool) {
         let images = selection.compactMap { History.shot(for: $0)?.image }
-        guard let img = Combine.images(images, horizontal: horizontal, spacing: 0) else { return }
+        guard let img = Combine.images(images, horizontal: horizontal, spacing: gap) else { return }
         let scale = selection.first.map(History.scale(of:)) ?? 1
         EditorWindowController.open(Shot(image: img, scale: scale, screenRect: nil))
         selection = []
@@ -115,6 +124,7 @@ private struct LibraryView: View {
                 Spacer()
                 if !selection.isEmpty {
                     Text(LF("%d selected", selection.count)).foregroundStyle(.secondary)
+                    Stepper(LF("Gap: %d px", gap), value: $gap, in: 0...200, step: 8).controlSize(.small)
                     Button("Combine Vertically") { combine(horizontal: false) }.disabled(selection.count < 2)
                     Button("Combine Horizontally") { combine(horizontal: true) }.disabled(selection.count < 2)
                     Button("Delete Selected", role: .destructive) {

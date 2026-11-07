@@ -12,6 +12,11 @@ enum Pref {
         "previewClosing": "8",
         "previewCorner": "bottomRight",
         "previewSize": "medium",
+        "showMenuBarIcon": true,
+        "urlScheme": true,
+        "historyLimit": 200,
+        "combineGap": 0,
+        "appLanguage": "system",
         "previewAnimation": "slide",
         "previewSwipe": true,
         "ocrDetectLinks": false,
@@ -108,6 +113,22 @@ enum Pref {
 
     static func resetShortcuts(in store: UserDefaults = .standard) {
         for key in store.dictionaryRepresentation().keys where key.hasPrefix("hotkey.") { store.removeObject(forKey: key) }
+    }
+
+    /// Chooses the app language ("system", "en" or "fr"); it applies after a relaunch.
+    static func setLanguage(_ code: String) {
+        if code == "system" { UserDefaults.standard.removeObject(forKey: "AppleLanguages") }
+        else { UserDefaults.standard.set([code], forKey: "AppleLanguages") }
+    }
+
+    /// Starts a fresh copy of the app and quits this one.
+    @MainActor
+    static func relaunch() {
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: "/bin/sh")
+        p.arguments = ["-c", "sleep 0.6; open -n \"\(Bundle.main.bundlePath)\""]
+        try? p.run()
+        NSApp.terminate(nil)
     }
 
     static func setLaunchAtLogin(_ on: Bool) {

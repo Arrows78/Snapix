@@ -201,6 +201,12 @@ struct PreferencesView: View {
     @AppStorage("afterPin") private var afterPin = false
     @AppStorage("previewCorner") private var previewCorner = "bottomRight"
     @AppStorage("previewSize") private var previewSize = "medium"
+    @AppStorage("showMenuBarIcon") private var showMenuBarIcon = true
+    @AppStorage("urlScheme") private var urlScheme = true
+    @AppStorage("historyLimit") private var historyLimit = 200
+    @AppStorage("appLanguage") private var appLanguage = "system"
+    @State private var historyBytes = History.totalBytes()
+    @State private var historyCount = History.items().count
     @AppStorage("previewAnimation") private var previewAnimation = "slide"
     @AppStorage("previewSwipe") private var previewSwipe = true
     @AppStorage("ocrDetectLinks") private var ocrDetectLinks = false
@@ -354,8 +360,26 @@ struct PreferencesView: View {
             Card(title: "Startup") {
                 ToggleRow("Launch at login", isOn: Binding(get: { launchAtLogin }, set: { launchAtLogin = $0; Pref.setLaunchAtLogin($0) }))
                 ToggleRow("Show the home window at launch", isOn: Binding(get: { !hideHome }, set: { hideHome = !$0 }))
+                ToggleRow("Show the menu bar icon", "When hidden, Snapix stays reachable from the Dock.", isOn: $showMenuBarIcon)
+                    .onChange(of: showMenuBarIcon) { _, _ in (NSApp.delegate as? AppDelegate)?.applyMenuBarVisibility() }
                 ToggleRow("Show Snapix in the Dock", isOn: $showDockIcon, last: true)
                     .onChange(of: showDockIcon) { _, _ in NSApp.setActivationPolicy(AppDelegate.restingPolicy) }
+            }
+            Card(title: "Language and integration") {
+                Row(title: "Language", subtitle: "Applies after Snapix restarts.") {
+                    Picker("", selection: $appLanguage) { Text("System default").tag("system"); Text("English").tag("en"); Text("Français").tag("fr") }
+                        .labelsHidden().frame(width: 160)
+                        .onChange(of: appLanguage) { _, new in
+                            Pref.setLanguage(new)
+                            let alert = NSAlert()
+                            alert.messageText = L("Relaunch Snapix?")
+                            alert.informativeText = L("The language changes after Snapix restarts.")
+                            alert.addButton(withTitle: L("Relaunch"))
+                            alert.addButton(withTitle: L("Later"))
+                            if alert.runModal() == .alertFirstButtonReturn { Pref.relaunch() }
+                        }
+                }
+                ToggleRow("Allow snapix:// links", "Lets other apps and scripts start captures with snapix:// URLs.", isOn: $urlScheme, last: true)
             }
         }
     }
@@ -379,10 +403,29 @@ struct PreferencesView: View {
             Card(title: "Library") {
                 ToggleRow("Keep a history of screenshots in the Library", isOn: $keepHistory, last: !keepHistory)
                 if keepHistory {
-                    Row(title: "Delete library screenshots", last: true) {
+                    Row(title: "Maximum number of screenshots") {
+                        Picker("", selection: $historyLimit) {
+                            Text("50").tag(50); Text("100").tag(100); Text("200").tag(200); Text("500").tag(500); Text("No limit").tag(-1)
+                        }.labelsHidden().frame(width: 120)
+                    }
+                    Row(title: "Delete library screenshots") {
                         Picker("", selection: $retentionDays) {
                             Text("Never").tag(0); Text("After 7 days").tag(7); Text("After 30 days").tag(30); Text("After 90 days").tag(90)
                         }.labelsHidden().frame(width: 140)
+                    }
+                }
+                Row(title: "Storage", subtitle: LocalizedStringKey(LF("%d screenshots, %@", historyCount, ByteCountFormatter.string(fromByteCount: Int64(historyBytes), countStyle: .file))), last: true) {
+                    HStack {
+                        Button("Open Folder") { NSWorkspace.shared.open(History.folder) }
+                        Button("Clear History…", role: .destructive) {
+                            let alert = NSAlert()
+                            alert.messageText = L("Clear the whole Library?")
+                            alert.informativeText = L("Every screenshot kept in the Library is deleted. Files you saved are not touched.")
+                            alert.alertStyle = .warning
+                            alert.addButton(withTitle: L("Clear"))
+                            alert.addButton(withTitle: L("Cancel"))
+                            if alert.runModal() == .alertFirstButtonReturn { History.clear(); historyBytes = 0; historyCount = 0 }
+                        }
                     }
                 }
             }
