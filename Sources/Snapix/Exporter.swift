@@ -88,6 +88,7 @@ enum Exporter {
             .replacingOccurrences(of: "{date}", with: d.string(from: now))
             .replacingOccurrences(of: "{time}", with: t.string(from: now))
             .replacingOccurrences(of: "{timestamp}", with: String(Int(now.timeIntervalSince1970)))
+            .replacingOccurrences(of: "{app}", with: NSWorkspace.shared.frontmostApplication?.localizedName ?? "Snapix")
             .replacingOccurrences(of: "/", with: "-")
         return "\(name)\(suffix).\(ext)"
     }

@@ -29,6 +29,12 @@ enum Pref {
         "wheelZoom": true,
         "keepHistory": true,
         "captureSound": true,
+        "hideDesktopIcons": false,
+        "recordCountdown": 3,
+        "largerWindow": false,
+        "editorOnTop": false,
+        "redact.email": true, "redact.card": true, "redact.iban": true,
+        "redact.secret": true, "redact.phone": true, "redact.ipAddress": true,
         "recordAudio": false,
         "recordCursor": true,
         "recordReveal": false,
@@ -68,6 +74,15 @@ enum Pref {
         guard !accepted.isEmpty else { return nil }
         for (k, v) in accepted { store.set(v, forKey: k) }
         return accepted.count
+    }
+
+    /// Back to factory settings: every key a backup would hold is removed (the registered defaults then apply again).
+    static func resetAll(in store: UserDefaults = .standard) {
+        for key in store.dictionaryRepresentation().keys where isBackedUp(key) || key == "uploadAuthHeader" || key == "stylePresets" { store.removeObject(forKey: key) }
+    }
+
+    static func resetShortcuts(in store: UserDefaults = .standard) {
+        for key in store.dictionaryRepresentation().keys where key.hasPrefix("hotkey.") { store.removeObject(forKey: key) }
     }
 
     static func setLaunchAtLogin(_ on: Bool) {

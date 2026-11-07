@@ -66,6 +66,16 @@ enum SelfTest {
         check(Pref.restore(Data("nope".utf8)) == nil, "backup rejects garbage")
         suite.removePersistentDomain(forName: "snapix.selftest")
 
+        // Resetting settings.
+        let rs = UserDefaults(suiteName: "snapix.selftest4")!
+        rs.removePersistentDomain(forName: "snapix.selftest4")
+        rs.set("png", forKey: "format"); rs.set("secret", forKey: "uploadAuthHeader"); rs.set(1, forKey: "unrelated"); rs.set(Data([1]), forKey: "hotkey.area")
+        Pref.resetShortcuts(in: rs)
+        check(rs.object(forKey: "hotkey.area") == nil && rs.string(forKey: "format") == "png", "reset shortcuts only")
+        Pref.resetAll(in: rs)
+        check(rs.object(forKey: "format") == nil && rs.object(forKey: "uploadAuthHeader") == nil && rs.integer(forKey: "unrelated") == 1, "reset all keeps unrelated keys")
+        rs.removePersistentDomain(forName: "snapix.selftest4")
+
         // Style presets.
         let ps = UserDefaults(suiteName: "snapix.selftest3")!
         ps.removePersistentDomain(forName: "snapix.selftest3")

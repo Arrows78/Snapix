@@ -6,6 +6,20 @@ enum Redaction {
     enum Kind: CaseIterable {
         case email, card, iban, secret, phone, ipAddress
 
+        var prefKey: String {
+            switch self {
+            case .email: return "redact.email"
+            case .card: return "redact.card"
+            case .iban: return "redact.iban"
+            case .secret: return "redact.secret"
+            case .phone: return "redact.phone"
+            case .ipAddress: return "redact.ipAddress"
+            }
+        }
+
+        /// On unless the user turned it off in Preferences.
+        var isEnabled: Bool { UserDefaults.standard.object(forKey: prefKey) as? Bool ?? true }
+
         var pattern: String {
             switch self {
             case .email: return #"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}"#
@@ -38,7 +52,7 @@ enum Redaction {
     static func ranges(in text: String) -> [Range<String.Index>] {
         let ns = text as NSString
         var found: [NSRange] = []
-        for (kind, re) in expressions {
+        for (kind, re) in expressions where kind.isEnabled {
             for m in re.matches(in: text, range: NSRange(location: 0, length: ns.length)) where kind.accepts(ns.substring(with: m.range)) {
                 found.append(m.range)
             }
