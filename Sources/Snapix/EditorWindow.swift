@@ -265,6 +265,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         add(L("Merge Annotations Into Image"), #selector(rasterizeAction(_:)), symbol: "square.stack.3d.down.right")
         add(L("Erase Text in Selection"), #selector(eraseTextAction(_:)), symbol: "text.badge.minus")
         add(L("Hide Sensitive Data"), #selector(redactAction(_:)), symbol: "eye.slash")
+        add(L("Remove Background"), #selector(cutoutAction(_:)), symbol: "person.crop.circle.badge.minus")
         menu.addItem(.separator())
         add(L("Zoom to Selection"), #selector(zoomSelectionAction(_:)), symbol: "plus.magnifyingglass")
         add(L("Annotation Shadows"), #selector(toggleShadows(_:)), symbol: "shadow")
@@ -603,6 +604,17 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
                 }
             }
             Toast.show(LF("%d sensitive regions hidden", boxes.count))
+        }
+    }
+
+    /// Keeps only the main subject of the image; the backdrop then shows through the transparent area.
+    @objc func cutoutAction(_ sender: Any?) {
+        Toast.show(L("Removing background…"), duration: 1.5)
+        Cutout.subject(of: doc.state.image) { [weak self] cut in
+            guard let self else { return }
+            guard let cut else { Toast.show(L("No subject found")); return }
+            self.doc.mutate { $0.image = cut; $0.uncrop = nil }
+            Toast.show(L("Background removed"))
         }
     }
 
