@@ -19,6 +19,22 @@ enum KeystrokeFormat {
     }
 }
 
+/// Look of the click ring drawn during a recording.
+struct ClickStyle: Equatable {
+    var hex: UInt32 = 0x5B8CFF
+    var size: CGFloat = 54
+    var duration: CFTimeInterval = 0.55
+
+    /// Reads the preferences, keeping every value in a sensible range.
+    static var current: ClickStyle {
+        let d = UserDefaults.standard
+        let hex = d.object(forKey: "clickColor") as? Int ?? 0x5B8CFF
+        let size = d.object(forKey: "clickSize") as? Double ?? 54
+        let dur = d.object(forKey: "clickDuration") as? Double ?? 0.55
+        return ClickStyle(hex: UInt32(truncatingIfNeeded: hex) & 0xFFFFFF, size: CGFloat(max(24, min(120, size))), duration: max(0.2, min(1.5, dur)))
+    }
+}
+
 /// Click ripples and a key-press pill drawn on screen so they end up in the recording.
 @MainActor
 final class RecordingOverlays {
@@ -62,31 +78,31 @@ final class RecordingOverlays {
             let p = NSEvent.mouseLocation
             Task { @MainActor in
                 guard let view, let layer = view.layer else { return }
-                Self.ripple(at: CGPoint(x: p.x - screen.frame.minX, y: p.y - screen.frame.minY), on: layer)
+                Self.ripple(at: CGPoint(x: p.x - screen.frame.minX, y: p.y - screen.frame.minY), on: layer, style: ClickStyle.current)
             }
         }
         if let m { monitors.append(m) }
     }
 
-    private static func ripple(at p: CGPoint, on layer: CALayer) {
-        let d: CGFloat = 54
+    private static func ripple(at p: CGPoint, on layer: CALayer, style: ClickStyle) {
+        let d = style.size
         let ring = CAShapeLayer()
         ring.frame = CGRect(x: p.x - d / 2, y: p.y - d / 2, width: d, height: d)
         ring.path = CGPath(ellipseIn: ring.bounds.insetBy(dx: 3, dy: 3), transform: nil)
-        ring.fillColor = NSColor(hex: 0x5B8CFF, alpha: 0.22).cgColor
-        ring.strokeColor = NSColor(hex: 0x5B8CFF, alpha: 0.9).cgColor
+        ring.fillColor = NSColor(hex: style.hex, alpha: 0.22).cgColor
+        ring.strokeColor = NSColor(hex: style.hex, alpha: 0.9).cgColor
         ring.lineWidth = 3
         layer.addSublayer(ring)
         let scale = CABasicAnimation(keyPath: "transform.scale"); scale.fromValue = 0.45; scale.toValue = 1.25
         let fade = CABasicAnimation(keyPath: "opacity"); fade.fromValue = 1; fade.toValue = 0
         let group = CAAnimationGroup()
         group.animations = [scale, fade]
-        group.duration = 0.55
+        group.duration = style.duration
         group.timingFunction = CAMediaTimingFunction(name: .easeOut)
         group.isRemovedOnCompletion = false
         group.fillMode = .forwards
         ring.add(group, forKey: "ripple")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { ring.removeFromSuperlayer() }
+        DispatchQueue.main.asyncAfter(deadline: .now() + style.duration + 0.05) { ring.removeFromSuperlayer() }
     }
 
     // MARK: Keys

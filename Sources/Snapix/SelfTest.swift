@@ -202,6 +202,13 @@ enum SelfTest {
         check(BackdropPreset.saved(in: bs).count == BackdropPreset.limit - 1 && BackdropPreset.saved(in: bs).first(where: { $0.name == "P1" })?.config.pattern == 2, "backdrop preset delete keeps the others")
         bs.removePersistentDomain(forName: "snapix.selftest5")
 
+        // Overlay and click ring preferences stay in range.
+        UserDefaults.standard.set(5.0, forKey: "clickSize"); UserDefaults.standard.set(0.0, forKey: "clickDuration")
+        UserDefaults.standard.set(2.0, forKey: "overlayDim")
+        check(ClickStyle.current.size == 24 && ClickStyle.current.duration == 0.2 && Overlay.dim == 0.8, "overlay preferences are clamped")
+        ["clickSize", "clickDuration", "overlayDim"].forEach { UserDefaults.standard.removeObject(forKey: $0) }
+        check(ClickStyle.current == ClickStyle() && Overlay.dim == 0.4, "overlay preferences default")
+
         // Export formats.
         let enc = Exporter.data(for: strip, as: .pdf, scale: 2)
         check(enc.map { $0.starts(with: Data("%PDF".utf8)) } == true, "PDF export")

@@ -5,6 +5,16 @@ final class OverlayWindow: NSWindow {
     override var canBecomeMain: Bool { true }
 }
 
+/// User-tunable look of the selection overlay.
+enum Overlay {
+    /// How dark the area outside the selection is, 0...0.8.
+    static var dim: CGFloat { CGFloat(max(0, min(0.8, UserDefaults.standard.object(forKey: "overlayDim") as? Double ?? 0.4))) }
+    static var showLoupe: Bool { UserDefaults.standard.object(forKey: "showLoupe") as? Bool ?? true }
+    static var loupeSize: CGFloat {
+        switch UserDefaults.standard.string(forKey: "loupeSize") { case "small": return 90; case "large": return 160; default: return 120 }
+    }
+}
+
 /// Full-screen frozen-screenshot overlays used to pick an area or a window.
 @MainActor
 final class SelectionOverlay {
@@ -138,7 +148,7 @@ private final class OverlayView: NSView {
     override func draw(_ dirtyRect: NSRect) {
         guard let ctx = NSGraphicsContext.current?.cgContext else { return }
         ctx.drawFlipped(frozen.image, in: bounds)
-        ctx.setFillColor(NSColor.black.withAlphaComponent(0.4).cgColor)
+        ctx.setFillColor(NSColor.black.withAlphaComponent(Overlay.dim).cgColor)
         ctx.fill(bounds)
 
         let highlight = mode == .area ? selection : (mode == .element ? elementChain[safe: elementIndex] : hover?.rect)
@@ -176,7 +186,7 @@ private final class OverlayView: NSView {
                 ctx.move(to: CGPoint(x: m.x + 0.5, y: 0)); ctx.addLine(to: CGPoint(x: m.x + 0.5, y: bounds.height))
                 ctx.strokePath()
             }
-            drawLoupe(at: m, in: ctx)
+            if Overlay.showLoupe { drawLoupe(at: m, in: ctx) }
         }
     }
 
@@ -199,7 +209,7 @@ private final class OverlayView: NSView {
 
     /// Pixel magnifier next to the cursor, with coordinates.
     private func drawLoupe(at m: CGPoint, in ctx: CGContext) {
-        let cells = 15, size: CGFloat = 120
+        let cells = 15, size = Overlay.loupeSize
         let px = Int(m.x * pixelScale), py = Int(m.y * pixelScale)
         let src = CGRect(x: px - cells / 2, y: py - cells / 2, width: cells, height: cells)
         guard CGRect(x: 0, y: 0, width: frozen.image.width, height: frozen.image.height).contains(src),

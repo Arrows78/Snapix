@@ -237,6 +237,12 @@ struct PreferencesView: View {
     @AppStorage("recordAudio") private var recordAudio = false
     @AppStorage("recordCursor") private var recordCursor = true
     @AppStorage("recordClicks") private var recordClicks = false
+    @AppStorage("clickColor") private var clickColor = 0x5B8CFF
+    @AppStorage("clickSize") private var clickSize = 54.0
+    @AppStorage("clickDuration") private var clickDuration = 0.55
+    @AppStorage("overlayDim") private var overlayDim = 0.4
+    @AppStorage("showLoupe") private var showLoupe = true
+    @AppStorage("loupeSize") private var loupeSize = "medium"
     @AppStorage("recordKeystrokes") private var recordKeystrokes = false
     @AppStorage("recordingTemplate") private var recordingTemplate = ""
     @AppStorage("recordFPS") private var recordFPS = 30
@@ -395,6 +401,15 @@ struct PreferencesView: View {
                     Picker("", selection: $captureDelay) { ForEach([3, 5, 10, 15], id: \.self) { Text("\($0) s").tag($0) } }.labelsHidden().frame(width: 100)
                 }
             }
+            Card(title: "Selection overlay") {
+                Row(title: "Dim outside the selection") { Slider(value: $overlayDim, in: 0...0.8).frame(width: 180) }
+                ToggleRow("Show the pixel magnifier", isOn: $showLoupe, last: !showLoupe)
+                if showLoupe {
+                    Row(title: "Magnifier size", last: true) {
+                        Picker("", selection: $loupeSize) { Text("Small").tag("small"); Text("Medium").tag("medium"); Text("Large").tag("large") }.labelsHidden().frame(width: 140)
+                    }
+                }
+            }
             Card(title: "Area selection") {
                 ToggleRow("Adjust the selection before capturing",
                           "Drag handles to resize, drag inside (or hold Space while dragging) to move, Return or double-click to capture.", isOn: $areaAdjust)
@@ -450,7 +465,15 @@ struct PreferencesView: View {
                     Picker("", selection: $recordMaxSize) { Text("Native").tag("native"); Text("1080p").tag("1080"); Text("720p").tag("720") }.labelsHidden().frame(width: 100)
                 }
                 ToggleRow("Record the mouse cursor", isOn: $recordCursor)
-                ToggleRow("Highlight mouse clicks", "A ring appears at each click.", isOn: $recordClicks)
+                ToggleRow("Highlight mouse clicks", "A ring appears at each click.", isOn: $recordClicks, last: false)
+                if recordClicks {
+                    Row(title: "Ring color") {
+                        ColorPicker("", selection: Binding(get: { Color(nsColor: NSColor(hex: UInt32(truncatingIfNeeded: clickColor))) },
+                                                           set: { clickColor = Int(NSColor($0).hexValue) })).labelsHidden()
+                    }
+                    Row(title: "Ring size") { Slider(value: $clickSize, in: 24...120).frame(width: 180) }
+                    Row(title: "Ring duration") { Slider(value: $clickDuration, in: 0.2...1.5).frame(width: 180) }
+                }
                 ToggleRow("Show keystrokes", "Typed keys and shortcuts appear in a pill. Needs the Accessibility permission.", isOn: $recordKeystrokes)
                 ToggleRow("Record system audio (MP4 only)", isOn: $recordAudio)
                 ToggleRow("Record the microphone (macOS 15 or later)", "The voice is a separate audio track; players that show a track picker let you choose it.", isOn: $recordMicrophone)

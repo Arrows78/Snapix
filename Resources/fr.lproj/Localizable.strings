@@ -466,3 +466,10 @@
 "You can save up to %d styles. Delete one first." = "Vous pouvez enregistrer jusqu'à %d styles. Supprimez-en un d'abord.";
 "Record Fullscreen" = "Enregistrer tout l'écran";
 "Record a Window" = "Enregistrer une fenêtre";
+"Ring color" = "Couleur de l'anneau";
+"Ring size" = "Taille de l'anneau";
+"Ring duration" = "Durée de l'anneau";
+"Selection overlay" = "Superposition de sélection";
+"Dim outside the selection" = "Assombrir hors de la sélection";
+"Show the pixel magnifier" = "Afficher la loupe de pixels";
+"Magnifier size" = "Taille de la loupe";
