@@ -190,6 +190,26 @@ private struct Page<Content: View>: View {
     }
 }
 
+/// The app's icon, name and version at the foot of the sidebar.
+private struct SidebarFooter: View {
+    private var version: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "" }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Divider().overlay(Color.white.opacity(0.08)).padding(.horizontal, 2).padding(.bottom, 10)
+            HStack(spacing: 9) {
+                Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 30, height: 30)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(verbatim: "Snapix").font(.system(size: 12, weight: .semibold)).foregroundStyle(.white.opacity(0.9))
+                    Text(verbatim: "\(L("Version")) \(version)").font(.system(size: 11)).foregroundStyle(.white.opacity(0.45))
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 6).padding(.bottom, 12)
+        }
+    }
+}
+
 // MARK: - Settings window
 
 struct PreferencesView: View {
@@ -268,6 +288,8 @@ struct PreferencesView: View {
     @AppStorage("defaultTool") private var defaultTool = "arrow"
     @AppStorage("rememberTool") private var rememberTool = false
     @AppStorage("snapHighlight") private var snapHighlight = true
+    @AppStorage("quickActions") private var quickActions = "edit,copy,save,ocr,pin"
+    @AppStorage("quickAccessStyle") private var quickAccessStyle = "stack"
     @AppStorage("ocrEngine") private var ocrEngine = "builtin"
     @AppStorage("ocrEndpoint") private var ocrEndpoint = ""
     @AppStorage("ocrModel") private var ocrModel = ""
@@ -336,6 +358,7 @@ struct PreferencesView: View {
                 if p == .recording || p == .upload { Spacer().frame(height: 8) }
             }
             Spacer()
+            SidebarFooter()
         }
         .padding(.horizontal, 10).padding(.top, 38)
         .frame(width: 190)
@@ -377,10 +400,24 @@ struct PreferencesView: View {
                     Row(title: "Swipe right") { swipePicker($swipeRight) }
                 }
                 ToggleRow("Sound effects", "A soft sound when a preview appears and when it copies or saves.", isOn: $quickAccessSounds)
+                Row(title: "Recall shortcut shows", subtitle: "The stack keeps your last captures on screen; the strip is a scrollable row of recent screenshots and recordings.") {
+                    Picker("", selection: $quickAccessStyle) { Text("A stack").tag("stack"); Text("A strip").tag("strip") }.labelsHidden().frame(width: 160)
+                }
                 Row(title: "Size", last: true) {
                     Picker("", selection: $previewSize) {
                         Text("Small").tag("small"); Text("Medium").tag("medium"); Text("Large").tag("large")
                     }.labelsHidden().frame(width: 160)
+                }
+            }
+            Card(title: "Quick Access buttons") {
+                ForEach(Array(QuickAction.allCases.enumerated()), id: \.element) { i, a in
+                    ToggleRow(LocalizedStringKey(a.title), isOn: Binding(
+                        get: { QuickAction.parse(quickActions).contains(a) && quickActions.contains(a.rawValue) },
+                        set: { on in
+                            var list = QuickAction.parse(quickActions)
+                            if on { if !list.contains(a) { list.append(a) } } else { list.removeAll { $0 == a } }
+                            quickActions = list.isEmpty ? QuickAction.serialize([a]) : QuickAction.serialize(list)
+                        }), last: i == QuickAction.allCases.count - 1)
                 }
             }
             Text("Hover a preview and press ⌘C to copy, ⌘S to save, ⌘E or Return to edit, ⌘P to pin, Delete to remove it, Esc to close.")

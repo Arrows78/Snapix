@@ -349,6 +349,11 @@ enum SelfTest {
         check(RemoteOCR.pngData(ocrImage.makeImage()!, maxSide: 300).flatMap { NSBitmapImageRep(data: $0)?.pixelsWide } == 300, "OCR image is scaled down")
         check(!(Pref.backupData()?.contains(Data("ocrAPIKey".utf8)) ?? false), "backups leave out the OCR key")
 
+        // Quick Access buttons.
+        check(QuickAction.parse("copy,edit") == [.edit, .copy] && QuickAction.parse("") == QuickAction.default && QuickAction.parse("nope,pin") == [.pin], "quick actions parse in canonical order")
+        check(QuickAction.serialize([.pin, .edit]) == "edit,pin", "quick actions serialize canonically")
+        check(RecentStrip.width(cards: 1, screenWidth: 1440) == 240 && RecentStrip.width(cards: 6, screenWidth: 1440) == 1238 && RecentStrip.width(cards: 16, screenWidth: 1440) == 1360, "recent strip width")
+
         // Export formats.
         let enc = Exporter.data(for: strip, as: .pdf, scale: 2)
         check(enc.map { $0.starts(with: Data("%PDF".utf8)) } == true, "PDF export")

@@ -140,6 +140,7 @@ final class PreviewController: NSObject {
 
     /// Quick Access: the latest Library captures stacked in the corner, or closed again when already shown.
     static func toggleRecent() {
+        if Pref.string("quickAccessStyle") == "strip" { RecentStrip.toggle(); return }
         if showingRecent { dismissAll(); return }
         let urls = Array(History.items().prefix(4))
         guard !urls.isEmpty else { Toast.show(L("Screenshots you take will appear here."), symbol: "exclamationmark.triangle.fill"); return }
@@ -202,14 +203,15 @@ final class PreviewController: NSObject {
             ("square.and.arrow.up", "Share…", #selector(shareTapped(_:))),
             ("trash", "Move to Trash", #selector(deleteTapped)),
             ("ellipsis", "More tools and actions", #selector(moreTapped(_:))),
-        ] : [
-            ("pencil", "Open in Editor", #selector(editTapped)),
-            ("doc.on.doc", "Copy", #selector(copyTapped)),
-            ("square.and.arrow.down", "Save", #selector(saveTapped)),
-            ("text.viewfinder", "Recognize text / QR code", #selector(ocrTapped)),
-            ("pin", "Pin to screen", #selector(pinTapped)),
-            ("ellipsis", "More tools and actions", #selector(moreTapped(_:))),
-        ]
+        ] : QuickAction.current.map { act -> (String, String, Selector) in
+            switch act {
+            case .edit: return ("pencil", "Open in Editor", #selector(editTapped))
+            case .copy: return ("doc.on.doc", "Copy", #selector(copyTapped))
+            case .save: return ("square.and.arrow.down", "Save", #selector(saveTapped))
+            case .ocr: return ("text.viewfinder", "Recognize text / QR code", #selector(ocrTapped))
+            case .pin: return ("pin", "Pin to screen", #selector(pinTapped))
+            }
+        } + [("ellipsis", "More tools and actions", #selector(moreTapped(_:)))]
         let bw: CGFloat = 32
         let gap = max(0, (w - 24 - bw * CGFloat(actions.count)) / CGFloat(actions.count - 1))
         for (i, a) in actions.enumerated() {

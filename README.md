@@ -71,7 +71,7 @@ Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 ### 📤 Output
 
 - **Copy**, **save** (PNG, JPEG, or automatic by content), **save as** (PNG, JPEG, HEIC, PDF), **share** (system share sheet), downscale Retina, filename template, **upload** to your own HTTP endpoint.
-- **Quick Access**: the floating preview after a capture now sits in the place you choose (4 corners or top/bottom centre, 3 sizes, slide or fade) and runs an action of your choice on a two-finger swipe left or right (dismiss, copy, save, edit, pin…); finished recordings get their own card (play, copy file, reveal, share, trash), and optional sound effects, has a *More* menu (save as, share, copy as file, upload, hide sensitive data, delete) and answers to keys while hovered (⌘C, ⌘S, ⌘E, ⌘P, Delete, Esc). `⇧⌘6` brings back your last four captures as a persistent stack.
+- **Quick Access**: the floating preview after a capture now sits in the place you choose (4 corners or top/bottom centre, 3 sizes, slide or fade) and runs an action of your choice on a two-finger swipe left or right (dismiss, copy, save, edit, pin…); finished recordings get their own card (play, copy file, reveal, share, trash), and optional sound effects, has a *More* menu (save as, share, copy as file, upload, hide sensitive data, delete) and answers to keys while hovered (⌘C, ⌘S, ⌘E, ⌘P, Delete, Esc). `⇧⌘6` brings back your last four captures as a persistent stack, or (your choice) a scrollable strip of the 16 latest screenshots and recordings along the bottom of the screen. Pick which buttons a card shows in Preferences.
 - **Pin to screen**: drag, scroll to resize, ⌥-scroll for opacity, double-click to edit, right-click menu.
 - **Menu bar**: a *Recent Captures* submenu with thumbnails (open, copy, pin, reveal).
 - **Capture options**: optionally hide desktop icons from screenshots and recordings.
@@ -193,6 +193,7 @@ Snapix/
 │   ├── Model, StylePreset, BackdropPreset, CropGeometry, Watermark, Renderer, Exporter, ImageDrag, ImageTransform # Annotations, drawing, output
 │   ├── OCR, Redaction, Cutout, ColorTools      # Vision, sensitive data, background removal, colour
 │   ├── History, Library, Combine, PinWindow, HomeWindow # Library, stitching images, pins, home
+│   ├── RecentStrip, QuickActions, ColorPanel, RemoteOCR,
 │   ├── Toast, Feedback, ShortcutSheet, Onboarding, UpdateCheck          # Feedback, shutter sound, cheat sheet
 │   ├── Settings, Preferences, HotKey, L10n     # Preferences, shortcuts, localisation
 │   └── SelfTest.swift                          # Behind --selftest

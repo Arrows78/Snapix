@@ -113,8 +113,9 @@ enum LibraryItems {
     }
 }
 
-private struct Thumb: View {
+struct LibraryThumb: View {
     let item: LibraryItem
+    var height: CGFloat = 120
     @State private var image: NSImage?
 
     var body: some View {
@@ -129,7 +130,7 @@ private struct Thumb: View {
                     .padding(.horizontal, 6).padding(.vertical, 3).background(Capsule().fill(Color.black.opacity(0.65))).padding(7)
             }
         }
-        .frame(height: 120)
+        .frame(height: height)
         .task {
             let u = item.url, kind = item.kind
             let cg = await Task.detached { kind == .screenshot ? History.thumbnail(for: u, maxPixel: 480) : await RecordingLog.firstFrame(of: u, maxPixel: 480) }.value
@@ -251,7 +252,7 @@ private struct LibraryView: View {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 170), spacing: 12)], spacing: 12) {
                         ForEach(visible) { item in
                             VStack(spacing: 4) {
-                                Thumb(item: item)
+                                LibraryThumb(item: item)
                                     .overlay(alignment: .topLeading) {
                                         if let n = selection.firstIndex(of: item.url) {
                                             Text("\(n + 1)").font(.caption.bold()).foregroundStyle(.white)

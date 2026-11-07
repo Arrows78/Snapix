@@ -562,3 +562,8 @@
 "The server answered HTTP %d" = "Le serveur a répondu HTTP %d";
 "The server's answer was not understood" = "La réponse du serveur n'a pas été comprise";
 "%d frames · %d px" = "%d images · %d px";
+"Quick Access buttons" = "Boutons de l'accès rapide";
+"Recall shortcut shows" = "Le raccourci de rappel affiche";
+"The stack keeps your last captures on screen; the strip is a scrollable row of recent screenshots and recordings." = "La pile garde vos dernières captures à l'écran ; la bande est une rangée défilante des captures et enregistrements récents.";
+"A stack" = "Une pile";
+"A strip" = "Une bande";
