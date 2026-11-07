@@ -35,7 +35,7 @@ Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 - **Fullscreen**, **any window** (hover to pick), **active window**, **delayed (3–15 s)**, **repeat last area**.
 - **Scrolling capture**: automatic down or up (synthetic scroll and frame stitching), or manual (scroll either way, press Done).
 - **Adjustable selection** (optional): handles, move by dragging or holding Space, arrow-key nudge, Return or double-click to capture.
-- **Screen recording**: select an area and record it to **MP4** (optional system audio, cursor on or off) or an animated **GIF**. A red frame and a small timer pill show what is recorded; press the shortcut again or click Stop. The file lands in your screenshots folder and on the clipboard.
+- **Screen recording**: select an area and record it to **MP4** (system audio and microphone optional, cursor on or off, frame rate, quality and maximum resolution) or an animated **GIF**. A red frame and a small timer pill show what is recorded; pause and resume from the pill, press the shortcut again or click Stop. Clicks can be highlighted with a ring and typed keys shown in a pill (both end up in the video). An optional countdown precedes the recording and a review window lets you trim it, or save it as a GIF instead. The file lands in your screenshots folder and on the clipboard.
 - **Capture options**: include the mouse pointer and the window shadow, separate file name templates for screenshots and recordings, HEIC output, and recording frame rate (15/30/60), quality and maximum resolution.
 - **Open an image** from the clipboard or a file.
 
