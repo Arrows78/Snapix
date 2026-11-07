@@ -284,6 +284,16 @@ enum SelfTest {
         check(LibraryItem.kind(of: URL(fileURLWithPath: "/x/a.mp4")) == .video && LibraryItem.kind(of: URL(fileURLWithPath: "/x/a.GIF")) == .gif && LibraryItem.kind(of: URL(fileURLWithPath: "/x/a.png")) == .screenshot, "library item kinds")
         check(LibraryFilter.videos.includes(.video) && !LibraryFilter.videos.includes(.gif) && LibraryFilter.all.includes(.screenshot), "library filters")
 
+        // Per-tool style memory.
+        let ts = UserDefaults(suiteName: "snapix.selftest6")!
+        ts.removePersistentDomain(forName: "snapix.selftest6")
+        ToolStyle.save(ToolStyle(hex: 0x123456, width: 9, arrowStyle: 2, dashed: true), for: .arrow, in: ts)
+        check(ToolStyle.load(.arrow, from: ts)?.hex == 0x123456 && ToolStyle.load(.arrow, from: ts)?.dashed == true && ToolStyle.load(.rect, from: ts) == nil, "tool style memory per tool")
+        check(ToolStyle.remembers(.arrow) && !ToolStyle.remembers(.crop) && !ToolStyle.remembers(.select), "tool style memory skips crop and select")
+        ToolStyle.forget(in: ts)
+        check(ToolStyle.load(.arrow, from: ts) == nil, "tool style forget")
+        ts.removePersistentDomain(forName: "snapix.selftest6")
+
         // Export formats.
         let enc = Exporter.data(for: strip, as: .pdf, scale: 2)
         check(enc.map { $0.starts(with: Data("%PDF".utf8)) } == true, "PDF export")

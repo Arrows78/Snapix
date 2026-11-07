@@ -175,7 +175,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         toolStack.addArrangedSubview(moreButton)
 
         options.setColor(canvas.color)
-        options.onColor = { [weak self] c in self?.canvas.color = c }
+        options.onColor = { [weak self] c in self?.canvas.color = c; self?.rememberStyle() }
         options.onSlider = { [weak self] v in self?.sliderChanged(v) }
         options.onOption = { [weak self] i in self?.optionPicked(i) }
 
@@ -443,6 +443,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         }
         canvas.tool = t
         if t != .overlay { UserDefaults.standard.set(t.rawValue, forKey: "lastTool") }
+        if t != .select { applyStoredStyle(for: t) }
         highlightTool(t)
         refreshOptions(for: t)
         if t == .overlay { options.setSlider(Double((doc.state.overlay?.opacity ?? 0.5) * 30)) }
@@ -493,6 +494,29 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         for (tool, b) in toolButtons { b.isOn = tool == t }
     }
 
+    /// Keeps the current look as the tool's own, so it comes back the next time the tool is picked.
+    private func rememberStyle() {
+        guard Pref.bool("toolStyleMemory") else { return }
+        let tool = canvas.selectedAnnotation?.tool ?? canvas.tool
+        guard ToolStyle.remembers(tool) else { return }
+        ToolStyle.save(ToolStyle(hex: canvas.color.hexValue, width: canvas.lineWidth, arrowStyle: canvas.arrowStyle, filled: canvas.filled,
+                                 dashed: canvas.dashed, dotted: canvas.dotted, blur: canvas.blurMode.rawValue), for: tool)
+    }
+
+    private func applyStoredStyle(for tool: Tool) {
+        guard Pref.bool("toolStyleMemory"), ToolStyle.remembers(tool), let s = ToolStyle.load(tool) else { return }
+        canvas.arrowStyle = s.arrowStyle
+        canvas.filled = s.filled
+        canvas.dashed = s.dashed
+        canvas.dotted = s.dotted
+        canvas.blurMode = BlurMode(rawValue: s.blur) ?? .pixelate
+        canvas.color = NSColor(hex: s.hex)
+        canvas.lineWidth = s.width
+        canvas.fontSize = max(12, s.width * 6 + 8)
+        options.setColor(canvas.color)
+        options.setSlider(Double(s.width))
+    }
+
     private func sliderChanged(_ v: Double) {
         if canvas.tool == .overlay { // the slider doubles as overlay opacity
             doc.state.overlay?.opacity = CGFloat(v / 30)
@@ -501,6 +525,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         }
         canvas.lineWidth = CGFloat(v)
         canvas.fontSize = max(12, CGFloat(v) * 6 + 8)
+        rememberStyle()
     }
 
     private func optionPicked(_ i: Int) {
@@ -513,6 +538,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         case .text: canvas.filled = i == 1
         default: break
         }
+        rememberStyle()
         window?.makeFirstResponder(canvas)
     }
 

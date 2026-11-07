@@ -516,3 +516,5 @@
 "Move %d recording file(s) to the Trash?" = "Mettre %d enregistrement(s) à la corbeille ?";
 "The files you saved are moved to the Trash. Screenshots in the Library are deleted." = "Les fichiers enregistrés sont mis à la corbeille. Les captures de la bibliothèque sont supprimées.";
 "Glow" = "Halo";
+"Remember each tool's style" = "Mémoriser le style de chaque outil";
+"Every tool comes back with the colour, thickness and options you last gave it." = "Chaque outil retrouve la couleur, l'épaisseur et les options que vous lui avez donnés.";

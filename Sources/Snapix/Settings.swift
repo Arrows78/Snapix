@@ -13,6 +13,7 @@ enum Pref {
         "previewCorner": "bottomRight",
         "previewSize": "medium",
         "snapHighlight": true,
+        "toolStyleMemory": true,
         "previewSwipeLeft": "dismiss",
         "previewSwipeRight": "dismiss",
         "quickAccessSounds": false,
@@ -124,7 +125,7 @@ enum Pref {
 
     /// Back to factory settings: every key a backup would hold is removed (the registered defaults then apply again).
     static func resetAll(in store: UserDefaults = .standard) {
-        for key in store.dictionaryRepresentation().keys where isBackedUp(key) || key == "uploadAuthHeader" || key == "stylePresets" { store.removeObject(forKey: key) }
+        for key in store.dictionaryRepresentation().keys where isBackedUp(key) || key == "uploadAuthHeader" || key == "stylePresets" || key.hasPrefix("toolStyle.") { store.removeObject(forKey: key) }
     }
 
     static func resetShortcuts(in store: UserDefaults = .standard) {
