@@ -31,28 +31,28 @@ final class SelectionOverlay {
     private var windows: [OverlayWindow] = []
     private var continuation: CheckedContinuation<Result, Never>?
 
-    static func run(frozen: [Frozen], mode: Mode) async -> Result {
+    static func run(frozen: [Frozen], mode: Mode, live: Bool = false) async -> Result {
         let overlay = SelectionOverlay()
         current = overlay
         return await withCheckedContinuation { cont in
             overlay.continuation = cont
-            overlay.show(frozen, mode: mode)
+            overlay.show(frozen, mode: mode, live: live)
         }
     }
 
-    private func show(_ frozen: [Frozen], mode: Mode) {
+    private func show(_ frozen: [Frozen], mode: Mode, live: Bool) {
         let windowList = mode == .area ? [] : Capture.visibleWindows()
         for f in frozen {
             let w = OverlayWindow(contentRect: f.screen.frame, styleMask: .borderless, backing: .buffered, defer: false)
             w.setFrame(f.screen.frame, display: false)
             w.level = .screenSaver
-            w.isOpaque = true
-            w.backgroundColor = .black
+            w.isOpaque = !live
+            w.backgroundColor = live ? .clear : .black
             w.hasShadow = false
             w.isReleasedWhenClosed = false
             w.acceptsMouseMovedEvents = true
             w.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-            let view = OverlayView(frame: NSRect(origin: .zero, size: f.screen.frame.size), frozen: f, mode: mode, windows: windowList, owner: self)
+            let view = OverlayView(frame: NSRect(origin: .zero, size: f.screen.frame.size), frozen: f, mode: mode, live: live, windows: windowList, owner: self)
             w.contentView = view
             w.makeKeyAndOrderFront(nil)
             w.makeFirstResponder(view)
@@ -74,6 +74,8 @@ final class SelectionOverlay {
 private final class OverlayView: NSView {
     let frozen: Frozen
     let mode: SelectionOverlay.Mode
+    /// Live selection: the real screen shows through instead of a frozen copy.
+    let live: Bool
     let windowRects: [(id: CGWindowID, rect: CGRect)] // view coordinates
     private let windowPIDs: [CGWindowID: pid_t]
     /// Element mode: the element under the cursor and its ancestors (view coordinates), smallest first; ↑ / ↓ move along it.
@@ -95,9 +97,10 @@ private final class OverlayView: NSView {
     override var isFlipped: Bool { true }
     override var acceptsFirstResponder: Bool { true }
 
-    init(frame: NSRect, frozen: Frozen, mode: SelectionOverlay.Mode, windows: [WindowInfo], owner: SelectionOverlay) {
+    init(frame: NSRect, frozen: Frozen, mode: SelectionOverlay.Mode, live: Bool, windows: [WindowInfo], owner: SelectionOverlay) {
         self.frozen = frozen
         self.mode = mode
+        self.live = live
         self.owner = owner
         windowPIDs = Dictionary(windows.map { ($0.id, $0.pid) }, uniquingKeysWith: { a, _ in a })
         let sf = frozen.screen.frame
@@ -119,7 +122,7 @@ private final class OverlayView: NSView {
 
     private var selection: CGRect? { locked ?? creationRect }
 
-    private var pixelScale: CGFloat { CGFloat(frozen.image.width) / bounds.width }
+    private var pixelScale: CGFloat { live ? frozen.screen.backingScaleFactor : CGFloat(frozen.image.width) / bounds.width }
 
     // MARK: Handles
 
@@ -147,16 +150,25 @@ private final class OverlayView: NSView {
 
     override func draw(_ dirtyRect: NSRect) {
         guard let ctx = NSGraphicsContext.current?.cgContext else { return }
-        ctx.drawFlipped(frozen.image, in: bounds)
-        ctx.setFillColor(NSColor.black.withAlphaComponent(Overlay.dim).cgColor)
-        ctx.fill(bounds)
-
+        if !live { ctx.drawFlipped(frozen.image, in: bounds) }
         let highlight = mode == .area ? selection : (mode == .element ? elementChain[safe: elementIndex] : hover?.rect)
+        // A live overlay stays slightly opaque so it keeps receiving clicks even with no dimming.
+        ctx.setFillColor(NSColor.black.withAlphaComponent(live ? max(0.02, Overlay.dim) : Overlay.dim).cgColor)
+        if live, let r = highlight, r.width > 0, r.height > 0 {
+            let cut = CGMutablePath()
+            cut.addRect(bounds); cut.addRect(r)
+            ctx.addPath(cut)
+            ctx.fillPath(using: .evenOdd)
+        } else {
+            ctx.fill(bounds)
+        }
         if let r = highlight, r.width > 0, r.height > 0 {
-            ctx.saveGState()
-            ctx.clip(to: r)
-            ctx.drawFlipped(frozen.image, in: bounds)
-            ctx.restoreGState()
+            if !live {
+                ctx.saveGState()
+                ctx.clip(to: r)
+                ctx.drawFlipped(frozen.image, in: bounds)
+                ctx.restoreGState()
+            }
             ctx.setStrokeColor(NSColor.white.cgColor)
             ctx.setLineWidth(1)
             ctx.stroke(r.insetBy(dx: 0.5, dy: 0.5))
@@ -186,7 +198,7 @@ private final class OverlayView: NSView {
                 ctx.move(to: CGPoint(x: m.x + 0.5, y: 0)); ctx.addLine(to: CGPoint(x: m.x + 0.5, y: bounds.height))
                 ctx.strokePath()
             }
-            if Overlay.showLoupe { drawLoupe(at: m, in: ctx) }
+            if Overlay.showLoupe && !live { drawLoupe(at: m, in: ctx) }
         }
     }
 

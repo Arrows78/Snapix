@@ -540,3 +540,5 @@
 "Maximum height" = "Hauteur maximale";
 "Taller pages stop at this height, in pixels." = "Les pages plus hautes s'arrêtent à cette hauteur, en pixels.";
 "Capture Application" = "Capturer une application";
+"Freeze the screen while selecting" = "Geler l'écran pendant la sélection";
+"Turn off to keep videos and animations moving under the overlay; the picture is then taken after you choose the area (no magnifier)." = "Désactivez pour que vidéos et animations continuent sous la sélection ; l'image est alors prise après le choix de la zone (sans loupe).";

@@ -13,6 +13,7 @@ enum Pref {
         "previewCorner": "bottomRight",
         "previewSize": "medium",
         "snapHighlight": true,
+        "freezeScreen": true,
         "colorPanel": true,
         "colorCopyOnPick": true,
         "scrollMaxHeight": 20000,

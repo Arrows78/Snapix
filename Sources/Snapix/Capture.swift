@@ -164,11 +164,25 @@ enum Capture {
         return Shot(image: img, scale: screen.backingScaleFactor, screenRect: rect, placeAtRegion: true)
     }
 
+    /// A 1 x 1 stand-in for the frozen screen image in live selection mode.
+    private static let placeholder: CGImage = {
+        let ctx = CGContext(data: nil, width: 1, height: 1, bitsPerComponent: 8, bytesPerRow: 0, space: Renderer.sRGB, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+        return ctx.makeImage()!
+    }()
+
     /// Lets the user drag a rectangle on a frozen copy of the screen.
     static func area(remember: Bool = true) async throws -> Shot? {
-        let frozen = try await freeze()
-        switch await SelectionOverlay.run(frozen: frozen, mode: .area) {
+        // Live selection keeps the screen moving under the overlay; the picture is taken once the area is chosen.
+        let live = !Pref.bool("freezeScreen")
+        let frozen = live ? NSScreen.screens.map { Frozen(screen: $0, image: placeholder) } : try await freeze()
+        switch await SelectionOverlay.run(frozen: frozen, mode: .area, live: live) {
         case let .area(f, pixelRect, screenRect, end):
+            if live {
+                try? await Task.sleep(nanoseconds: 180_000_000) // let the overlay fade out
+                let img = try await captureRegion(screenRect, on: f.screen, excludingSelf: false)
+                if remember { lastArea = screenRect }
+                return Shot(image: img, scale: f.screen.backingScaleFactor, screenRect: screenRect, placeAtRegion: true, anchorPoint: end)
+            }
             guard let crop = f.image.cropping(to: pixelRect) else { return nil }
             if remember { lastArea = screenRect }
             return Shot(image: crop, scale: f.screen.backingScaleFactor, screenRect: screenRect, placeAtRegion: true, anchorPoint: end)

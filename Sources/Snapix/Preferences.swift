@@ -268,6 +268,7 @@ struct PreferencesView: View {
     @AppStorage("defaultTool") private var defaultTool = "arrow"
     @AppStorage("rememberTool") private var rememberTool = false
     @AppStorage("snapHighlight") private var snapHighlight = true
+    @AppStorage("freezeScreen") private var freezeScreen = true
     @AppStorage("colorPanel") private var colorPanel = true
     @AppStorage("colorCopyOnPick") private var colorCopyOnPick = true
     @AppStorage("scrollMaxHeight") private var scrollMaxHeight = 20000
@@ -447,6 +448,7 @@ struct PreferencesView: View {
                 }
             }
             Card(title: "Area selection") {
+                ToggleRow("Freeze the screen while selecting", "Turn off to keep videos and animations moving under the overlay; the picture is then taken after you choose the area (no magnifier).", isOn: $freezeScreen)
                 ToggleRow("Adjust the selection before capturing",
                           "Drag handles to resize, drag inside (or hold Space while dragging) to move, Return or double-click to capture.", isOn: $areaAdjust)
                 ToggleRow("Reverse direction for automatic scrolling capture", "Enable this if a third-party app reverses your scroll direction.", isOn: $reverseScroll, last: true)
