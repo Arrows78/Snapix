@@ -10,6 +10,7 @@ struct WindowInfo {
     let id: CGWindowID
     /// AppKit global coordinates (bottom-left origin).
     let rect: CGRect
+    let pid: pid_t
 }
 
 enum CaptureError: Error { case noPermission, notFound }
@@ -110,7 +111,7 @@ enum Capture {
                   let b = d[kCGWindowBounds as String] as? [String: CGFloat],
                   let w = b["Width"], let h = b["Height"], w > 40, h > 40 else { return nil }
             let cg = CGRect(x: b["X"] ?? 0, y: b["Y"] ?? 0, width: w, height: h)
-            return WindowInfo(id: id, rect: appKitRect(fromCG: cg))
+            return WindowInfo(id: id, rect: appKitRect(fromCG: cg), pid: pid_t(d[kCGWindowOwnerPID as String] as? Int32 ?? 0))
         }
     }
 
@@ -172,6 +173,19 @@ enum Capture {
         default:
             return nil
         }
+    }
+
+    /// Hover any interface element (button, toolbar, panel…) and click to capture exactly its bounds.
+    static func element() async throws -> Shot? {
+        guard ElementPicker.isTrusted else {
+            ElementPicker.requestAccess()
+            Toast.show(L("Allow Snapix in Privacy & Security › Accessibility, then try again"), duration: 4)
+            return nil
+        }
+        let frozen = try await freeze()
+        guard case let .area(f, pixelRect, screenRect, end) = await SelectionOverlay.run(frozen: frozen, mode: .element),
+              let crop = f.image.cropping(to: pixelRect) else { return nil }
+        return Shot(image: crop, scale: f.screen.backingScaleFactor, screenRect: screenRect, placeAtRegion: true, anchorPoint: end)
     }
 
     /// Area selection that returns the geometry only (scrolling capture needs a live region, not a frozen crop).

@@ -31,6 +31,7 @@
 Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 
 - **Area**: frozen screen, pixel loupe, live W×H.
+- **Interface element**: hover a button, toolbar or panel and click to capture exactly its bounds (↑ / ↓ move to the parent or child element; needs the Accessibility permission).
 - **Fullscreen**, **any window** (hover to pick), **active window**, **delayed (3–15 s)**, **repeat last area**.
 - **Scrolling capture**: automatic down or up (synthetic scroll and frame stitching), or manual (scroll either way, press Done).
 - **Adjustable selection** (optional): handles, move by dragging or holding Space, arrow-key nudge, Return or double-click to capture.
@@ -79,7 +80,7 @@ The other actions (active window, repeat last area, scrolling upwards or manuall
 
 ### 🔗 URL scheme
 
-`snapix://area`, `fullscreen`, `window`, `active-window`, `delayed`, `repeat`, `scrolling`, `scrolling-up`, `scrolling-manual`, `library`, `shortcuts`, `ocr`, `cutout`, `record`, `record-gif`, `pick-color`, `contrast`, `clipboard`, with an optional `?then=copy,save,edit,pin`.
+`snapix://area`, `fullscreen`, `window`, `active-window`, `element`, `delayed`, `repeat`, `scrolling`, `scrolling-up`, `scrolling-manual`, `library`, `shortcuts`, `ocr`, `cutout`, `record`, `record-gif`, `pick-color`, `contrast`, `clipboard`, with an optional `?then=copy,save,edit,pin`.
 
 ```bash
 open "snapix://area?then=copy"

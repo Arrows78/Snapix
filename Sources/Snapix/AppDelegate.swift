@@ -63,7 +63,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let name = url.host ?? url.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         let map: [String: Action] = [
             "area": .area, "fullscreen": .fullscreen, "window": .window, "active-window": .activeWindow, "delayed": .delayed,
-            "repeat": .repeatArea, "scrolling": .scrolling, "scrolling-up": .scrollingUp, "scrolling-manual": .scrollingManual, "ocr": .ocr, "cutout": .cutout, "record": .record, "record-gif": .recordGIF,
+            "repeat": .repeatArea, "scrolling": .scrolling, "scrolling-up": .scrollingUp, "scrolling-manual": .scrollingManual, "ocr": .ocr, "cutout": .cutout, "element": .element, "record": .record, "record-gif": .recordGIF,
             "pick-color": .pickColor, "contrast": .contrast, "clipboard": .clipboard, "library": .library, "shortcuts": .shortcuts,
         ]
         guard let action = map[name] else { return }
@@ -107,7 +107,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             if let c = a.combo { item.attributedTitle = NSAttributedString(string: "\(a.title)\t\(c.display)") }
             menu.addItem(item)
         }
-        [Action.area, .fullscreen, .window, .activeWindow, .delayed, .repeatArea].forEach(add)
+        [Action.area, .fullscreen, .window, .activeWindow, .element, .delayed, .repeatArea].forEach(add)
         menu.addItem(.separator())
         [Action.scrolling, .scrollingUp, .scrollingManual].forEach(add)
         menu.addItem(.separator())
@@ -200,6 +200,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 case .window: if let s = try await Capture.interactiveWindow() { deliver(s, override) }
                 case .activeWindow: deliver(try await Capture.activeWindow(), override)
                 case .repeatArea: deliver(try await Capture.repeatArea(), override)
+                case .element: if let s = try await Capture.element() { deliver(s, override) }
                 case .delayed:
                     for n in stride(from: Pref.delay, through: 1, by: -1) { Toast.show(LF("Capturing in %d…", n), duration: 1); try? await Task.sleep(nanoseconds: 1_000_000_000) }
                     if let s = try await Capture.area() { deliver(s, override) }

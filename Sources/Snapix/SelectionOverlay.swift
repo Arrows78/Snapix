@@ -8,7 +8,7 @@ final class OverlayWindow: NSWindow {
 /// Full-screen frozen-screenshot overlays used to pick an area or a window.
 @MainActor
 final class SelectionOverlay {
-    enum Mode { case area, window }
+    enum Mode { case area, window, element }
     enum Result {
         /// Frozen screen, pixel rect inside its image, rect in AppKit global coordinates, and where the selection ended
         /// (cursor position, AppKit global coordinates).
@@ -31,7 +31,7 @@ final class SelectionOverlay {
     }
 
     private func show(_ frozen: [Frozen], mode: Mode) {
-        let windowList = mode == .window ? Capture.visibleWindows() : []
+        let windowList = mode == .area ? [] : Capture.visibleWindows()
         for f in frozen {
             let w = OverlayWindow(contentRect: f.screen.frame, styleMask: .borderless, backing: .buffered, defer: false)
             w.setFrame(f.screen.frame, display: false)
@@ -65,6 +65,10 @@ private final class OverlayView: NSView {
     let frozen: Frozen
     let mode: SelectionOverlay.Mode
     let windowRects: [(id: CGWindowID, rect: CGRect)] // view coordinates
+    private let windowPIDs: [CGWindowID: pid_t]
+    /// Element mode: the element under the cursor and its ancestors (view coordinates), smallest first; ↑ / ↓ move along it.
+    private var elementChain: [CGRect] = []
+    private var elementIndex = 0
     unowned let owner: SelectionOverlay
 
     /// Handle direction: -1 = left/top edge, 0 = middle, 1 = right/bottom edge.
@@ -85,6 +89,7 @@ private final class OverlayView: NSView {
         self.frozen = frozen
         self.mode = mode
         self.owner = owner
+        windowPIDs = Dictionary(windows.map { ($0.id, $0.pid) }, uniquingKeysWith: { a, _ in a })
         let sf = frozen.screen.frame
         windowRects = windows.filter { $0.rect.intersects(sf) }.map { w in
             (w.id, CGRect(x: w.rect.minX - sf.minX, y: sf.maxY - w.rect.maxY, width: w.rect.width, height: w.rect.height))
@@ -136,7 +141,7 @@ private final class OverlayView: NSView {
         ctx.setFillColor(NSColor.black.withAlphaComponent(0.4).cgColor)
         ctx.fill(bounds)
 
-        let highlight = mode == .area ? selection : hover?.rect
+        let highlight = mode == .area ? selection : (mode == .element ? elementChain[safe: elementIndex] : hover?.rect)
         if let r = highlight, r.width > 0, r.height > 0 {
             ctx.saveGState()
             ctx.clip(to: r)
@@ -145,6 +150,9 @@ private final class OverlayView: NSView {
             ctx.setStrokeColor(NSColor.white.cgColor)
             ctx.setLineWidth(1)
             ctx.stroke(r.insetBy(dx: 0.5, dy: 0.5))
+            if mode == .element {
+                drawLabel("\(Int(r.width)) × \(Int(r.height))  ↑↓", near: CGPoint(x: r.midX, y: r.maxY + 10), in: ctx)
+            }
             if mode == .area {
                 let hint = locked != nil ? "  ↩ capture" : ""
                 drawLabel("\(Int(r.width)) × \(Int(r.height))\(hint)", near: CGPoint(x: r.midX, y: r.maxY + 10), in: ctx)
@@ -224,12 +232,18 @@ private final class OverlayView: NSView {
     override func mouseMoved(with event: NSEvent) {
         mouse = convert(event.locationInWindow, from: nil)
         if mode == .window { hover = windowRects.first { $0.rect.contains(mouse!) } }
+        if mode == .element { updateElementChain(at: mouse!) }
         needsDisplay = true
     }
 
     override func mouseDown(with event: NSEvent) {
         let p = convert(event.locationInWindow, from: nil)
         mouse = p
+        if mode == .element {
+            updateElementChain(at: p)
+            if let r = elementChain[safe: elementIndex] { confirm(r) }
+            return
+        }
         if mode == .window {
             if let h = hover ?? windowRects.first(where: { $0.rect.contains(p) }) { owner.finish(.window(h.id)) }
             return
@@ -262,6 +276,21 @@ private final class OverlayView: NSView {
                 dragStart = CGPoint(x: s.x + p.x - m.x, y: s.y + p.y - m.y)
             }
         }
+    }
+
+    /// Asks the app owning the window under `p` for the element there; falls back to the window itself.
+    private func updateElementChain(at p: CGPoint) {
+        let sf = frozen.screen.frame
+        guard let w = windowRects.first(where: { $0.rect.contains(p) }), let pid = windowPIDs[w.id] else { elementChain = []; needsDisplay = true; return }
+        // View (top-left, screen-local) -> global coordinates with a top-left origin, as the Accessibility API expects.
+        let originY = Capture.primaryHeight - sf.maxY
+        let cgPoint = CGPoint(x: sf.minX + p.x, y: originY + p.y)
+        let rects = ElementPicker.chain(at: cgPoint, pid: pid).map {
+            CGRect(x: $0.minX - sf.minX, y: $0.minY - originY, width: $0.width, height: $0.height).intersection(bounds)
+        }.filter { !$0.isNull && $0.width >= 4 && $0.height >= 4 }
+        let chain = rects + [w.rect]
+        if chain != elementChain { elementChain = chain; elementIndex = 0 }
+        needsDisplay = true
     }
 
     override func mouseUp(with event: NSEvent) {
@@ -299,6 +328,9 @@ private final class OverlayView: NSView {
         case 53: owner.finish(.cancelled)
         case 36, 76: if let r = locked { confirm(r) }
         case 49: spaceDown = true
+        case 125, 126 where mode == .element:
+            elementIndex = max(0, min(elementChain.count - 1, elementIndex + (event.keyCode == 126 ? 1 : -1)))
+            needsDisplay = true
         case 123, 124, 125, 126:
             guard var r = locked else { return super.keyDown(with: event) }
             let d: CGFloat = event.modifierFlags.contains(.shift) ? 10 : 1
@@ -317,4 +349,8 @@ private final class OverlayView: NSView {
     override func keyUp(with event: NSEvent) {
         if event.keyCode == 49 { spaceDown = false } else { super.keyUp(with: event) }
     }
+}
+
+private extension Array {
+    subscript(safe i: Int) -> Element? { indices.contains(i) ? self[i] : nil }
 }
