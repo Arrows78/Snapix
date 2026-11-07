@@ -22,7 +22,7 @@
 **Snapix** captures your screen, lets you annotate and polish the result, and reads the text out of it. It lives in the menu bar and answers to global hotkeys: area, window, fullscreen and scrolling captures, an editor with arrows, blur, spotlight, counters and a backdrop, OCR and QR codes, a colour picker and a contrast checker, pinned screenshots and a library of everything you captured.
 
 > [!NOTE]
-> Snapix runs entirely on your Mac: no account, no analytics. The only network calls are the optional upload to an HTTP endpoint **you** configure and the *Check for Updates* button, which asks GitHub for the latest release when you click it.
+> Snapix runs entirely on your Mac: no account, no analytics. The only network calls are the optional upload to an HTTP endpoint **you** configure, the optional *Custom server* text recognition (it receives the captured image, only if you switch the engine to it) and the *Check for Updates* button, which asks GitHub for the latest release when you click it.
 
 ## ✨ Features
 
@@ -64,6 +64,7 @@ Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 ### 🔎 Analysis
 
 - **OCR and QR / barcodes** (Vision) from a dragged area or the editor, with an optional *remove line breaks* and an offer to open links found in the text.
+- **Custom OCR server** (optional): send the image to a server of your choice that speaks the common chat-completions format with image input (address, model, prompt, key, connection test). QR codes are always read locally and the built-in engine is the fallback.
 - **Colour picker**: HEX, RGB, CSS, HSL, Swift, C#, Android and UIKit output, in a card that lists every format and keeps the recent colours.
 - **Contrast checker**: WCAG ratio and APCA Lc. Pick two colours, or analyse a region in the editor.
 

@@ -268,6 +268,12 @@ struct PreferencesView: View {
     @AppStorage("defaultTool") private var defaultTool = "arrow"
     @AppStorage("rememberTool") private var rememberTool = false
     @AppStorage("snapHighlight") private var snapHighlight = true
+    @AppStorage("ocrEngine") private var ocrEngine = "builtin"
+    @AppStorage("ocrEndpoint") private var ocrEndpoint = ""
+    @AppStorage("ocrModel") private var ocrModel = ""
+    @AppStorage("ocrPrompt") private var ocrPrompt = ""
+    @AppStorage("ocrAPIKey") private var ocrAPIKey = ""
+    @State private var ocrTestResult = ""
     @AppStorage("freezeScreen") private var freezeScreen = true
     @AppStorage("colorPanel") private var colorPanel = true
     @AppStorage("colorCopyOnPick") private var colorCopyOnPick = true
@@ -568,6 +574,26 @@ struct PreferencesView: View {
                             Text(Locale.current.localizedString(forIdentifier: code) ?? code).tag(code)
                         }
                     }.labelsHidden().frame(width: 200)
+                }
+            }
+            Card(title: "Recognition engine") {
+                Row(title: "Engine", subtitle: "Built-in recognition runs on this Mac. A custom server receives the captured image.", last: ocrEngine != "custom") {
+                    Picker("", selection: $ocrEngine) { Text("Built-in (Apple Vision)").tag("builtin"); Text("Custom server").tag("custom") }.labelsHidden().frame(width: 200)
+                }
+                if ocrEngine == "custom" {
+                    Row(title: "Server address") { TextField("https://api.example.com/v1", text: $ocrEndpoint).textFieldStyle(.roundedBorder).frame(width: 260) }
+                    Row(title: "Model") { TextField("model name", text: $ocrModel).textFieldStyle(.roundedBorder).frame(width: 260) }
+                    Row(title: "Prompt (optional)") { TextField(RemoteOCR.defaultPrompt, text: $ocrPrompt).textFieldStyle(.roundedBorder).frame(width: 260) }
+                    Row(title: "API key (optional)") { SecureField("", text: $ocrAPIKey).textFieldStyle(.roundedBorder).frame(width: 260) }
+                    Row(title: "Connection", subtitle: LocalizedStringKey(ocrTestResult), last: true) {
+                        Button("Test") {
+                            ocrTestResult = L("Testing…")
+                            Task {
+                                do { ocrTestResult = LF("Connected (%d ms)", try await RemoteOCR.test()) }
+                                catch { ocrTestResult = RemoteOCR.describe(error) }
+                            }
+                        }
+                    }
                 }
             }
             RedactionCard()

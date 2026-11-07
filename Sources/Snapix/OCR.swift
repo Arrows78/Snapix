@@ -80,20 +80,40 @@ enum OCR {
     @MainActor
     static func recognizeAndCopy(_ image: CGImage) {
         Toast.show(L("Recognizing…"), duration: 1)
-        recognize(image, removeBreaks: Pref.bool("ocrRemoveBreaks")) { result in
-            guard !result.isEmpty else { Toast.show(L("No text or QR code found"), symbol: "exclamationmark.triangle.fill"); return }
-            NSPasteboard.general.clearContents()
-            NSPasteboard.general.setString(result.clipboardText, forType: .string)
-            Toast.show(result.qrPayloads.isEmpty ? LF("Text copied (%d characters)", result.text.count) : L("QR code copied"), symbol: "checkmark.circle.fill")
-            if Pref.bool("ocrDetectLinks"), let link = links(in: result.clipboardText).first {
-                let alert = NSAlert()
-                alert.messageText = L("Link detected")
-                alert.informativeText = link.absoluteString
-                alert.addButton(withTitle: L("Open Link"))
-                alert.addButton(withTitle: L("Not Now"))
-                NSApp.activate(ignoringOtherApps: true)
-                if alert.runModal() == .alertFirstButtonReturn { NSWorkspace.shared.open(link) }
+        let custom = Pref.string("ocrEngine") == "custom" && RemoteOCR.Config.current.isUsable
+        recognize(image, removeBreaks: Pref.bool("ocrRemoveBreaks")) { local in
+            // QR codes are always read on this Mac; free text goes to the custom server when one is configured.
+            guard custom, local.qrPayloads.isEmpty else { finish(local); return }
+            Toast.show(L("Sending the image to your OCR server…"), duration: 30)
+            Task { @MainActor in
+                do {
+                    var text = try await RemoteOCR.recognize(image)
+                    if Pref.bool("ocrRemoveBreaks") { text = text.replacingOccurrences(of: "\n", with: " ") }
+                    finish(Result(text: text, qrPayloads: []))
+                } catch {
+                    Toast.show(RemoteOCR.describe(error) + " · " + L("using the built-in recognition"), duration: 3.5, symbol: "exclamationmark.triangle.fill")
+                    try? await Task.sleep(nanoseconds: 1_200_000_000)
+                    finish(local)
+                }
             }
+        }
+    }
+
+    /// Puts the result on the clipboard and, when asked, offers to open the first link in it.
+    @MainActor
+    private static func finish(_ result: Result) {
+        guard !result.isEmpty else { Toast.show(L("No text or QR code found"), symbol: "exclamationmark.triangle.fill"); return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(result.clipboardText, forType: .string)
+        Toast.show(result.qrPayloads.isEmpty ? LF("Text copied (%d characters)", result.text.count) : L("QR code copied"), symbol: "checkmark.circle.fill")
+        if Pref.bool("ocrDetectLinks"), let link = links(in: result.clipboardText).first {
+            let alert = NSAlert()
+            alert.messageText = L("Link detected")
+            alert.informativeText = link.absoluteString
+            alert.addButton(withTitle: L("Open Link"))
+            alert.addButton(withTitle: L("Not Now"))
+            NSApp.activate(ignoringOtherApps: true)
+            if alert.runModal() == .alertFirstButtonReturn { NSWorkspace.shared.open(link) }
         }
     }
 }

@@ -326,6 +326,24 @@ enum SelfTest {
         // Application capture geometry.
         check(Capture.union(of: [CGRect(x: 0, y: 0, width: 100, height: 50), CGRect(x: 80, y: 40, width: 100, height: 100)]) == CGRect(x: 0, y: 0, width: 180, height: 140) && Capture.union(of: []) == nil, "union of window frames")
 
+        // Custom OCR server: request and response handling.
+        let rc2 = RemoteOCR.Config(baseURL: " https://api.example.com/v1/ ", model: "vision-1", prompt: "", apiKey: "k")
+        check(rc2.endpoint?.absoluteString == "https://api.example.com/v1/chat/completions" && rc2.isUsable, "OCR endpoint is normalised")
+        check(RemoteOCR.Config(baseURL: "https://x.io/chat/completions", model: "m", prompt: "", apiKey: "").endpoint?.absoluteString == "https://x.io/chat/completions", "OCR endpoint keeps a complete path")
+        check(RemoteOCR.Config(baseURL: "ftp://x", model: "m", prompt: "", apiKey: "").endpoint == nil && !RemoteOCR.Config(baseURL: "https://x.io", model: " ", prompt: "", apiKey: "").isUsable, "OCR rejects bad address or empty model")
+        if let req = try? RemoteOCR.request(rc2, png: Data([1, 2, 3])), let body = req.httpBody, let obj = try? JSONSerialization.jsonObject(with: body) as? [String: Any] {
+            let parts = ((obj["messages"] as? [[String: Any]])?.first?["content"] as? [[String: Any]]) ?? []
+            check(req.value(forHTTPHeaderField: "Authorization") == "Bearer k" && obj["model"] as? String == "vision-1" && parts.count == 2
+                  && ((parts[1]["image_url"] as? [String: Any])?["url"] as? String) == "data:image/png;base64,AQID", "OCR request carries model, key and image")
+        } else { check(false, "OCR request") }
+        check((try? RemoteOCR.parse(Data(#"{"choices":[{"message":{"content":" Hello\nWorld "}}]}"#.utf8))) == "Hello\nWorld", "OCR parses a text answer")
+        check((try? RemoteOCR.parse(Data(#"{"choices":[{"message":{"content":[{"type":"text","text":"A"},{"type":"text","text":"B"}]}}]}"#.utf8))) == "A\nB", "OCR parses a list of parts")
+        var gotMessage = false
+        do { _ = try RemoteOCR.parse(Data(#"{"error":{"message":"bad key"}}"#.utf8)) } catch RemoteOCR.Failure.message(let m) { gotMessage = m == "bad key" } catch {}
+        check(gotMessage, "OCR surfaces a server error message")
+        check(RemoteOCR.pngData(ocrImage.makeImage()!, maxSide: 300).flatMap { NSBitmapImageRep(data: $0)?.pixelsWide } == 300, "OCR image is scaled down")
+        check(!(Pref.backupData()?.contains(Data("ocrAPIKey".utf8)) ?? false), "backups leave out the OCR key")
+
         // Export formats.
         let enc = Exporter.data(for: strip, as: .pdf, scale: 2)
         check(enc.map { $0.starts(with: Data("%PDF".utf8)) } == true, "PDF export")
