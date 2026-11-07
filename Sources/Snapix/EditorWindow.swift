@@ -39,6 +39,8 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
     private let options = OptionsPanel()
     private let colorChip = Chip(), sizeChip = Chip(), zoomChip = Chip()
     private var lastCursorColor: NSColor?
+    /// True when the image changed since it was last copied, saved, pinned or uploaded.
+    private var dirty = false
     private var backdropPopover: NSPopover?
     private var backdropModel: BackdropModel?
 
@@ -269,6 +271,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         add(L("Merge Annotations Into Image"), #selector(rasterizeAction(_:)), symbol: "square.stack.3d.down.right")
         add(L("Erase Text in Selection"), #selector(eraseTextAction(_:)), symbol: "text.badge.minus")
         add(L("Trim Borders"), #selector(trimAction(_:)), symbol: "crop")
+        add(L("Add Empty Space…"), #selector(expandAction(_:)), symbol: "rectangle.expand.vertical")
         add(L("Hide Sensitive Data"), #selector(redactAction(_:)), symbol: "eye.slash")
         add(L("Remove Background"), #selector(cutoutAction(_:)), symbol: "person.crop.circle.badge.minus")
         let presets = NSMenuItem(title: L("Style Presets"), action: nil, keyEquivalent: "")
@@ -379,6 +382,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
     // MARK: State sync
 
     private func documentChanged() {
+        dirty = true
         canvas.documentChanged()
         refreshTitle()
         updateStatus()
@@ -448,7 +452,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
             }
             selected = a?.style ?? canvas.arrowStyle
         case .blur:
-            let icons = ["square.grid.3x3.fill", "drop.fill", "eraser.fill"]
+            let icons = ["square.grid.3x3.fill", "drop.fill", "eraser.fill", "hexagon.fill"]
             opts = BlurMode.allCases.map { OptionsPanel.Option(image: symbol(icons[$0.rawValue]), tip: $0.title) }
             selected = (a?.blur ?? canvas.blurMode).rawValue
         case .rect, .oval:
@@ -530,19 +534,19 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
     @objc func redo(_ sender: Any?) { doc.redo() }
 
     @objc func copy(_ sender: Any?) {
-        if let img = flattened() { Exporter.copy(img, scale: doc.scale) }
+        if let img = flattened() { dirty = false; Exporter.copy(img, scale: doc.scale) }
     }
 
     @objc func saveDocument(_ sender: Any?) {
-        if let img = flattened() { Exporter.save(img, scale: doc.scale) }
+        if let img = flattened() { dirty = false; Exporter.save(img, scale: doc.scale) }
     }
 
     @objc func saveDocumentAs(_ sender: Any?) {
-        if let img = flattened() { Exporter.saveAs(img, scale: doc.scale, window: window) }
+        if let img = flattened() { dirty = false; Exporter.saveAs(img, scale: doc.scale, window: window) }
     }
 
     @objc func uploadImage(_ sender: Any?) {
-        if let img = flattened() { Exporter.upload(img, scale: doc.scale) }
+        if let img = flattened() { dirty = false; Exporter.upload(img, scale: doc.scale) }
     }
 
     @objc private func pinImage(_ sender: Any?) {
@@ -728,6 +732,44 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         }
     }
 
+    /// Asks for a margin per side and a fill, then grows the image; annotations keep their place on the content.
+    @objc func expandAction(_ sender: Any?) {
+        let fields = (0..<4).map { _ -> NSTextField in let f = NSTextField(string: "0"); f.frame.size = NSSize(width: 54, height: 22); return f }
+        let names = [L("Top"), L("Right"), L("Bottom"), L("Left")]
+        let box = NSView(frame: NSRect(x: 0, y: 0, width: 320, height: 56))
+        for (i, f) in fields.enumerated() {
+            let label = NSTextField(labelWithString: names[i])
+            label.font = .systemFont(ofSize: 10); label.textColor = .secondaryLabelColor
+            label.frame = NSRect(x: CGFloat(i) * 62, y: 38, width: 58, height: 14)
+            f.frame.origin = NSPoint(x: CGFloat(i) * 62, y: 14)
+            box.addSubview(label); box.addSubview(f)
+        }
+        let fill = NSPopUpButton(frame: NSRect(x: 0, y: -10, width: 200, height: 24), pullsDown: false)
+        fill.addItems(withTitles: [L("Transparent"), L("White"), L("Black"), L("Current color")])
+        box.addSubview(fill)
+        let alert = NSAlert()
+        alert.messageText = L("Add empty space")
+        alert.informativeText = L("Margins in pixels around the image.")
+        alert.accessoryView = box
+        alert.addButton(withTitle: L("Add"))
+        alert.addButton(withTitle: L("Cancel"))
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        let v = fields.map { max(0, Int($0.stringValue) ?? 0) }
+        guard v.contains(where: { $0 > 0 }) else { return }
+        let color: CGColor? = [nil, CGColor(srgbRed: 1, green: 1, blue: 1, alpha: 1), CGColor(srgbRed: 0, green: 0, blue: 0, alpha: 1), canvas.color.cgColor][fill.indexOfSelectedItem]
+        guard let out = ImageTransform.expanded(doc.state.image, top: v[0], right: v[1], bottom: v[2], left: v[3], fill: color) else {
+            Toast.show(L("The image would be too large"), symbol: "exclamationmark.triangle.fill"); return
+        }
+        doc.mutate { s in
+            s.image = out
+            s.uncrop = nil
+            for i in s.annotations.indices { s.annotations[i].translate(by: CGSize(width: CGFloat(v[3]), height: CGFloat(v[0]))) }
+            s.overlay?.origin.x += CGFloat(v[3])
+            s.overlay?.origin.y += CGFloat(v[0])
+        }
+        fitToWindow()
+    }
+
     @objc func trimAction(_ sender: Any?) {
         if canvas.trimBorders() { fitToWindow(); Toast.show(L("Borders trimmed"), symbol: "checkmark.circle.fill") }
         else { Toast.show(L("Nothing to trim"), symbol: "exclamationmark.triangle.fill") }
@@ -759,6 +801,23 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
     }
 
     // MARK: Closing
+
+    func windowShouldClose(_ sender: NSWindow) -> Bool {
+        guard dirty, Pref.bool("confirmClose"), doc.canUndo else { return true }
+        let alert = NSAlert()
+        alert.messageText = L("Save changes before closing?")
+        alert.informativeText = L("Your edits will be lost if you don't save them.")
+        alert.addButton(withTitle: L("Save"))
+        alert.addButton(withTitle: L("Don't Save"))
+        alert.addButton(withTitle: L("Cancel"))
+        switch alert.runModal() {
+        case .alertFirstButtonReturn:
+            if let img = flattened() { Exporter.save(img, scale: doc.scale) }
+            return true
+        case .alertSecondButtonReturn: return true
+        default: return false
+        }
+    }
 
     private func finishWithEscape() {
         if Pref.bool("escCopy") || Pref.bool("escSave"), let img = flattened() {

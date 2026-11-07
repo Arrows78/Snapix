@@ -232,6 +232,12 @@ struct PreferencesView: View {
     @AppStorage("recordQuality") private var recordQuality = "medium"
     @AppStorage("recordMaxSize") private var recordMaxSize = "native"
     @AppStorage("screenshotCursor") private var screenshotCursor = false
+    @AppStorage("watermarkEnabled") private var watermarkEnabled = false
+    @AppStorage("watermarkText") private var watermarkText = ""
+    @AppStorage("watermarkPosition") private var watermarkPosition = "bottomRight"
+    @AppStorage("watermarkOpacity") private var watermarkOpacity = 0.6
+    @AppStorage("watermarkSize") private var watermarkSize = 4.0
+    @AppStorage("confirmClose") private var confirmClose = true
     @AppStorage("windowShadow") private var windowShadow = false
     @AppStorage("defaultTool") private var defaultTool = "arrow"
     @AppStorage("rememberTool") private var rememberTool = false
@@ -411,6 +417,7 @@ struct PreferencesView: View {
                     Picker("", selection: $defaultTool) { ForEach(Tool.allCases.filter { $0 != .overlay && $0 != .crop }, id: \.rawValue) { Text($0.title).tag($0.rawValue) } }
                         .labelsHidden().frame(width: 180)
                 }
+                ToggleRow("Ask before closing an edited image", "Offers to save when you close the editor window with unsaved changes.", isOn: $confirmClose)
                 ToggleRow("Remember the last tool", "Open the editor with the tool you used last instead of the default one.", isOn: $rememberTool)
                 ToggleRow("Snap shapes to edges in the screenshot (hold ⌥ to disable)", isOn: $snapEdges)
                 ToggleRow("Mouse wheel zooms the image (trackpad scrolls, ⌥ or ⌘ swaps)", isOn: $wheelZoom)
@@ -483,6 +490,20 @@ struct PreferencesView: View {
                     Row(title: "JPEG quality") { Slider(value: $quality, in: 0.3...1).frame(width: 180) }
                 }
                 ToggleRow("Downscale Retina screenshots to 1×", isOn: $downscale, last: true)
+            }
+            Card(title: "Watermark") {
+                ToggleRow("Add a watermark to exported images", "Applied when you copy, save, upload, share or drag an image out of Snapix.", isOn: $watermarkEnabled, last: !watermarkEnabled)
+                if watermarkEnabled {
+                    Row(title: "Text") { TextField("© your name", text: $watermarkText).textFieldStyle(.roundedBorder).frame(width: 220) }
+                    Row(title: "Position") {
+                        Picker("", selection: $watermarkPosition) {
+                            Text("Bottom right").tag("bottomRight"); Text("Bottom left").tag("bottomLeft"); Text("Top right").tag("topRight")
+                            Text("Top left").tag("topLeft"); Text("Center").tag("center")
+                        }.labelsHidden().frame(width: 160)
+                    }
+                    Row(title: "Size") { Slider(value: $watermarkSize, in: 1.5...10).frame(width: 180) }
+                    Row(title: "Opacity", last: true) { Slider(value: $watermarkOpacity, in: 0.1...1).frame(width: 180) }
+                }
             }
             Card(title: "Pins") {
                 ToggleRow("Pins stay on top of other windows", isOn: $pinsOnTop, last: true)

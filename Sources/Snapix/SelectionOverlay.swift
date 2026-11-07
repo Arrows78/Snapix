@@ -328,7 +328,7 @@ private final class OverlayView: NSView {
         case 53: owner.finish(.cancelled)
         case 36, 76: if let r = locked { confirm(r) }
         case 49: spaceDown = true
-        case 125, 126 where mode == .element:
+        case 125 where mode == .element, 126 where mode == .element:
             elementIndex = max(0, min(elementChain.count - 1, elementIndex + (event.keyCode == 126 ? 1 : -1)))
             needsDisplay = true
         case 123, 124, 125, 126:

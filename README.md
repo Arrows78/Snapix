@@ -48,6 +48,8 @@ Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 - **Backdrop** (`K`): padding, inner and outer radius, shadow, gradient or solid, angle, 16 presets, optional window title bar, aspect ratio (1:1, 4:3, 16:9, 9:16…), randomize.
 - **Snapping**: edge snapping for boxes and crop (hold ⌥ to bypass), and *Snap to Similar Region* (right-click a shape).
 - **Image**: resize, rotate and flip, trim uniform borders, crop (Return to apply) with Uncrop, merge annotations into the image, print, drag the result out of the editor into other apps.
+- **More editing**: hexagonal pixelation, *Add Empty Space* around the image, background patterns (dots, grid, lines) and a confirmation before closing an edited image.
+- **Watermark**: an optional text stamp (position, size, opacity) added to everything that leaves the app.
 - **Image overlay**: lay a clipboard image over the screenshot, drag to align, a slider sets the opacity.
 - **Hide sensitive data** (More menu): finds emails, card numbers, IBANs, phone numbers, API tokens and IP addresses with on-device OCR and pixelates each one.
 - **Remove background**: isolates the main subject on a transparent background (on-device), in the editor or straight from a capture; combine it with the backdrop.

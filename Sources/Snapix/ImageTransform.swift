@@ -17,6 +17,16 @@ enum ImageTransform {
         return ctx.makeImage()
     }
 
+    /// Adds empty space around the image; `fill` nil leaves it transparent.
+    static func expanded(_ image: CGImage, top: Int, right: Int, bottom: Int, left: Int, fill: CGColor?) -> CGImage? {
+        let w = image.width + left + right, h = image.height + top + bottom
+        guard left >= 0, right >= 0, top >= 0, bottom >= 0, w > 0, h > 0, w * h <= 200_000_000, let ctx = context(w, h) else { return nil }
+        if let fill { ctx.setFillColor(fill); ctx.fill(CGRect(x: 0, y: 0, width: w, height: h)) }
+        // CoreGraphics' origin is bottom-left: the bottom margin is the y offset.
+        ctx.draw(image, in: CGRect(x: left, y: bottom, width: image.width, height: image.height))
+        return ctx.makeImage()
+    }
+
     static func flipped(_ image: CGImage, horizontal: Bool) -> CGImage? {
         let w = image.width, h = image.height
         guard let ctx = context(w, h) else { return nil }

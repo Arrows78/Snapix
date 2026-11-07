@@ -20,6 +20,7 @@ struct Shot {
 enum Exporter {
     /// Applies the "downscale Retina" preference.
     static func prepared(_ image: CGImage, scale: CGFloat) -> (image: CGImage, scale: CGFloat) {
+        let image = Watermark.apply(to: image)
         guard Pref.bool("downscale"), scale > 1 else { return (image, scale) }
         let w = Int((CGFloat(image.width) / scale).rounded()), h = Int((CGFloat(image.height) / scale).rounded())
         guard let ctx = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: 0, space: Renderer.sRGB,

@@ -125,6 +125,32 @@ enum SelfTest {
         check(Exporter.encode(strip)?.ext == "heic", "HEIC encoding")
         UserDefaults.standard.removeObject(forKey: "format")
 
+        // Empty space around an image.
+        if let ex = ImageTransform.expanded(strip, top: 5, right: 7, bottom: 3, left: 2, fill: CGColor(srgbRed: 1, green: 0, blue: 0, alpha: 1)) {
+            check(ex.width == 409 && ex.height == 108, "expand size \(ex.width)x\(ex.height)")
+            check(PixelBuffer(ex)?.color(x: 2 + 5, y: 5 + 3)?.hexValue == PixelBuffer(strip)?.color(x: 5, y: 3)?.hexValue, "expand keeps content offset")
+            check(PixelBuffer(ex)?.color(x: 0, y: 0)?.hexValue == 0xFF0000, "expand fills the margin")
+        } else { check(false, "expand") }
+
+        // Watermark.
+        UserDefaults.standard.set(true, forKey: "watermarkEnabled"); UserDefaults.standard.set("© Test", forKey: "watermarkText")
+        UserDefaults.standard.set("bottomRight", forKey: "watermarkPosition")
+        let plainBase = page(rows: 0..<100)
+        let stamped = Watermark.apply(to: plainBase)
+        var changedInCorner = false, changedElsewhere = false
+        if let a = PixelBuffer(plainBase), let b = PixelBuffer(stamped) {
+            for y in 0..<100 { for x in 0..<400 where a.color(x: x, y: y)?.hexValue != b.color(x: x, y: y)?.hexValue {
+                if x > 200 && y > 60 { changedInCorner = true } else { changedElsewhere = true }
+            } }
+        }
+        check(changedInCorner && !changedElsewhere, "watermark marks only the bottom-right corner")
+        UserDefaults.standard.set(false, forKey: "watermarkEnabled")
+        check(Watermark.apply(to: plainBase) === plainBase, "disabled watermark leaves the image untouched")
+        UserDefaults.standard.removeObject(forKey: "watermarkEnabled"); UserDefaults.standard.removeObject(forKey: "watermarkText")
+
+        // Backdrop pattern decoding.
+        check((try? JSONDecoder().decode(BackdropConfig.self, from: old))?.pattern == nil, "old backdrop settings have no pattern")
+
         // Export formats.
         let enc = Exporter.data(for: strip, as: .pdf, scale: 2)
         check(enc.map { $0.starts(with: Data("%PDF".utf8)) } == true, "PDF export")

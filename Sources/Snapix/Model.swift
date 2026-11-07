@@ -73,8 +73,8 @@ enum Tool: String, CaseIterable {
 }
 
 enum BlurMode: Int, CaseIterable {
-    case pixelate, gaussian, erase
-    var title: String { L(["Pixelate", "Gaussian blur", "Erase"][rawValue]) }
+    case pixelate, gaussian, erase, hexagonal
+    var title: String { L(["Pixelate", "Gaussian blur", "Erase", "Hexagonal pixelation"][rawValue]) }
 }
 
 struct Annotation: Identifiable {
@@ -205,6 +205,8 @@ struct BackdropConfig: Codable, Equatable {
     var ratio: CGFloat?
     /// Draws a window title bar (three dots) above the screenshot. Optional so settings saved by older versions still decode.
     var windowFrame: Bool?
+    /// Texture over the background: 1 dots, 2 grid, 3 diagonal lines. Optional for the same reason as `windowFrame`.
+    var pattern: Int?
 
     static let ratios: [(name: String, value: CGFloat?)] = [
         ("Auto", nil), ("1:1", 1), ("4:3", 4.0 / 3), ("3:2", 1.5), ("16:9", 16.0 / 9), ("2:1", 2), ("9:16", 9.0 / 16),

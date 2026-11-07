@@ -89,6 +89,9 @@ struct BackdropPanel: View {
                     if model.cfg.gradient { ColorPicker("To", selection: colorBinding(\.toHex)) }
                 }
                 if model.cfg.gradient { slider("Angle", $model.cfg.angle, 0...360) }
+                Picker("Pattern", selection: Binding(get: { model.cfg.pattern ?? 0 }, set: { model.cfg.pattern = $0 == 0 ? nil : $0 })) {
+                    Text("None").tag(0); Text("Dots").tag(1); Text("Grid").tag(2); Text("Lines").tag(3)
+                }
                 Picker("Ratio", selection: Binding(get: { model.cfg.ratio ?? 0 }, set: { model.cfg.ratio = $0 > 0 ? $0 : nil })) {
                     ForEach(Array(BackdropConfig.ratios.enumerated()), id: \.offset) { _, r in Text(LocalizedStringKey(r.name)).tag(r.value ?? 0) }
                 }

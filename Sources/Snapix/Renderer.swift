@@ -124,6 +124,7 @@ enum Renderer {
             ctx.setFillColor(b.from.cgColor)
             ctx.fill(full)
         }
+        if let kind = b.pattern, kind > 0 { drawPattern(kind, in: full, ctx: ctx) }
         ctx.restoreGState()
 
         if b.shadow {
@@ -135,6 +136,30 @@ enum Renderer {
             ctx.fillPath()
             ctx.restoreGState()
         }
+    }
+
+    /// A subtle texture (white at low opacity) laid over the backdrop; the context is top-left based.
+    static func drawPattern(_ kind: Int, in r: CGRect, ctx: CGContext) {
+        let step = max(14, (min(r.width, r.height) / 26).rounded())
+        ctx.saveGState()
+        ctx.setFillColor(NSColor.white.withAlphaComponent(0.22).cgColor)
+        ctx.setStrokeColor(NSColor.white.withAlphaComponent(0.16).cgColor)
+        ctx.setLineWidth(max(1, step / 14))
+        switch kind {
+        case 1:
+            let d = max(2, step / 7)
+            for y in stride(from: step / 2, to: r.height, by: step) {
+                for x in stride(from: step / 2, to: r.width, by: step) { ctx.fillEllipse(in: CGRect(x: r.minX + x - d / 2, y: r.minY + y - d / 2, width: d, height: d)) }
+            }
+        case 2:
+            for x in stride(from: 0, through: r.width, by: step) { ctx.move(to: CGPoint(x: r.minX + x, y: r.minY)); ctx.addLine(to: CGPoint(x: r.minX + x, y: r.maxY)) }
+            for y in stride(from: 0, through: r.height, by: step) { ctx.move(to: CGPoint(x: r.minX, y: r.minY + y)); ctx.addLine(to: CGPoint(x: r.maxX, y: r.minY + y)) }
+            ctx.strokePath()
+        default:
+            for k in stride(from: -r.height, through: r.width, by: step) { ctx.move(to: CGPoint(x: r.minX + k, y: r.maxY)); ctx.addLine(to: CGPoint(x: r.minX + k + r.height, y: r.minY)) }
+            ctx.strokePath()
+        }
+        ctx.restoreGState()
     }
 
     /// A flat dark title bar with the three window buttons, occupying y in -height..0 of the translated context.
@@ -377,6 +402,11 @@ enum Renderer {
         if a.blur == .pixelate {
             out = src.applyingFilter("CIPixellate", parameters: [
                 kCIInputScaleKey: max(4, a.width),
+                kCIInputCenterKey: CIVector(x: ciRect.minX, y: ciRect.minY),
+            ]).cropped(to: ciRect)
+        } else if a.blur == .hexagonal {
+            out = src.applyingFilter("CIHexagonalPixellate", parameters: [
+                kCIInputScaleKey: max(5, a.width * 1.2),
                 kCIInputCenterKey: CIVector(x: ciRect.minX, y: ciRect.minY),
             ]).cropped(to: ciRect)
         } else {
