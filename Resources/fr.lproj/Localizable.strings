@@ -367,3 +367,6 @@
 "Delete from Library" = "Supprimer de la bibliothèque";
 "Deleted from the Library" = "Supprimée de la bibliothèque";
 "Close All" = "Tout fermer";
+"Microphone access denied: recording without it" = "Accès au micro refusé : enregistrement sans le micro";
+"Record the microphone (macOS 15 or later)" = "Enregistrer le micro (macOS 15 ou plus)";
+"The voice is a separate audio track; players that show a track picker let you choose it." = "La voix est une piste audio séparée ; les lecteurs qui proposent un sélecteur de piste permettent de la choisir.";

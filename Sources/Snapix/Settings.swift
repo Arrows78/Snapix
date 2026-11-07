@@ -41,6 +41,7 @@ enum Pref {
         "redact.secret": true, "redact.phone": true, "redact.ipAddress": true,
         "recordAudio": false,
         "recordCursor": true,
+        "recordMicrophone": false,
         "recordReveal": false,
         "captureDelay": 3,
         "uploadURL": "",

@@ -9,10 +9,11 @@ private final class FrameWriter: NSObject, SCStreamOutput, SCStreamDelegate, @un
     private let writer: AVAssetWriter
     private let video: AVAssetWriterInput
     private let audio: AVAssetWriterInput?
+    private let mic: AVAssetWriterInput?
     private var sessionStarted = false
     var onError: ((Error) -> Void)?
 
-    init(url: URL, width: Int, height: Int, audio withAudio: Bool) throws {
+    init(url: URL, width: Int, height: Int, audio withAudio: Bool, microphone withMic: Bool) throws {
         writer = try AVAssetWriter(outputURL: url, fileType: .mp4)
         video = AVAssetWriterInput(mediaType: .video, outputSettings: [
             AVVideoCodecKey: AVVideoCodecType.h264,
@@ -30,6 +31,16 @@ private final class FrameWriter: NSObject, SCStreamOutput, SCStreamDelegate, @un
             audio = a
         } else {
             audio = nil
+        }
+        if withMic {
+            let m = AVAssetWriterInput(mediaType: .audio, outputSettings: [
+                AVFormatIDKey: kAudioFormatMPEG4AAC, AVNumberOfChannelsKey: 1, AVSampleRateKey: 48_000, AVEncoderBitRateKey: 96_000,
+            ])
+            m.expectsMediaDataInRealTime = true
+            writer.add(m)
+            mic = m
+        } else {
+            mic = nil
         }
         super.init()
     }
@@ -50,7 +61,8 @@ private final class FrameWriter: NSObject, SCStreamOutput, SCStreamDelegate, @un
         case .audio:
             if sessionStarted, let audio, audio.isReadyForMoreMediaData { audio.append(sb) }
         default:
-            break
+            // `.microphone` only exists on macOS 15; compare the raw value so the file still builds for macOS 14.
+            if type.rawValue == 2, sessionStarted, let mic, mic.isReadyForMoreMediaData { mic.append(sb) }
         }
     }
 
@@ -61,6 +73,7 @@ private final class FrameWriter: NSObject, SCStreamOutput, SCStreamDelegate, @un
         guard sessionStarted else { writer.cancelWriting(); return false }
         video.markAsFinished()
         audio?.markAsFinished()
+        mic?.markAsFinished()
         await writer.finishWriting()
         return writer.status == .completed
     }
@@ -104,8 +117,13 @@ final class Recorder {
         guard w >= 16, h >= 16 else { throw CaptureError.notFound }
 
         let withAudio = format == .video && Pref.bool("recordAudio")
+        var withMic = false
+        if #available(macOS 15.0, *), format == .video, Pref.bool("recordMicrophone") {
+            withMic = await Self.microphoneAllowed()
+            if !withMic { Toast.show(L("Microphone access denied: recording without it"), duration: 3, symbol: "exclamationmark.triangle.fill") }
+        }
         let url = Self.temporaryURL(for: format)
-        let writer = try FrameWriter(url: url, width: w, height: h, audio: withAudio)
+        let writer = try FrameWriter(url: url, width: w, height: h, audio: withAudio, microphone: withMic)
         writer.onError = { [weak self] _ in Task { @MainActor in await self?.stop() } }
 
         let cfg = SCStreamConfiguration()
@@ -116,12 +134,14 @@ final class Recorder {
         cfg.minimumFrameInterval = CMTime(value: 1, timescale: format == .gif ? 15 : 30)
         cfg.queueDepth = 6
         if withAudio { cfg.capturesAudio = true; cfg.excludesCurrentProcessAudio = true }
+        if #available(macOS 15.0, *), withMic { cfg.captureMicrophone = true }
 
         let filter = Capture.filter(display: display, content: content, excludingSelf: true)
         let s = SCStream(filter: filter, configuration: cfg, delegate: writer)
         let queue = DispatchQueue(label: "snapix.recorder")
         try s.addStreamOutput(writer, type: .screen, sampleHandlerQueue: queue)
         if withAudio { try s.addStreamOutput(writer, type: .audio, sampleHandlerQueue: queue) }
+        if #available(macOS 15.0, *), withMic { try s.addStreamOutput(writer, type: .microphone, sampleHandlerQueue: queue) }
         try await s.startCapture()
 
         stream = s
@@ -150,6 +170,14 @@ final class Recorder {
             RecordingReview.show(url: url) { [weak self] file in self?.finalize(file) }
         } else {
             finalize(url)
+        }
+    }
+
+    private static func microphoneAllowed() async -> Bool {
+        switch AVCaptureDevice.authorizationStatus(for: .audio) {
+        case .authorized: return true
+        case .notDetermined: return await AVCaptureDevice.requestAccess(for: .audio)
+        default: return false
         }
     }
 

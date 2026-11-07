@@ -227,6 +227,7 @@ struct PreferencesView: View {
     @AppStorage("hideDesktopIcons") private var hideDesktopIcons = false
     @AppStorage("recordAudio") private var recordAudio = false
     @AppStorage("recordCursor") private var recordCursor = true
+    @AppStorage("recordMicrophone") private var recordMicrophone = false
     @AppStorage("recordReveal") private var recordReveal = false
     @AppStorage("recordCountdown") private var recordCountdown = 3
     @AppStorage("recordReview") private var recordReview = true
@@ -370,6 +371,7 @@ struct PreferencesView: View {
                 }
                 ToggleRow("Record the mouse cursor", isOn: $recordCursor)
                 ToggleRow("Record system audio (MP4 only)", isOn: $recordAudio)
+                ToggleRow("Record the microphone (macOS 15 or later)", "The voice is a separate audio track; players that show a track picker let you choose it.", isOn: $recordMicrophone)
                 ToggleRow("Review and trim before saving", "Opens the recording in a player where you can cut the start and the end.", isOn: $recordReview)
                 ToggleRow("Show the file in Finder when done", isOn: $recordReveal, last: true)
             }

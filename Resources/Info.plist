@@ -33,6 +33,8 @@
 	<true/>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Snapix can record your voice along with a screen recording.</string>
 	<key>NSScreenCaptureUsageDescription</key>
 	<string>Snapix needs to record your screen to take screenshots.</string>
 	<key>LSApplicationCategoryType</key>
