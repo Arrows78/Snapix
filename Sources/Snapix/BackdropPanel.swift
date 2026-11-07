@@ -23,6 +23,24 @@ final class BackdropModel: ObservableObject {
     }
 
     @Published var hasImage = false
+    @Published var presets = BackdropPreset.saved()
+
+    func apply(_ p: BackdropPreset) {
+        var c = p.config
+        c.enabled = true
+        cfg = c
+    }
+
+    func savePreset(named name: String) -> Bool {
+        let ok = BackdropPreset.save(BackdropPreset(name: name, config: cfg))
+        presets = BackdropPreset.saved()
+        return ok
+    }
+
+    func deletePreset(_ name: String) {
+        BackdropPreset.delete(named: name)
+        presets = BackdropPreset.saved()
+    }
 
     func reverse() { (cfg.fromHex, cfg.toHex) = (cfg.toHex, cfg.fromHex) }
 
@@ -68,6 +86,23 @@ struct BackdropPanel: View {
         }
     }
 
+    private func askPresetName() {
+        let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 220, height: 24))
+        field.placeholderString = L("Style name")
+        let alert = NSAlert()
+        alert.messageText = L("Save current style")
+        alert.informativeText = L("Padding, colours, corners, shadow and pattern are stored under this name.")
+        alert.accessoryView = field
+        alert.addButton(withTitle: L("Save"))
+        alert.addButton(withTitle: L("Cancel"))
+        alert.window.initialFirstResponder = field
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        let name = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return }
+        if !model.savePreset(named: name) { Toast.show(LF("You can save up to %d styles. Delete one first.", BackdropPreset.limit), duration: 3, symbol: "exclamationmark.triangle.fill") }
+        else { Toast.show(LF("Style “%@” saved", name), symbol: "checkmark.circle.fill") }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Toggle("Backdrop (K)", isOn: $model.cfg.enabled).toggleStyle(.switch).font(.headline)
@@ -110,6 +145,18 @@ struct BackdropPanel: View {
                     }
                     .buttonStyle(.plain)
                 }
+            }
+            HStack {
+                Menu("My Styles") {
+                    if model.presets.isEmpty { Text("No saved styles yet") }
+                    ForEach(model.presets, id: \.name) { p in Button(p.name) { model.apply(p) } }
+                    Divider()
+                    Button("Save Current Style…") { askPresetName() }
+                    if !model.presets.isEmpty {
+                        Menu("Delete Style") { ForEach(model.presets, id: \.name) { p in Button(p.name, role: .destructive) { model.deletePreset(p.name) } } }
+                    }
+                }
+                .menuStyle(.borderlessButton).fixedSize()
             }
             HStack {
                 Button("Randomize", action: model.randomize).disabled(!model.cfg.enabled)

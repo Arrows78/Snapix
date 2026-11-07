@@ -188,6 +188,20 @@ enum SelfTest {
         let refit = CropGeometry.refit(CGRect(x: 50, y: 50, width: 200, height: 100), ratio: 1, bounds: bnds)
         check(refit.width == refit.height && bnds.contains(refit) && abs(refit.midX - 150) < 1, "crop refit keeps the centre")
 
+        // Backdrop presets.
+        let bs = UserDefaults(suiteName: "snapix.selftest5")!
+        bs.removePersistentDomain(forName: "snapix.selftest5")
+        var cfgA = BackdropConfig(); cfgA.padding = 99; cfgA.pattern = 2
+        BackdropPreset.save(BackdropPreset(name: "A", config: cfgA), in: bs)
+        BackdropPreset.save(BackdropPreset(name: "A", config: BackdropConfig()), in: bs)
+        check(BackdropPreset.saved(in: bs).count == 1 && BackdropPreset.saved(in: bs)[0].config.padding == 64, "backdrop preset replaced by name")
+        for i in 0..<BackdropPreset.limit { BackdropPreset.save(BackdropPreset(name: "P\(i)", config: cfgA), in: bs) }
+        check(BackdropPreset.saved(in: bs).count == BackdropPreset.limit, "backdrop preset limit")
+        check(!BackdropPreset.save(BackdropPreset(name: "extra", config: cfgA), in: bs), "backdrop preset over the limit refused")
+        BackdropPreset.delete(named: "P0", in: bs)
+        check(BackdropPreset.saved(in: bs).count == BackdropPreset.limit - 1 && BackdropPreset.saved(in: bs).first(where: { $0.name == "P1" })?.config.pattern == 2, "backdrop preset delete keeps the others")
+        bs.removePersistentDomain(forName: "snapix.selftest5")
+
         // Export formats.
         let enc = Exporter.data(for: strip, as: .pdf, scale: 2)
         check(enc.map { $0.starts(with: Data("%PDF".utf8)) } == true, "PDF export")

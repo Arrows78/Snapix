@@ -458,3 +458,9 @@
 "Clear the whole Library?" = "Vider toute la bibliothèque ?";
 "Every screenshot kept in the Library is deleted. Files you saved are not touched." = "Toutes les captures de la bibliothèque sont supprimées. Les fichiers enregistrés ne sont pas touchés.";
 "Free" = "Libre";
+"My Styles" = "Mes styles";
+"No saved styles yet" = "Aucun style enregistré";
+"Delete Style" = "Supprimer un style";
+"Style name" = "Nom du style";
+"Padding, colours, corners, shadow and pattern are stored under this name." = "La marge, les couleurs, les coins, l'ombre et le motif sont enregistrés sous ce nom.";
+"You can save up to %d styles. Delete one first." = "Vous pouvez enregistrer jusqu'à %d styles. Supprimez-en un d'abord.";
