@@ -310,6 +310,19 @@ enum SelfTest {
         check(wp.enabled && wp.glow == true && wp.fromHex == 0x0F2027 && wp.pattern == 1 && BackdropConfig().applying(wallpaper: 99) == BackdropConfig(), "wallpaper preset applies colours, glow and pattern")
         check((try? JSONDecoder().decode(BackdropConfig.self, from: old))?.tape == nil, "old backdrop settings have no tape")
 
+        // Colour formats and recent colours.
+        let amber = NSColor(hex: 0xFFC200)
+        check(ColorFormat.android.string(for: amber) == "0xFFFFC200" && ColorFormat.uikit.string(for: amber) == "UIColor(red: 1.00, green: 0.76, blue: 0.00, alpha: 1.00)", "colour formats android and uikit")
+        let rc = UserDefaults(suiteName: "snapix.selftest7")!
+        rc.removePersistentDomain(forName: "snapix.selftest7")
+        for h in 1...10 { RecentColors.add(UInt32(h), in: rc) }
+        RecentColors.add(5, in: rc)
+        check(RecentColors.all(in: rc).count == RecentColors.limit && RecentColors.all(in: rc).first == 5 && RecentColors.all(in: rc).filter { $0 == 5 }.count == 1, "recent colours newest first, unique, capped")
+        rc.removePersistentDomain(forName: "snapix.selftest7")
+        UserDefaults.standard.set(999_999, forKey: "scrollMaxHeight"); check(Stitcher.maxHeight == 60_000, "scroll height is capped")
+        UserDefaults.standard.set(15_000, forKey: "scrollMaxHeight"); check(Stitcher.maxHeight == 15_000, "scroll height preference")
+        UserDefaults.standard.removeObject(forKey: "scrollMaxHeight")
+
         // Export formats.
         let enc = Exporter.data(for: strip, as: .pdf, scale: 2)
         check(enc.map { $0.starts(with: Data("%PDF".utf8)) } == true, "PDF export")

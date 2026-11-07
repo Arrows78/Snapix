@@ -268,6 +268,9 @@ struct PreferencesView: View {
     @AppStorage("defaultTool") private var defaultTool = "arrow"
     @AppStorage("rememberTool") private var rememberTool = false
     @AppStorage("snapHighlight") private var snapHighlight = true
+    @AppStorage("colorPanel") private var colorPanel = true
+    @AppStorage("colorCopyOnPick") private var colorCopyOnPick = true
+    @AppStorage("scrollMaxHeight") private var scrollMaxHeight = 20000
     @AppStorage("toolStyleMemory") private var toolStyleMemory = true
     @AppStorage("recordMicrophone") private var recordMicrophone = false
     @AppStorage("recordReveal") private var recordReveal = false
@@ -422,6 +425,16 @@ struct PreferencesView: View {
                 ToggleRow("Hide desktop icons", "Files on the desktop stay out of screenshots and recordings.", isOn: $hideDesktopIcons)
                 Row(title: "Delayed screenshot timer", last: true) {
                     Picker("", selection: $captureDelay) { ForEach([3, 5, 10, 15], id: \.self) { Text("\($0) s").tag($0) } }.labelsHidden().frame(width: 100)
+                }
+            }
+            Card(title: "Color picker") {
+                ToggleRow("Copy the color when picked", isOn: $colorCopyOnPick)
+                ToggleRow("Show the color panel", "A card lists the color in every format and keeps the recent ones.", isOn: $colorPanel, last: true)
+            }
+            Card(title: "Scrolling capture") {
+                Row(title: "Maximum height", subtitle: "Taller pages stop at this height, in pixels.", last: true) {
+                    Picker("", selection: $scrollMaxHeight) { Text("10 000").tag(10000); Text("20 000").tag(20000); Text("40 000").tag(40000); Text("60 000").tag(60000) }
+                        .labelsHidden().frame(width: 120)
                 }
             }
             Card(title: "Selection overlay") {

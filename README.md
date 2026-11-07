@@ -33,7 +33,7 @@ Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 - **Area**: frozen screen, pixel loupe, live W×H.
 - **Interface element**: hover a button, toolbar or panel and click to capture exactly its bounds (↑ / ↓ move to the parent or child element; needs the Accessibility permission).
 - **Fullscreen**, **any window** (hover to pick), **active window**, **delayed (3–15 s)**, **repeat last area**.
-- **Scrolling capture**: automatic down or up (synthetic scroll and frame stitching), or manual (scroll either way, press Done).
+- **Scrolling capture**: automatic down or up (synthetic scroll and frame stitching), or manual (scroll either way, press Done), with an adjustable maximum height.
 - **Adjustable selection** (optional): handles, move by dragging or holding Space, arrow-key nudge, Return or double-click to capture.
 - **Screen recording**: select an area, a window or the whole screen and record it to **MP4** (system audio and microphone optional, cursor on or off, frame rate, quality and maximum resolution) or an animated **GIF**. A red frame and a small timer pill show what is recorded; pause and resume from the pill, press the shortcut again or click Stop. A draggable camera bubble (circle or square, size, corner, mirror) can be added, clicks can be highlighted with a ring and typed keys shown in a pill (both end up in the video). An optional countdown precedes the recording and a review window lets you trim it, change its speed (0.5× to 4×), mute it or save it as a GIF instead. The file lands in your screenshots folder and on the clipboard.
 - **Capture options**: include the mouse pointer and the window shadow, separate file name templates for screenshots and recordings, HEIC output, and recording frame rate (15/30/60), quality and maximum resolution.
@@ -62,7 +62,7 @@ Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 ### 🔎 Analysis
 
 - **OCR and QR / barcodes** (Vision) from a dragged area or the editor, with an optional *remove line breaks* and an offer to open links found in the text.
-- **Colour picker**: HEX, RGB, CSS, HSL, Swift and C# output.
+- **Colour picker**: HEX, RGB, CSS, HSL, Swift, C#, Android and UIKit output, in a card that lists every format and keeps the recent colours.
 - **Contrast checker**: WCAG ratio and APCA Lc. Pick two colours, or analyse a region in the editor.
 
 ### 📤 Output

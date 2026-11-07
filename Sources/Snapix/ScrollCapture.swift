@@ -16,7 +16,11 @@ final class Stitcher {
     private var accumulated: [UInt8]
     private(set) var height: Int
     private var prev: Frame
-    static let maxHeight = 20_000
+    /// Tallest stitched image in pixels: the "scrollMaxHeight" preference, 20 000 by default.
+    static var maxHeight: Int {
+        let v = UserDefaults.standard.integer(forKey: "scrollMaxHeight")
+        return v > 0 ? min(v, 60_000) : 20_000
+    }
 
     init?(first: CGImage) {
         guard let f = Stitcher.decode(first) else { return nil }

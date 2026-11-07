@@ -530,3 +530,12 @@
 "Aurora" = "Aurore";
 "Midnight" = "Minuit";
 "Graphite" = "Graphite";
+"Click a value to copy it" = "Cliquez sur une valeur pour la copier";
+"Recent" = "Récentes";
+"Color picker" = "Sélecteur de couleur";
+"Copy the color when picked" = "Copier la couleur au pointage";
+"Show the color panel" = "Afficher le panneau de couleur";
+"A card lists the color in every format and keeps the recent ones." = "Une carte liste la couleur dans tous les formats et garde les récentes.";
+"Scrolling capture" = "Capture défilante";
+"Maximum height" = "Hauteur maximale";
+"Taller pages stop at this height, in pixels." = "Les pages plus hautes s'arrêtent à cette hauteur, en pixels.";

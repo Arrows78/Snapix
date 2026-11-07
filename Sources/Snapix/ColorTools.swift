@@ -80,7 +80,7 @@ enum ColorMath {
 }
 
 enum ColorFormat: String, CaseIterable {
-    case hex, hexNoHash, rgb, rgba, hsl, swift, csharp
+    case hex, hexNoHash, rgb, rgba, hsl, swift, csharp, android, uikit
 
     var title: String {
         switch self {
@@ -91,6 +91,8 @@ enum ColorFormat: String, CaseIterable {
         case .hsl: return "CSS  hsl(45, 100%, 50%)"
         case .swift: return "Swift  NSColor(...)"
         case .csharp: return "C#  Color.FromArgb(...)"
+        case .android: return "Android 0xFFFFC200"
+        case .uikit: return "UIColor(red: 1.00, green: 0.76, ...)"
         }
     }
 
@@ -111,6 +113,22 @@ enum ColorFormat: String, CaseIterable {
         case .swift:
             return String(format: "NSColor(srgbRed: %.3f, green: %.3f, blue: %.3f, alpha: 1)", c.redComponent, c.greenComponent, c.blueComponent)
         case .csharp: return "Color.FromArgb(\(r), \(g), \(b))"
+        case .android: return String(format: "0xFF%02X%02X%02X", r, g, b)
+        case .uikit: return String(format: "UIColor(red: %.2f, green: %.2f, blue: %.2f, alpha: 1.00)", c.redComponent, c.greenComponent, c.blueComponent)
+        }
+    }
+
+    /// Short name for the colour panel.
+    var label: String {
+        switch self {
+        case .hex, .hexNoHash: return "HEX"
+        case .rgb: return "RGB"
+        case .rgba: return "CSS"
+        case .hsl: return "HSL"
+        case .swift: return "Swift"
+        case .csharp: return "C#"
+        case .android: return "Android"
+        case .uikit: return "UIKit"
         }
     }
 
@@ -227,10 +245,14 @@ enum ColorTools {
 
     static func pickAndCopy() {
         sample { color in
-            let text = ColorFormat.current.string(for: color)
-            NSPasteboard.general.clearContents()
-            NSPasteboard.general.setString(text, forType: .string)
-            Toast.show(LF("Copied %@", text), symbol: "checkmark.circle.fill")
+            RecentColors.add(color.hexValue)
+            if Pref.bool("colorCopyOnPick") {
+                let text = ColorFormat.current.string(for: color)
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(text, forType: .string)
+                if !Pref.bool("colorPanel") { Toast.show(LF("Copied %@", text), symbol: "checkmark.circle.fill") }
+            }
+            if Pref.bool("colorPanel") { ColorPanel.show(color) }
         }
     }
 
