@@ -13,6 +13,7 @@ final class CanvasView: NSView, NSTextFieldDelegate {
     /// Width / height the crop box is held to (nil = free).
     var cropRatio: CGFloat? { didSet { if let r = cropRect { cropRect = CropGeometry.refit(r, ratio: cropRatio, bounds: imageBounds); needsDisplay = true } } }
     var dashed = false { didSet { applyToSelection { $0.dashed = dashed } } }
+    var dotted = false { didSet { applyToSelection { $0.dotted = dotted } } }
     var fontSize: CGFloat = 28
 
     var onCursorMove: ((CGPoint?, NSColor?) -> Void)?
@@ -235,6 +236,7 @@ final class CanvasView: NSView, NSTextFieldDelegate {
         a.points = [p]
         a.filled = filled
         a.dashed = dashed
+        a.dotted = dotted
         a.style = arrowStyle
         a.blur = blurMode
         a.fontSize = fontSize

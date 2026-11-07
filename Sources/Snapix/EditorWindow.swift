@@ -457,11 +457,13 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
             selected = (a?.blur ?? canvas.blurMode).rawValue
         case .rect, .oval:
             opts = [OptionsPanel.Option(image: symbol("square"), tip: L("Outline")), OptionsPanel.Option(image: symbol("square.fill"), tip: L("Filled")),
-                    OptionsPanel.Option(image: symbol("square.dashed"), tip: L("Dashed"))]
-            selected = (a?.dashed ?? canvas.dashed) ? 2 : ((a?.filled ?? canvas.filled) ? 1 : 0)
+                    OptionsPanel.Option(image: symbol("square.dashed"), tip: L("Dashed")),
+                    OptionsPanel.Option(image: symbol("circle.dotted"), tip: L("Dotted"))]
+            selected = (a?.dotted ?? canvas.dotted) ? 3 : ((a?.dashed ?? canvas.dashed) ? 2 : ((a?.filled ?? canvas.filled) ? 1 : 0))
         case .line:
-            opts = [OptionsPanel.Option(image: symbol("minus"), tip: L("Solid")), OptionsPanel.Option(image: symbol("ellipsis"), tip: L("Dashed"))]
-            selected = (a?.dashed ?? canvas.dashed) ? 1 : 0
+            opts = [OptionsPanel.Option(image: symbol("minus"), tip: L("Solid")), OptionsPanel.Option(image: symbol("minus.forwardslash.plus"), tip: L("Dashed")),
+                    OptionsPanel.Option(image: symbol("ellipsis"), tip: L("Dotted"))]
+            selected = (a?.dotted ?? canvas.dotted) ? 2 : ((a?.dashed ?? canvas.dashed) ? 1 : 0)
         case .crop:
             opts = CropGeometry.ratios.map { OptionsPanel.Option(image: CropGeometry.glyph(ratio: $0.value), tip: $0.label == "Free" ? L("Free") : $0.label) }
             selected = CropGeometry.ratios.firstIndex { $0.value == canvas.cropRatio } ?? 0
@@ -494,8 +496,8 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         switch canvas.selectedAnnotation?.tool ?? canvas.tool {
         case .arrow: canvas.arrowStyle = i
         case .blur: canvas.blurMode = BlurMode(rawValue: i) ?? .pixelate
-        case .rect, .oval: canvas.dashed = i == 2; canvas.filled = i == 1
-        case .line: canvas.dashed = i == 1
+        case .rect, .oval: canvas.dashed = i == 2; canvas.dotted = i == 3; canvas.filled = i == 1
+        case .line: canvas.dashed = i == 1; canvas.dotted = i == 2
         case .crop: canvas.cropRatio = CropGeometry.ratios[i].value
         case .text: canvas.filled = i == 1
         default: break

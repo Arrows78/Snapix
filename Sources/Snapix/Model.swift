@@ -90,6 +90,7 @@ struct Annotation: Identifiable {
     var number = 1
     var filled = false
     var dashed = false
+    var dotted = false
     var style = 0
     var blur: BlurMode = .pixelate
     /// Quadratic Bézier control point: bends arrows and lines (nil = straight).

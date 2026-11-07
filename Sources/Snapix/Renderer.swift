@@ -198,8 +198,10 @@ enum Renderer {
         ctx.setLineWidth(a.width)
         ctx.setLineCap(.round)
         ctx.setLineJoin(.round)
-        if a.dashed, [.rect, .oval, .line, .pen].contains(a.tool) {
-            ctx.setLineDash(phase: 0, lengths: [a.width * 2.2, a.width * 1.8])
+        if [.rect, .oval, .line, .pen].contains(a.tool) {
+            // Round caps turn near-zero dashes into dots.
+            if a.dotted { ctx.setLineDash(phase: 0, lengths: [0.01, a.width * 2.2]) }
+            else if a.dashed { ctx.setLineDash(phase: 0, lengths: [a.width * 2.2, a.width * 1.8]) }
         }
 
         switch a.tool {
