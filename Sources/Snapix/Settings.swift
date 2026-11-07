@@ -13,6 +13,9 @@ enum Pref {
         "previewCorner": "bottomRight",
         "previewSize": "medium",
         "snapHighlight": true,
+        "uploadService": "http",
+        "s3Endpoint": "", "s3Region": "", "s3Bucket": "", "s3AccessKey": "", "s3Prefix": "", "s3PublicBase": "",
+        "s3LinkMode": "none", "s3ExpiryDays": 7,
         "windowBackground": "transparent",
         "windowBackgroundColor": 0x1B1B1E,
         "sizeInPoints": false,
@@ -117,7 +120,7 @@ enum Pref {
 
     /// Keys that belong in a settings backup. The upload credential is left out so a shared backup never leaks it.
     private static func isBackedUp(_ key: String) -> Bool {
-        guard key != "uploadAuthHeader", key != "ocrAPIKey" else { return false }
+        guard key != "uploadAuthHeader", key != "ocrAPIKey", key != "s3AccessKey" else { return false }
         return defaults[key] != nil || key.hasPrefix("hotkey.") || ["backdropConfig", "ocrLanguage"].contains(key)
     }
 
@@ -139,7 +142,8 @@ enum Pref {
 
     /// Back to factory settings: every key a backup would hold is removed (the registered defaults then apply again).
     static func resetAll(in store: UserDefaults = .standard) {
-        for key in store.dictionaryRepresentation().keys where isBackedUp(key) || key == "uploadAuthHeader" || key == "ocrAPIKey" || key == "stylePresets" || key.hasPrefix("toolStyle.") { store.removeObject(forKey: key) }
+        if store === UserDefaults.standard { Keychain.set("", for: "s3SecretKey") }
+        for key in store.dictionaryRepresentation().keys where isBackedUp(key) || key == "uploadAuthHeader" || key == "ocrAPIKey" || key == "s3AccessKey" || key == "stylePresets" || key.hasPrefix("toolStyle.") { store.removeObject(forKey: key) }
     }
 
     static func resetShortcuts(in store: UserDefaults = .standard) {

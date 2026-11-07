@@ -310,6 +310,18 @@ struct PreferencesView: View {
     @AppStorage("uploadURL") private var uploadURL = ""
     @AppStorage("uploadField") private var uploadField = "file"
     @AppStorage("uploadAuthHeader") private var uploadAuth = ""
+    @AppStorage("uploadService") private var uploadService = "http"
+    @AppStorage("s3Endpoint") private var s3Endpoint = ""
+    @AppStorage("s3Region") private var s3Region = ""
+    @AppStorage("s3Bucket") private var s3Bucket = ""
+    @AppStorage("s3AccessKey") private var s3AccessKey = ""
+    @AppStorage("s3Prefix") private var s3Prefix = ""
+    @AppStorage("s3PublicBase") private var s3PublicBase = ""
+    @AppStorage("s3LinkMode") private var s3LinkMode = "none"
+    @AppStorage("s3ExpiryDays") private var s3ExpiryDays = 7
+    @State private var s3Secret = Keychain.get("s3SecretKey") ?? ""
+    @State private var s3TestResult = ""
+    @State private var uploads = UploadLog.all()
     @State private var launchAtLogin = Pref.launchAtLogin
     @State private var pane = Pane.general
     @State private var shortcutsVersion = 0
@@ -723,13 +735,68 @@ struct PreferencesView: View {
 
     private var upload: some View {
         Page(pane: .upload) {
-            Card(title: "Endpoint") {
-                Row(title: "Endpoint URL") { TextField("https://example.com/upload", text: $uploadURL).textFieldStyle(.roundedBorder).frame(width: 260) }
-                Row(title: "Form field name") { TextField("", text: $uploadField).textFieldStyle(.roundedBorder).frame(width: 260) }
-                Row(title: "Authorization header (optional)", last: true) { SecureField("", text: $uploadAuth).textFieldStyle(.roundedBorder).frame(width: 260) }
+            Card(title: "Service") {
+                Row(title: "Upload to", last: true) {
+                    Picker("", selection: $uploadService) { Text("HTTP endpoint").tag("http"); Text("S3-compatible storage").tag("s3") }.labelsHidden().frame(width: 220)
+                }
             }
-            Text("Images are sent as multipart/form-data. The response (plain URL or JSON with a \"url\" key) is copied to the clipboard.")
-                .font(.system(size: 11)).foregroundStyle(.white.opacity(0.45))
+            if uploadService == "s3" {
+                Card(title: "S3-compatible storage") {
+                    Row(title: "Endpoint", subtitle: "Leave empty for Amazon S3. Example: https://<account>.r2.cloudflarestorage.com") {
+                        TextField("", text: $s3Endpoint).textFieldStyle(.roundedBorder).frame(width: 260)
+                    }
+                    Row(title: "Region", subtitle: "Required for Amazon S3; use \"auto\" or leave empty for most others.") { TextField("us-east-1", text: $s3Region).textFieldStyle(.roundedBorder).frame(width: 260) }
+                    Row(title: "Bucket") { TextField("", text: $s3Bucket).textFieldStyle(.roundedBorder).frame(width: 260) }
+                    Row(title: "Access key") { TextField("", text: $s3AccessKey).textFieldStyle(.roundedBorder).frame(width: 260) }
+                    Row(title: "Secret key", subtitle: "Stored in the macOS Keychain.") {
+                        SecureField("", text: $s3Secret).textFieldStyle(.roundedBorder).frame(width: 260).onChange(of: s3Secret) { _, v in Keychain.set(v, for: "s3SecretKey") }
+                    }
+                    Row(title: "Key prefix (path)") { TextField("screenshots", text: $s3Prefix).textFieldStyle(.roundedBorder).frame(width: 260) }
+                    Row(title: "Connection", subtitle: LocalizedStringKey(s3TestResult), last: true) {
+                        Button("Test Connection") { s3TestResult = L("Testing…"); Task { s3TestResult = await S3Uploader.test() } }
+                    }
+                }
+                Card(title: "Link sharing") {
+                    Row(title: "Link to copy", last: s3LinkMode == "none") {
+                        Picker("", selection: $s3LinkMode) { Text("No link").tag("none"); Text("Presigned URL").tag("presigned"); Text("Public bucket URL").tag("public") }.labelsHidden().frame(width: 200)
+                    }
+                    if s3LinkMode == "presigned" {
+                        Row(title: "Link expiration", subtitle: "Presigned URLs are valid for up to 7 days.", last: true) {
+                            Picker("", selection: $s3ExpiryDays) { ForEach(1...7, id: \.self) { Text(LF("%d day(s)", $0)).tag($0) } }.labelsHidden().frame(width: 120)
+                        }
+                    }
+                    if s3LinkMode == "public" {
+                        Row(title: "Public bucket URL", subtitle: "Only works if the bucket is public.", last: true) { TextField("https://cdn.example.com", text: $s3PublicBase).textFieldStyle(.roundedBorder).frame(width: 260) }
+                    }
+                }
+                Card(title: "Past uploads") {
+                    if uploads.isEmpty {
+                        Row(title: "Nothing uploaded yet", last: true) { EmptyView() }
+                    } else {
+                        ForEach(Array(uploads.prefix(10).enumerated()), id: \.element.key) { i, u in
+                            Row(title: LocalizedStringKey(u.name), subtitle: LocalizedStringKey(u.date.formatted(date: .abbreviated, time: .shortened)), last: i == min(10, uploads.count) - 1) {
+                                HStack {
+                                    if let link = u.link {
+                                        Button("Copy link") { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(link, forType: .string); Toast.show(L("Link copied"), symbol: "checkmark.circle.fill") }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                HStack {
+                    Button("Refresh") { uploads = UploadLog.all() }
+                    Button("Clear List", role: .destructive) { UploadLog.clear(); uploads = [] }.disabled(uploads.isEmpty)
+                }
+            } else {
+                Card(title: "Endpoint") {
+                    Row(title: "Endpoint URL") { TextField("https://example.com/upload", text: $uploadURL).textFieldStyle(.roundedBorder).frame(width: 260) }
+                    Row(title: "Form field name") { TextField("", text: $uploadField).textFieldStyle(.roundedBorder).frame(width: 260) }
+                    Row(title: "Authorization header (optional)", last: true) { SecureField("", text: $uploadAuth).textFieldStyle(.roundedBorder).frame(width: 260) }
+                }
+                Text("Images are sent as multipart/form-data. The response (plain URL or JSON with a \"url\" key) is copied to the clipboard.")
+                    .font(.system(size: 11)).foregroundStyle(.white.opacity(0.45))
+            }
         }
     }
 

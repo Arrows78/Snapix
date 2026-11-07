@@ -185,6 +185,12 @@ enum Exporter {
 
     /// Multipart POST to the user-configured endpoint; the returned URL (plain text or JSON `url`) lands on the clipboard.
     static func upload(_ image: CGImage, scale: CGFloat) {
+        if Pref.string("uploadService") == "s3" {
+            let (img, _) = prepared(image, scale: scale)
+            guard let (data, ext) = encode(img, forceLossless: hasTransparency(img)) else { return }
+            S3Uploader.upload(data: data, ext: ext)
+            return
+        }
         let endpoint = Pref.string("uploadURL").trimmingCharacters(in: .whitespaces)
         guard let url = URL(string: endpoint), url.scheme?.hasPrefix("http") == true else {
             Toast.show(L("Set an upload URL in Preferences › Upload first"), duration: 3)

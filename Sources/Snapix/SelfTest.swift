@@ -382,6 +382,34 @@ enum SelfTest {
             check(Int(st.average >> 16) == 191 && Int(st.average & 0xFF) == 63, "colour stats average (\(String(st.average, radix: 16)))")
         } else { check(false, "colour stats") }
 
+        // S3: AWS's documented SigV4 example (GET Object with a Range header), then path-style requests and presigning.
+        let awsDate = Date(timeIntervalSince1970: 1_369_353_600) // 2013-05-24T00:00:00Z
+        let (aStamp, aDay) = SigV4.amzDate(awsDate)
+        let aws = SigV4.signature(method: "GET", path: "/test.txt", query: [], headers: ["host": "examplebucket.s3.amazonaws.com", "range": "bytes=0-9",
+                                  "x-amz-content-sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "x-amz-date": "20130524T000000Z"],
+                                  payloadHash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", secret: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY", region: "us-east-1", stamp: aStamp, day: aDay)
+        check(aStamp == "20130524T000000Z" && aws.signedHeaders == "host;range;x-amz-content-sha256;x-amz-date", "SigV4 signed headers")
+        check(aws.signature == "f0e8bdb87c964420e857bd35b5d6ed310bd44f0170aba48dd91039c6036bdb41", "SigV4 matches the AWS documentation example (\(aws.signature))")
+        let s3 = S3Config(endpoint: "https://acc.r2.cloudflarestorage.com", region: "", bucket: "my-bucket", accessKey: "AK", secretKey: "SK", prefix: "/shots/", publicBase: "https://cdn.example.com/", linkMode: "public", expiryDays: 3)
+        check(s3.key(for: "a b.png") == "shots/a b.png" && s3.url(forKey: "shots/a b.png")?.absoluteString == "https://acc.r2.cloudflarestorage.com/my-bucket/shots/a%20b.png", "S3 key and path-style URL")
+        check(s3.link(forKey: "shots/a b.png")?.absoluteString == "https://cdn.example.com/shots/a%20b.png", "S3 public link")
+        if let req = s3.request(method: "PUT", key: "k.png", body: Data([1, 2, 3]), contentType: "image/png", date: awsDate) {
+            let auth = req.value(forHTTPHeaderField: "Authorization") ?? ""
+            check(auth.hasPrefix("AWS4-HMAC-SHA256 Credential=AK/20130524/auto/s3/aws4_request, SignedHeaders=content-type;host;x-amz-content-sha256;x-amz-date, Signature=") && req.httpMethod == "PUT"
+                  && req.value(forHTTPHeaderField: "x-amz-content-sha256") == SigV4.sha256Hex(Data([1, 2, 3])), "S3 PUT request is signed")
+        } else { check(false, "S3 request") }
+        var s3p = s3; s3p.linkMode = "presigned"
+        let presigned = s3p.presignedURL(forKey: "k.png", days: 99, date: awsDate)?.absoluteString ?? ""
+        check(presigned.contains("X-Amz-Expires=604800") && presigned.contains("X-Amz-SignedHeaders=host") && presigned.contains("X-Amz-Signature="), "S3 presigned URL is capped at 7 days")
+        check(S3Config(endpoint: "", region: "eu-west-3", bucket: "b", accessKey: "a", secretKey: "s", prefix: "", publicBase: "", linkMode: "none", expiryDays: 7).base?.absoluteString == "https://s3.eu-west-3.amazonaws.com", "S3 default Amazon endpoint")
+        check(S3Config(endpoint: "", region: "", bucket: "", accessKey: "a", secretKey: "s", prefix: "", publicBase: "", linkMode: "none", expiryDays: 7).missing != nil, "S3 reports a missing field")
+        let ulog = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("snapix-ul-\(UUID().uuidString).json")
+        UploadLog.add(UploadRecord(name: "a.png", key: "a", link: "u1", date: Date(timeIntervalSince1970: 10)), to: ulog)
+        UploadLog.add(UploadRecord(name: "b.png", key: "b", link: nil, date: Date(timeIntervalSince1970: 20)), to: ulog)
+        UploadLog.add(UploadRecord(name: "a2.png", key: "a", link: "u2", date: Date(timeIntervalSince1970: 30)), to: ulog)
+        check(UploadLog.all(from: ulog).map(\.key) == ["a", "b"] && UploadLog.all(from: ulog).first?.link == "u2", "upload log newest first, one per key")
+        try? FileManager.default.removeItem(at: ulog)
+
         // Export formats.
         let enc = Exporter.data(for: strip, as: .pdf, scale: 2)
         check(enc.map { $0.starts(with: Data("%PDF".utf8)) } == true, "PDF export")
