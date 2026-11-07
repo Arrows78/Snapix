@@ -268,6 +268,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         add(L("Flip Vertically"), #selector(flipVerticalAction(_:)), symbol: "arrow.up.and.down.righttriangle.up.righttriangle.down")
         add(L("Merge Annotations Into Image"), #selector(rasterizeAction(_:)), symbol: "square.stack.3d.down.right")
         add(L("Erase Text in Selection"), #selector(eraseTextAction(_:)), symbol: "text.badge.minus")
+        add(L("Trim Borders"), #selector(trimAction(_:)), symbol: "crop")
         add(L("Hide Sensitive Data"), #selector(redactAction(_:)), symbol: "eye.slash")
         add(L("Remove Background"), #selector(cutoutAction(_:)), symbol: "person.crop.circle.badge.minus")
         let presets = NSMenuItem(title: L("Style Presets"), action: nil, keyEquivalent: "")
@@ -450,8 +451,12 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
             opts = BlurMode.allCases.map { OptionsPanel.Option(image: symbol(icons[$0.rawValue]), tip: $0.title) }
             selected = (a?.blur ?? canvas.blurMode).rawValue
         case .rect, .oval:
-            opts = [OptionsPanel.Option(image: symbol("square"), tip: L("Outline")), OptionsPanel.Option(image: symbol("square.fill"), tip: L("Filled"))]
-            selected = (a?.filled ?? canvas.filled) ? 1 : 0
+            opts = [OptionsPanel.Option(image: symbol("square"), tip: L("Outline")), OptionsPanel.Option(image: symbol("square.fill"), tip: L("Filled")),
+                    OptionsPanel.Option(image: symbol("square.dashed"), tip: L("Dashed"))]
+            selected = (a?.dashed ?? canvas.dashed) ? 2 : ((a?.filled ?? canvas.filled) ? 1 : 0)
+        case .line:
+            opts = [OptionsPanel.Option(image: symbol("minus"), tip: L("Solid")), OptionsPanel.Option(image: symbol("ellipsis"), tip: L("Dashed"))]
+            selected = (a?.dashed ?? canvas.dashed) ? 1 : 0
         case .text:
             opts = [OptionsPanel.Option(image: symbol("textformat"), tip: L("Plain text")),
                     OptionsPanel.Option(image: symbol("t.square.fill"), tip: L("Text with background"))]
@@ -481,7 +486,9 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         switch canvas.selectedAnnotation?.tool ?? canvas.tool {
         case .arrow: canvas.arrowStyle = i
         case .blur: canvas.blurMode = BlurMode(rawValue: i) ?? .pixelate
-        case .rect, .oval, .text: canvas.filled = i == 1
+        case .rect, .oval: canvas.dashed = i == 2; canvas.filled = i == 1
+        case .line: canvas.dashed = i == 1
+        case .text: canvas.filled = i == 1
         default: break
         }
         window?.makeFirstResponder(canvas)
@@ -718,6 +725,11 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
             self.doc.mutate { $0.image = cut; $0.uncrop = nil }
             Toast.show(L("Background removed"), symbol: "checkmark.circle.fill")
         }
+    }
+
+    @objc func trimAction(_ sender: Any?) {
+        if canvas.trimBorders() { fitToWindow(); Toast.show(L("Borders trimmed"), symbol: "checkmark.circle.fill") }
+        else { Toast.show(L("Nothing to trim"), symbol: "exclamationmark.triangle.fill") }
     }
 
     @objc func zoomSelectionAction(_ sender: Any?) {

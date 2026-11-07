@@ -19,9 +19,15 @@ enum Renderer {
     private static var blurCache: [String: CGImage] = [:]
     private static var blurCacheOwner: UnsafeMutableRawPointer?
 
+    /// Height of the title bar drawn above the screenshot when the backdrop's window frame is on.
+    static func chromeHeight(_ s: DocState) -> CGFloat {
+        guard s.backdrop.enabled, s.backdrop.windowFrame == true else { return 0 }
+        return min(56, max(28, (CGFloat(s.image.width) * 0.035).rounded()))
+    }
+
     static func canvasSize(_ s: DocState) -> CGSize {
         let p = s.backdrop.enabled ? s.backdrop.padding : 0
-        var w = CGFloat(s.image.width) + 2 * p, h = CGFloat(s.image.height) + 2 * p
+        var w = CGFloat(s.image.width) + 2 * p, h = CGFloat(s.image.height) + chromeHeight(s) + 2 * p
         if s.backdrop.enabled, let r = s.backdrop.ratio, r > 0 {
             // Grow the short side so the picture reaches the ratio; the screenshot never shrinks.
             if w / h < r { w = (h * r).rounded() } else { h = (w / r).rounded() }
@@ -32,7 +38,9 @@ enum Renderer {
     static func origin(_ s: DocState) -> CGPoint {
         guard s.backdrop.enabled else { return .zero }
         let size = canvasSize(s)
-        return CGPoint(x: ((size.width - CGFloat(s.image.width)) / 2).rounded(), y: ((size.height - CGFloat(s.image.height)) / 2).rounded())
+        let chrome = chromeHeight(s)
+        return CGPoint(x: ((size.width - CGFloat(s.image.width)) / 2).rounded(),
+                       y: ((size.height - CGFloat(s.image.height) - chrome) / 2).rounded() + chrome)
     }
 
     // MARK: Whole document
@@ -41,7 +49,9 @@ enum Renderer {
         let imgSize = CGSize(width: s.image.width, height: s.image.height)
         let o = origin(s)
 
-        if s.backdrop.enabled { drawBackdrop(s, in: ctx, imageRect: CGRect(origin: o, size: imgSize)) }
+        let chrome = chromeHeight(s)
+        let block = CGRect(x: o.x, y: o.y - chrome, width: imgSize.width, height: imgSize.height + chrome)
+        if s.backdrop.enabled { drawBackdrop(s, in: ctx, imageRect: block) }
 
         ctx.saveGState()
         ctx.translateBy(x: o.x, y: o.y)
@@ -49,9 +59,10 @@ enum Renderer {
         ctx.saveGState()
         if s.backdrop.enabled && s.backdrop.innerRadius > 0 {
             let r = s.backdrop.innerRadius
-            ctx.addPath(CGPath(roundedRect: CGRect(origin: .zero, size: imgSize), cornerWidth: r, cornerHeight: r, transform: nil))
+            ctx.addPath(CGPath(roundedRect: CGRect(x: 0, y: -chrome, width: imgSize.width, height: imgSize.height + chrome), cornerWidth: r, cornerHeight: r, transform: nil))
             ctx.clip()
         }
+        if chrome > 0 { drawTitleBar(width: imgSize.width, height: chrome, in: ctx) }
         ctx.clip(to: CGRect(origin: .zero, size: imgSize))
         ctx.drawFlipped(s.image, in: CGRect(origin: .zero, size: imgSize))
         if let o = s.overlay {
@@ -126,6 +137,17 @@ enum Renderer {
         }
     }
 
+    /// A flat dark title bar with the three window buttons, occupying y in -height..0 of the translated context.
+    private static func drawTitleBar(width: CGFloat, height: CGFloat, in ctx: CGContext) {
+        ctx.setFillColor(NSColor(hex: 0x2B2B2F).cgColor)
+        ctx.fill(CGRect(x: 0, y: -height, width: width, height: height))
+        let d = height * 0.3, gap = d * 0.8, x0 = height * 0.5
+        for (i, hex) in [UInt32(0xFF5F57), 0xFEBC2E, 0x28C840].enumerated() {
+            ctx.setFillColor(NSColor(hex: hex).cgColor)
+            ctx.fillEllipse(in: CGRect(x: x0 + CGFloat(i) * (d + gap), y: -height / 2 - d / 2, width: d, height: d))
+        }
+    }
+
     // MARK: Annotations
 
     private static func drawSpotlights(_ spots: [Annotation], size: CGSize, in ctx: CGContext) {
@@ -151,6 +173,9 @@ enum Renderer {
         ctx.setLineWidth(a.width)
         ctx.setLineCap(.round)
         ctx.setLineJoin(.round)
+        if a.dashed, [.rect, .oval, .line, .pen].contains(a.tool) {
+            ctx.setLineDash(phase: 0, lengths: [a.width * 2.2, a.width * 1.8])
+        }
 
         switch a.tool {
         case .rect:

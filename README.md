@@ -40,12 +40,12 @@ Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 
 ### ✏️ Editor
 
-- **Tools**, one key each: select `V`, arrow `A` (3 styles, curvable), rectangle `R`, oval `O`, line `L`, freehand `P`, text `T` (optional background), highlighter `H`, blur / erase `B` (pixelate, gaussian, erase), spotlight `S`, counter `C`, ruler `M`, magnifier `G`, image overlay `I`, crop `X`.
+- **Tools**, one key each: select `V`, arrow `A` (3 styles, curvable), rectangle `R` (outline, filled or dashed), oval `O`, line `L` (solid or dashed), freehand `P`, text `T` (optional background), highlighter `H`, blur / erase `B` (pixelate, gaussian, erase), spotlight `S`, counter `C`, ruler `M`, magnifier `G`, image overlay `I`, crop `X`.
 - **Editing**: select, move and resize shapes, Delete, arrow-key nudge, Shift to constrain, unlimited undo / redo, zoom and pinch, colour under the cursor.
 - **Style presets** (More menu): four built-in looks plus your own, saved by name; applying one restyles the selected shape too.
-- **Backdrop** (`K`): padding, inner and outer radius, shadow, gradient or solid, angle, 16 presets, aspect ratio (1:1, 4:3, 16:9, 9:16…), randomize.
+- **Backdrop** (`K`): padding, inner and outer radius, shadow, gradient or solid, angle, 16 presets, optional window title bar, aspect ratio (1:1, 4:3, 16:9, 9:16…), randomize.
 - **Snapping**: edge snapping for boxes and crop (hold ⌥ to bypass), and *Snap to Similar Region* (right-click a shape).
-- **Image**: resize, rotate and flip, crop (Return to apply) with Uncrop, merge annotations into the image, print, drag the result out of the editor into other apps.
+- **Image**: resize, rotate and flip, trim uniform borders, crop (Return to apply) with Uncrop, merge annotations into the image, print, drag the result out of the editor into other apps.
 - **Image overlay**: lay a clipboard image over the screenshot, drag to align, a slider sets the opacity.
 - **Hide sensitive data** (More menu): finds emails, card numbers, IBANs, phone numbers, API tokens and IP addresses with on-device OCR and pixelates each one.
 - **Remove background**: isolates the main subject on a transparent background (on-device), in the editor or straight from a capture; combine it with the backdrop.

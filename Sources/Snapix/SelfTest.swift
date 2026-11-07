@@ -95,6 +95,29 @@ enum SelfTest {
         let wide = Renderer.canvasSize(ds)
         check(abs(wide.width / wide.height - 16.0 / 9) < 0.01 && wide.height >= 120, "backdrop 16:9 canvas \(wide)")
 
+        // Window frame adds a title bar above the screenshot.
+        var wf = DocState(image: strip)
+        wf.backdrop = BackdropConfig(enabled: true, padding: 10)
+        let plainSize = Renderer.canvasSize(wf)
+        wf.backdrop.windowFrame = true
+        let bar = Renderer.chromeHeight(wf)
+        check(bar >= 28 && Renderer.canvasSize(wf).height == plainSize.height + bar, "window frame grows the canvas by the bar height")
+        check(Renderer.origin(wf).y == 10 + bar, "window frame pushes the screenshot below the bar")
+        if let img = Renderer.render(wf), let px = PixelBuffer(img) {
+            check(px.color(x: Int(plainSize.width) - 20, y: 10 + Int(bar) / 2)?.hexValue == 0x2B2B2F, "title bar is drawn")
+        } else { check(false, "window frame render") }
+        let old = Data(#"{"enabled":true,"padding":64,"innerRadius":12,"outerRadius":0,"shadow":true,"gradient":true,"fromHex":1,"toHex":2,"angle":45,"radial":false}"#.utf8)
+        check((try? JSONDecoder().decode(BackdropConfig.self, from: old))?.windowFrame == nil, "old backdrop settings still decode")
+
+        // Trimming uniform borders.
+        let framed = CGContext(data: nil, width: 120, height: 80, bitsPerComponent: 8, bytesPerRow: 0, space: Renderer.sRGB, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+        framed.setFillColor(CGColor(srgbRed: 1, green: 1, blue: 1, alpha: 1)); framed.fill(CGRect(x: 0, y: 0, width: 120, height: 80))
+        framed.setFillColor(CGColor(srgbRed: 0.1, green: 0.2, blue: 0.8, alpha: 1)); framed.fill(CGRect(x: 30, y: 20, width: 50, height: 40))
+        check(PixelBuffer(framed.makeImage()!)?.contentBounds() == CGRect(x: 30, y: 20, width: 50, height: 40), "content bounds found")
+        let flatCtx = CGContext(data: nil, width: 10, height: 10, bitsPerComponent: 8, bytesPerRow: 0, space: Renderer.sRGB, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+        flatCtx.setFillColor(CGColor(srgbRed: 0, green: 0, blue: 0, alpha: 1)); flatCtx.fill(CGRect(x: 0, y: 0, width: 10, height: 10))
+        check(PixelBuffer(flatCtx.makeImage()!)?.contentBounds() == nil, "flat image has no content bounds")
+
         // Export formats.
         let enc = Exporter.data(for: strip, as: .pdf, scale: 2)
         check(enc.map { $0.starts(with: Data("%PDF".utf8)) } == true, "PDF export")

@@ -130,6 +130,26 @@ final class PixelBuffer {
         ctx.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
     }
 
+    /// Smallest rectangle (pixels, top-left origin) holding everything that differs from the colour of the top-left pixel
+    /// by more than `tolerance` on any channel; nil when the image is one flat colour.
+    func contentBounds(tolerance: Int = 8) -> CGRect? {
+        guard width > 0, height > 0 else { return nil }
+        let bg = (Int(data[0]), Int(data[1]), Int(data[2]), Int(data[3]))
+        func differs(_ x: Int, _ y: Int) -> Bool {
+            let i = (y * width + x) * 4
+            return abs(Int(data[i]) - bg.0) > tolerance || abs(Int(data[i + 1]) - bg.1) > tolerance
+                || abs(Int(data[i + 2]) - bg.2) > tolerance || abs(Int(data[i + 3]) - bg.3) > tolerance
+        }
+        var minX = width, minY = height, maxX = -1, maxY = -1
+        for y in 0..<height {
+            for x in 0..<width where differs(x, y) {
+                minX = min(minX, x); maxX = max(maxX, x); minY = min(minY, y); maxY = max(maxY, y)
+            }
+        }
+        guard maxX >= minX, maxY >= minY else { return nil }
+        return CGRect(x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1)
+    }
+
     private func luma(_ x: Int, _ y: Int) -> Int {
         let i = (y * width + x) * 4
         return (Int(data[i]) * 299 + Int(data[i + 1]) * 587 + Int(data[i + 2]) * 114) / 1000

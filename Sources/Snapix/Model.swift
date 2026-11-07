@@ -89,6 +89,7 @@ struct Annotation: Identifiable {
     var fontSize: CGFloat = 28
     var number = 1
     var filled = false
+    var dashed = false
     var style = 0
     var blur: BlurMode = .pixelate
     /// Quadratic Bézier control point: bends arrows and lines (nil = straight).
@@ -202,6 +203,8 @@ struct BackdropConfig: Codable, Equatable {
     var radial = false
     /// Width / height of the final picture (nil = as big as the padding makes it); the screenshot stays centred.
     var ratio: CGFloat?
+    /// Draws a window title bar (three dots) above the screenshot. Optional so settings saved by older versions still decode.
+    var windowFrame: Bool?
 
     static let ratios: [(name: String, value: CGFloat?)] = [
         ("Auto", nil), ("1:1", 1), ("4:3", 4.0 / 3), ("3:2", 1.5), ("16:9", 16.0 / 9), ("2:1", 2), ("9:16", 9.0 / 16),

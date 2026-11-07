@@ -76,6 +76,7 @@ struct BackdropPanel: View {
                 slider("Inner radius", $model.cfg.innerRadius, 0...60)
                 slider("Outer radius", $model.cfg.outerRadius, 0...80)
                 Toggle("Shadow", isOn: $model.cfg.shadow)
+                Toggle("Window frame", isOn: Binding(get: { model.cfg.windowFrame == true }, set: { model.cfg.windowFrame = $0 }))
                 HStack {
                     Toggle("Gradient", isOn: $model.cfg.gradient)
                     if model.cfg.gradient {

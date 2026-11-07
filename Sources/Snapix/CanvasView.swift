@@ -10,6 +10,7 @@ final class CanvasView: NSView, NSTextFieldDelegate {
     var arrowStyle = 0 { didSet { applyToSelection { $0.style = arrowStyle } } }
     var blurMode: BlurMode = .pixelate { didSet { applyToSelection { $0.blur = blurMode } } }
     var filled = false { didSet { applyToSelection { $0.filled = filled } } }
+    var dashed = false { didSet { applyToSelection { $0.dashed = dashed } } }
     var fontSize: CGFloat = 28
 
     var onCursorMove: ((CGPoint?, NSColor?) -> Void)?
@@ -222,6 +223,7 @@ final class CanvasView: NSView, NSTextFieldDelegate {
         var a = Annotation(tool: tool, p1: p, p2: p, color: color, width: lineWidth)
         a.points = [p]
         a.filled = filled
+        a.dashed = dashed
         a.style = arrowStyle
         a.blur = blurMode
         a.fontSize = fontSize
@@ -355,6 +357,16 @@ final class CanvasView: NSView, NSTextFieldDelegate {
             s.overlay?.origin.x -= r.minX
             s.overlay?.origin.y -= r.minY
         }
+    }
+
+    /// Crops away the uniform border around the content (colour taken from the top-left pixel).
+    @discardableResult
+    func trimBorders() -> Bool {
+        guard let r = PixelBuffer(doc.state.image)?.contentBounds(), r.width >= 1, r.height >= 1,
+              r != imageBounds else { return false }
+        cropRect = r
+        applyCrop()
+        return true
     }
 
     func cancelCrop() { cropRect = nil; needsDisplay = true }
