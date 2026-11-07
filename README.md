@@ -44,7 +44,9 @@ Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 - **Snapping**: edge snapping for boxes and crop (hold ⌥ to bypass), and *Snap to Similar Region* (right-click a shape).
 - **Image**: resize, crop (Return to apply) with Uncrop, merge annotations into the image, print, drag the result out of the editor into other apps.
 - **Image overlay**: lay a clipboard image over the screenshot, drag to align, a slider sets the opacity.
-- **Library**: every capture is kept (last 200) and can be reopened, copied, pinned or deleted.
+- **Hide sensitive data** (More menu): finds emails, card numbers, IBANs, phone numbers, API tokens and IP addresses with on-device OCR and pixelates each one.
+- **Remove background**: isolates the main subject on a transparent background (on-device), in the editor or straight from a capture; combine it with the backdrop.
+- **Library**: every capture is kept (last 200, optionally deleted after 7, 30 or 90 days). Click thumbnails to select them, then reopen, copy, pin, delete, or combine them vertically or horizontally into one image.
 
 ### 🔎 Analysis
 
@@ -56,7 +58,8 @@ Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 
 - **Copy**, **save** (PNG, JPEG, or automatic by content), **save as**, downscale Retina, filename template, **upload** to your own HTTP endpoint.
 - **Pin to screen**: drag, scroll to resize, ⌥-scroll for opacity, double-click to edit, right-click menu.
-- **After-capture actions**, Esc to copy or save, launch at login.
+- **After-capture actions**, Esc to copy or save, launch at login, optional shutter sound.
+- **Shortcuts cheat sheet** and **settings backup**: list every shortcut in one floating sheet; export or import preferences (never the upload credential) from **Preferences › Backup**.
 - **Languages**: English and French, following macOS.
 
 ## ⌨️ Default shortcuts
@@ -74,7 +77,7 @@ The other actions (active window, repeat last area, scrolling upwards or manuall
 
 ### 🔗 URL scheme
 
-`snapix://area`, `fullscreen`, `window`, `active-window`, `delayed`, `repeat`, `scrolling`, `scrolling-up`, `scrolling-manual`, `library`, `shortcuts`, `ocr`, `pick-color`, `contrast`, `clipboard`, with an optional `?then=copy,save,edit,pin`.
+`snapix://area`, `fullscreen`, `window`, `active-window`, `delayed`, `repeat`, `scrolling`, `scrolling-up`, `scrolling-manual`, `library`, `shortcuts`, `ocr`, `cutout`, `pick-color`, `contrast`, `clipboard`, with an optional `?then=copy,save,edit,pin`.
 
 ```bash
 open "snapix://area?then=copy"
@@ -167,8 +170,9 @@ Snapix/
 │   ├── Capture, ScrollCapture, SelectionOverlay, PreviewPanel
 │   ├── EditorWindow, EditorChrome, CanvasView, OptionsPanel, BackdropPanel
 │   ├── Model, Renderer, Exporter, ImageDrag    # Annotations, drawing, output
-│   ├── OCR, ColorTools                         # Vision and colour analysis
-│   ├── History, PinWindow, HomeWindow, Toast   # Library, pins, home, feedback
+│   ├── OCR, Redaction, Cutout, ColorTools      # Vision, sensitive data, background removal, colour
+│   ├── History, Combine, PinWindow, HomeWindow # Library, stitching images, pins, home
+│   ├── Toast, Feedback, ShortcutSheet          # Feedback, shutter sound, cheat sheet
 │   ├── Settings, Preferences, HotKey, L10n     # Preferences, shortcuts, localisation
 │   └── SelfTest.swift                          # Behind --selftest
 ├── scripts/               # CI, release tool and its tests

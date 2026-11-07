@@ -14,6 +14,7 @@ extension Action {
         case .scrollingUp: return "arrow.up.to.line"
         case .scrollingManual: return "hand.draw"
         case .ocr: return "text.viewfinder"
+        case .cutout: return "person.crop.circle.badge.minus"
         case .pickColor: return "eyedropper"
         case .contrast: return "circle.lefthalf.filled"
         case .clipboard: return "doc.on.clipboard"
@@ -94,7 +95,7 @@ private struct HomeView: View {
             }
             section("Capture", [.area, .fullscreen, .window, .activeWindow, .delayed, .repeatArea])
             section("Scrolling", [.scrolling, .scrollingUp, .scrollingManual])
-            section("Tools", [.ocr, .pickColor, .contrast])
+            section("Tools", [.ocr, .cutout, .pickColor, .contrast])
             Spacer(minLength: 0)
             HStack(spacing: 10) {
                 pill("photo.on.rectangle", L("Open Library")) { onAction(.library) }

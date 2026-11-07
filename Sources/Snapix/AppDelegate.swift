@@ -63,7 +63,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let name = url.host ?? url.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         let map: [String: Action] = [
             "area": .area, "fullscreen": .fullscreen, "window": .window, "active-window": .activeWindow, "delayed": .delayed,
-            "repeat": .repeatArea, "scrolling": .scrolling, "scrolling-up": .scrollingUp, "scrolling-manual": .scrollingManual, "ocr": .ocr,
+            "repeat": .repeatArea, "scrolling": .scrolling, "scrolling-up": .scrollingUp, "scrolling-manual": .scrollingManual, "ocr": .ocr, "cutout": .cutout,
             "pick-color": .pickColor, "contrast": .contrast, "clipboard": .clipboard, "library": .library, "shortcuts": .shortcuts,
         ]
         guard let action = map[name] else { return }
@@ -111,7 +111,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(.separator())
         [Action.scrolling, .scrollingUp, .scrollingManual].forEach(add)
         menu.addItem(.separator())
-        [Action.ocr, .pickColor, .contrast].forEach(add)
+        [Action.ocr, .cutout, .pickColor, .contrast].forEach(add)
         menu.addItem(.separator())
         add(.clipboard)
         add(.library)
@@ -200,6 +200,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 case .scrolling: if let s = try await ScrollCapture.run(auto: true) { deliver(s, override) }
                 case .scrollingUp: if let s = try await ScrollCapture.run(auto: true, up: true) { deliver(s, override) }
                 case .scrollingManual: if let s = try await ScrollCapture.run(auto: false) { deliver(s, override) }
+                case .cutout:
+                    if let s = try await Capture.area(remember: false) {
+                        Toast.show(L("Removing background…"), duration: 1.5)
+                        let cut: CGImage? = await withCheckedContinuation { c in Cutout.subject(of: s.image) { c.resume(returning: $0) } }
+                        guard let cut else { Toast.show(L("No subject found")); break }
+                        var shot = s
+                        shot.image = cut
+                        deliver(shot, override)
+                    }
                 case .ocr: if let s = try await Capture.area(remember: false) { OCR.recognizeAndCopy(s.image) }
                 default: break
                 }
