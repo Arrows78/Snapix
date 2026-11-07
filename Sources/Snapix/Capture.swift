@@ -188,6 +188,36 @@ enum Capture {
         }
     }
 
+    /// Union of the rectangles (the bounding box), or nil for none.
+    nonisolated static func union(of rects: [CGRect]) -> CGRect? {
+        rects.dropFirst().reduce(rects.first) { $0?.union($1) }
+    }
+
+    /// Click any window: every on-screen window of its app is captured together, on a transparent background.
+    static func application() async throws -> Shot? {
+        let frozen = try await freeze()
+        guard case let .window(id) = await SelectionOverlay.run(frozen: frozen, mode: .window),
+              let pid = visibleWindows().first(where: { $0.id == id })?.pid else { return nil }
+        try? await Task.sleep(nanoseconds: 150_000_000) // let the overlay fade out
+        let content = try await content()
+        guard let app = content.applications.first(where: { $0.processID == pid }) else { throw CaptureError.notFound }
+        let windows = content.windows.filter { $0.owningApplication?.processID == pid && $0.windowLayer == 0 && $0.isOnScreen && $0.frame.width > 40 && $0.frame.height > 40 }
+        guard let box = union(of: windows.map(\.frame)) else { throw CaptureError.notFound }
+        let rect = appKitRect(fromCG: box)
+        guard let screen = screen(containing: rect),
+              let display = content.displays.first(where: { $0.displayID == displayID(screen) }) else { throw CaptureError.notFound }
+        let cfg = SCStreamConfiguration()
+        let scale = screen.backingScaleFactor
+        let visible = box.intersection(display.frame)
+        cfg.sourceRect = CGRect(x: visible.minX - display.frame.minX, y: visible.minY - display.frame.minY, width: visible.width, height: visible.height)
+        cfg.width = Int((visible.width * scale).rounded())
+        cfg.height = Int((visible.height * scale).rounded())
+        cfg.showsCursor = Pref.bool("screenshotCursor")
+        cfg.backgroundColor = .clear
+        let img = try await SCScreenshotManager.captureImage(contentFilter: SCContentFilter(display: display, including: [app], exceptingWindows: []), configuration: cfg)
+        return Shot(image: img, scale: scale, screenRect: appKitRect(fromCG: visible), placeAtRegion: true)
+    }
+
     /// Hover any interface element (button, toolbar, panel…) and click to capture exactly its bounds.
     static func element() async throws -> Shot? {
         guard ElementPicker.isTrusted else {

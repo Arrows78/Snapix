@@ -31,6 +31,7 @@
 Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 
 - **Area**: frozen screen, pixel loupe, live W×H.
+- **Application**: click a window and every window of that app is captured together on a transparent background.
 - **Interface element**: hover a button, toolbar or panel and click to capture exactly its bounds (↑ / ↓ move to the parent or child element; needs the Accessibility permission).
 - **Fullscreen**, **any window** (hover to pick), **active window**, **delayed (3–15 s)**, **repeat last area**.
 - **Scrolling capture**: automatic down or up (synthetic scroll and frame stitching), or manual (scroll either way, press Done), with an adjustable maximum height.
@@ -95,7 +96,7 @@ The other actions (active window, repeat last area, scrolling upwards or manuall
 
 ### 🔗 URL scheme
 
-`snapix://area`, `fullscreen`, `window`, `active-window`, `element`, `delayed`, `repeat`, `scrolling`, `scrolling-up`, `scrolling-manual`, `library`, `preferences`, `home`, `shortcuts`, `quick-access`, `ocr`, `cutout`, `record`, `record-fullscreen`, `record-window`, `record-gif`, `pick-color`, `contrast`, `clipboard`, with an optional `?then=copy,save,edit,pin`.
+`snapix://area`, `fullscreen`, `window`, `active-window`, `application`, `element`, `delayed`, `repeat`, `scrolling`, `scrolling-up`, `scrolling-manual`, `library`, `preferences`, `home`, `shortcuts`, `quick-access`, `ocr`, `cutout`, `record`, `record-fullscreen`, `record-window`, `record-gif`, `pick-color`, `contrast`, `clipboard`, with an optional `?then=copy,save,edit,pin`.
 
 ```bash
 open "snapix://area?then=copy"

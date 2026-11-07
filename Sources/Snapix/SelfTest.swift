@@ -323,6 +323,9 @@ enum SelfTest {
         UserDefaults.standard.set(15_000, forKey: "scrollMaxHeight"); check(Stitcher.maxHeight == 15_000, "scroll height preference")
         UserDefaults.standard.removeObject(forKey: "scrollMaxHeight")
 
+        // Application capture geometry.
+        check(Capture.union(of: [CGRect(x: 0, y: 0, width: 100, height: 50), CGRect(x: 80, y: 40, width: 100, height: 100)]) == CGRect(x: 0, y: 0, width: 180, height: 140) && Capture.union(of: []) == nil, "union of window frames")
+
         // Export formats.
         let enc = Exporter.data(for: strip, as: .pdf, scale: 2)
         check(enc.map { $0.starts(with: Data("%PDF".utf8)) } == true, "PDF export")

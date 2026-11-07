@@ -71,7 +71,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let name = url.host ?? url.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         let map: [String: Action] = [
             "area": .area, "fullscreen": .fullscreen, "window": .window, "active-window": .activeWindow, "delayed": .delayed,
-            "repeat": .repeatArea, "scrolling": .scrolling, "scrolling-up": .scrollingUp, "scrolling-manual": .scrollingManual, "ocr": .ocr, "cutout": .cutout, "quick-access": .quickAccess, "element": .element, "record": .record, "record-gif": .recordGIF, "record-fullscreen": .recordFullscreen, "record-window": .recordWindow,
+            "repeat": .repeatArea, "scrolling": .scrolling, "scrolling-up": .scrollingUp, "scrolling-manual": .scrollingManual, "ocr": .ocr, "cutout": .cutout, "quick-access": .quickAccess, "element": .element, "application": .application, "record": .record, "record-gif": .recordGIF, "record-fullscreen": .recordFullscreen, "record-window": .recordWindow,
             "pick-color": .pickColor, "contrast": .contrast, "clipboard": .clipboard, "library": .library, "shortcuts": .shortcuts,
         ]
         switch name {
@@ -120,7 +120,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             if let c = a.combo { item.attributedTitle = NSAttributedString(string: "\(a.title)\t\(c.display)") }
             menu.addItem(item)
         }
-        [Action.area, .fullscreen, .window, .activeWindow, .element, .delayed, .repeatArea].forEach(add)
+        [Action.area, .fullscreen, .window, .activeWindow, .application, .element, .delayed, .repeatArea].forEach(add)
         menu.addItem(.separator())
         [Action.scrolling, .scrollingUp, .scrollingManual].forEach(add)
         menu.addItem(.separator())
@@ -268,6 +268,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 case .activeWindow: deliver(try await Capture.activeWindow(), override)
                 case .repeatArea: deliver(try await Capture.repeatArea(), override)
                 case .element: if let s = try await Capture.element() { deliver(s, override) }
+                case .application: if let s = try await Capture.application() { deliver(s, override) }
                 case .delayed:
                     for n in stride(from: Pref.delay, through: 1, by: -1) { Toast.show(LF("Capturing in %d…", n), duration: 1); try? await Task.sleep(nanoseconds: 1_000_000_000) }
                     if let s = try await Capture.area() { deliver(s, override) }

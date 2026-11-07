@@ -16,6 +16,7 @@ extension Action {
         case .ocr: return "text.viewfinder"
         case .quickAccess: return "square.stack"
         case .element: return "cursorarrow.rays"
+        case .application: return "square.on.square.dashed"
         case .cutout: return "person.crop.circle.badge.minus"
         case .record: return "record.circle"
         case .recordGIF: return "photo.stack"
@@ -31,7 +32,7 @@ extension Action {
 
     var tint: Color {
         switch self {
-        case .area, .fullscreen, .window, .activeWindow, .element, .delayed, .repeatArea: return Color(nsColor: NSColor(hex: 0x5B8CFF))
+        case .area, .fullscreen, .window, .activeWindow, .application, .element, .delayed, .repeatArea: return Color(nsColor: NSColor(hex: 0x5B8CFF))
         case .scrolling, .scrollingUp, .scrollingManual: return Color(nsColor: NSColor(hex: 0x9B6BFF))
         case .record, .recordGIF, .recordFullscreen, .recordWindow: return Color(nsColor: NSColor(hex: 0xFF5A52))
         default: return Color(nsColor: NSColor(hex: 0x2CB1BC))
@@ -107,7 +108,7 @@ private struct HomeView: View {
             }
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 18) {
-                    section("Capture", [.area, .fullscreen, .window, .activeWindow, .element, .delayed, .repeatArea])
+                    section("Capture", [.area, .fullscreen, .window, .activeWindow, .application, .element, .delayed, .repeatArea])
                     section("Scrolling", [.scrolling, .scrollingUp, .scrollingManual])
                     section("Recording", [.record, .recordFullscreen, .recordWindow, .recordGIF])
                     section("Tools", [.quickAccess, .ocr, .cutout, .pickColor, .contrast])
