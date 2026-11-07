@@ -52,6 +52,20 @@ enum SelfTest {
         if case .noMatch = Stitcher(first: page(rows: 0..<frameH))!.add(page(rows: 2000..<(2000 + frameH))) { check(true, "unrelated frame rejected") }
         else { check(false, "unrelated frame rejected") }
 
+        // Settings backup round trip, in a throwaway defaults suite.
+        let suite = UserDefaults(suiteName: "snapix.selftest")!
+        suite.removePersistentDomain(forName: "snapix.selftest")
+        suite.set("png", forKey: "format"); suite.set("secret", forKey: "uploadAuthHeader"); suite.set(1, forKey: "unrelated")
+        if let data = Pref.backupData(from: suite) {
+            let other = UserDefaults(suiteName: "snapix.selftest2")!
+            other.removePersistentDomain(forName: "snapix.selftest2")
+            check(Pref.restore(data, into: other) == 1, "backup restores only known keys")
+            check(other.string(forKey: "format") == "png" && other.string(forKey: "uploadAuthHeader") == nil, "backup omits the upload credential")
+            other.removePersistentDomain(forName: "snapix.selftest2")
+        } else { check(false, "backup encodes") }
+        check(Pref.restore(Data("nope".utf8)) == nil, "backup rejects garbage")
+        suite.removePersistentDomain(forName: "snapix.selftest")
+
         // Sensitive-data detection.
         func hits(_ t: String) -> [String] { Redaction.ranges(in: t).map { String(t[$0]) } }
         check(hits("write to jane.doe@example.com now") == ["jane.doe@example.com"], "redaction: email")

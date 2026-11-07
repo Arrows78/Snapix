@@ -43,6 +43,30 @@ enum Pref {
     /// Seconds of the countdown before a delayed capture.
     static var delay: Int { max(1, UserDefaults.standard.integer(forKey: "captureDelay")) }
 
+    // MARK: Backup
+
+    /// Keys that belong in a settings backup. The upload credential is left out so a shared backup never leaks it.
+    private static func isBackedUp(_ key: String) -> Bool {
+        guard key != "uploadAuthHeader" else { return false }
+        return defaults[key] != nil || key.hasPrefix("hotkey.") || ["backdropConfig", "ocrLanguage"].contains(key)
+    }
+
+    /// Settings as a property list: preferences, shortcuts and backdrop style.
+    static func backupData(from store: UserDefaults = .standard) -> Data? {
+        let all = store.dictionaryRepresentation().filter { isBackedUp($0.key) }
+        return try? PropertyListSerialization.data(fromPropertyList: all, format: .xml, options: 0)
+    }
+
+    /// Applies a backup made by `backupData`; returns the number of settings restored, or nil if the file is not a backup.
+    @discardableResult
+    static func restore(_ data: Data, into store: UserDefaults = .standard) -> Int? {
+        guard let dict = (try? PropertyListSerialization.propertyList(from: data, format: nil)) as? [String: Any] else { return nil }
+        let accepted = dict.filter { isBackedUp($0.key) }
+        guard !accepted.isEmpty else { return nil }
+        for (k, v) in accepted { store.set(v, forKey: k) }
+        return accepted.count
+    }
+
     static func setLaunchAtLogin(_ on: Bool) {
         do {
             if on { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }

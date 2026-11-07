@@ -198,3 +198,11 @@
 "Background removed" = "Arrière-plan supprimé";
 "Play a sound when a screenshot is taken" = "Jouer un son lors d'une capture";
 "Delayed screenshot timer" = "Minuteur de la capture différée";
+"Settings backup" = "Sauvegarde des réglages";
+"Export Settings…" = "Exporter les réglages…";
+"Import Settings…" = "Importer les réglages…";
+"Backup" = "Sauvegarde";
+"Settings exported" = "Réglages exportés";
+"This file is not a Snapix backup" = "Ce fichier n'est pas une sauvegarde Snapix";
+"Settings imported — reopen Preferences to see them" = "Réglages importés — rouvrez les Préférences pour les voir";
+"A backup holds your preferences, shortcuts and backdrop style. The upload authorization header is never exported." = "Une sauvegarde contient vos préférences, raccourcis et style de fond. L'en-tête d'autorisation de l'envoi n'est jamais exporté.";

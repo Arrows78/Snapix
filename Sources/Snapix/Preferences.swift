@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// Click, then press the desired shortcut. Delete clears it, Esc cancels.
 private final class RecorderField: NSButton {
@@ -97,6 +98,7 @@ struct PreferencesView: View {
             hotkeys.tabItem { Label("Shortcuts", systemImage: "keyboard") }
             tools.tabItem { Label("Tools", systemImage: "wand.and.stars") }
             upload.tabItem { Label("Upload", systemImage: "icloud.and.arrow.up") }
+            backup.tabItem { Label("Backup", systemImage: "externaldrive") }
         }
         .frame(width: 520, height: 430)
         .padding(12)
@@ -193,6 +195,41 @@ struct PreferencesView: View {
         .formStyle(.grouped)
     }
 
+    private var backup: some View {
+        Form {
+            Section("Settings backup") {
+                Button("Export Settings…", action: exportSettings)
+                Button("Import Settings…", action: importSettings)
+                Text("A backup holds your preferences, shortcuts and backdrop style. The upload authorization header is never exported.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    private func exportSettings() {
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.propertyList]
+        panel.nameFieldStringValue = "Snapix Settings.plist"
+        guard panel.runModal() == .OK, let url = panel.url, let data = Pref.backupData() else { return }
+        do {
+            try data.write(to: url)
+            Toast.show(L("Settings exported"))
+        } catch {
+            Toast.show(LF("Capture failed: %@", error.localizedDescription), duration: 3)
+        }
+    }
+
+    private func importSettings() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.propertyList]
+        guard panel.runModal() == .OK, let url = panel.url, let data = try? Data(contentsOf: url) else { return }
+        guard Pref.restore(data) != nil else { Toast.show(L("This file is not a Snapix backup"), duration: 3); return }
+        (NSApp.delegate as? AppDelegate)?.reloadHotkeys()
+        Toast.show(L("Settings imported — reopen Preferences to see them"), duration: 3)
+        PreferencesWindow.close()
+    }
+
     private var upload: some View {
         Form {
             TextField("Endpoint URL", text: $uploadURL, prompt: Text("https://example.com/upload"))
@@ -208,6 +245,11 @@ struct PreferencesView: View {
 @MainActor
 enum PreferencesWindow {
     private static var window: NSWindow?
+
+    static func close() {
+        window?.close()
+        window = nil
+    }
 
     static func show() {
         if window == nil {
