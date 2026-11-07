@@ -14,6 +14,8 @@ struct Shot {
     var anchorPoint: CGPoint?
     /// Set when the shot comes from the Library, so Quick Access can delete the file.
     var historyURL: URL?
+    /// Set for a recording (video or GIF): the Quick Access card then offers file actions instead of image ones.
+    var fileURL: URL?
 }
 
 @MainActor

@@ -209,6 +209,10 @@ struct PreferencesView: View {
     @State private var historyCount = History.items().count
     @AppStorage("previewAnimation") private var previewAnimation = "slide"
     @AppStorage("previewSwipe") private var previewSwipe = true
+    @AppStorage("previewSwipeLeft") private var swipeLeft = "dismiss"
+    @AppStorage("previewSwipeRight") private var swipeRight = "dismiss"
+    @AppStorage("quickAccessSounds") private var quickAccessSounds = false
+    @AppStorage("libraryFilter") private var libraryFilter = "all"
     @AppStorage("ocrDetectLinks") private var ocrDetectLinks = false
     @AppStorage("saveFolder") private var saveFolder = ""
     @AppStorage("filenameTemplate") private var template = ""
@@ -356,7 +360,12 @@ struct PreferencesView: View {
                 Row(title: "Animation") {
                     Picker("", selection: $previewAnimation) { Text("Slide").tag("slide"); Text("Fade").tag("fade") }.labelsHidden().frame(width: 160)
                 }
-                ToggleRow("Swipe to dismiss", "Swipe horizontally with two fingers on a preview to close it.", isOn: $previewSwipe)
+                ToggleRow("Swipe actions", "Swipe horizontally with two fingers on a preview to run an action.", isOn: $previewSwipe, last: !previewSwipe)
+                if previewSwipe {
+                    Row(title: "Swipe left") { swipePicker($swipeLeft) }
+                    Row(title: "Swipe right") { swipePicker($swipeRight) }
+                }
+                ToggleRow("Sound effects", "A soft sound when a preview appears and when it copies or saves.", isOn: $quickAccessSounds)
                 Row(title: "Size", last: true) {
                     Picker("", selection: $previewSize) {
                         Text("Small").tag("small"); Text("Medium").tag("medium"); Text("Large").tag("large")
@@ -396,6 +405,13 @@ struct PreferencesView: View {
         }
     }
 
+    private func swipePicker(_ binding: Binding<String>) -> some View {
+        Picker("", selection: binding) {
+            Text("Dismiss").tag("dismiss"); Text("Copy").tag("copy"); Text("Save").tag("save")
+            Text("Open in Editor").tag("edit"); Text("Pin to screen").tag("pin"); Text("Do nothing").tag("none")
+        }.labelsHidden().frame(width: 160)
+    }
+
     private var capture: some View {
         Page(pane: .capture) {
             Card(title: "Screenshots") {
@@ -424,7 +440,10 @@ struct PreferencesView: View {
             Card(title: "Library") {
                 ToggleRow("Keep a history of screenshots in the Library", isOn: $keepHistory, last: !keepHistory)
                 if keepHistory {
-                    Row(title: "Maximum number of screenshots") {
+                    Row(title: "Library opens on") {
+                    Picker("", selection: $libraryFilter) { ForEach(LibraryFilter.allCases, id: \.rawValue) { Text($0.title).tag($0.rawValue) } }.labelsHidden().frame(width: 140)
+                }
+                Row(title: "Maximum number of screenshots") {
                         Picker("", selection: $historyLimit) {
                             Text("50").tag(50); Text("100").tag(100); Text("200").tag(200); Text("500").tag(500); Text("No limit").tag(-1)
                         }.labelsHidden().frame(width: 120)

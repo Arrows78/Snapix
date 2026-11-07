@@ -302,6 +302,13 @@ final class Recorder {
             NSPasteboard.general.writeObjects([dest as NSURL])
             Toast.show(LF("Recording saved and copied: %@", dest.lastPathComponent), duration: 3, symbol: "checkmark.circle.fill")
             if Pref.bool("recordReveal") { NSWorkspace.shared.activateFileViewerSelecting([dest]) }
+            RecordingLog.add(dest)
+            if Pref.bool("afterPreview") {
+                Task { @MainActor in
+                    guard let frame = await RecordingLog.firstFrame(of: dest, maxPixel: 900) else { return }
+                    PreviewController.show(Shot(image: frame, scale: 1, screenRect: nil, fileURL: dest))
+                }
+            }
         } catch {
             Toast.show(LF("Capture failed: %@", error.localizedDescription), duration: 3, symbol: "exclamationmark.triangle.fill")
         }

@@ -195,7 +195,14 @@ final class PreviewController: NSObject {
         thumb.onDrag = { [weak self] e in self?.beginDrag(e, from: thumb) }
         content.addSubview(thumb)
 
-        let actions: [(String, String, Selector)] = [
+        let actions: [(String, String, Selector)] = shot.fileURL != nil ? [
+            ("play.fill", "Open", #selector(editTapped)),
+            ("doc.on.doc", "Copy as File", #selector(copyFileTapped)),
+            ("folder", "Reveal in Finder", #selector(revealTapped)),
+            ("square.and.arrow.up", "Share…", #selector(shareTapped(_:))),
+            ("trash", "Move to Trash", #selector(deleteTapped)),
+            ("ellipsis", "More tools and actions", #selector(moreTapped(_:))),
+        ] : [
             ("pencil", "Open in Editor", #selector(editTapped)),
             ("doc.on.doc", "Copy", #selector(copyTapped)),
             ("square.and.arrow.down", "Save", #selector(saveTapped)),
@@ -213,7 +220,7 @@ final class PreviewController: NSObject {
         }
 
         content.onKey = { [weak self] e in self?.handleKey(e) ?? false }
-        content.onSwipe = { [weak self] dir in self?.swipeShift = dir * 160; self?.dismiss() }
+        content.onSwipe = { [weak self] dir in self?.performSwipe(dir) }
         content.onEnter = { [weak self] in self?.closeWork?.cancel() }
         content.onExit = { [weak self] in self?.scheduleClose() }
     }
@@ -294,6 +301,7 @@ final class PreviewController: NSObject {
         }
         panel.alphaValue = 0
         panel.orderFrontRegardless()
+        if Pref.bool("quickAccessSounds") { NSSound(named: "Pop")?.play() }
         Self.layoutAll()
         scheduleClose()
     }
@@ -358,10 +366,28 @@ final class PreviewController: NSObject {
 
     private func beginDrag(_ event: NSEvent, from view: NSView) {
         closeWork?.cancel()
-        ImageDrag.begin(from: view, source: content, event: event, image: shot.image, scale: shot.scale)
+        if let file = shot.fileURL { ImageDrag.beginFile(from: view, source: content, event: event, url: file, preview: shot.image) }
+        else { ImageDrag.begin(from: view, source: content, event: event, image: shot.image, scale: shot.scale) }
     }
 
-    private func edit() { EditorWindowController.open(shot); dismiss() }
+    private func edit() {
+        if let file = shot.fileURL { NSWorkspace.shared.open(file) } else { EditorWindowController.open(shot) }
+        dismiss()
+    }
+
+    /// Runs the action chosen in Preferences for a swipe to the right (dir > 0) or the left.
+    private func performSwipe(_ dir: CGFloat) {
+        let action = Pref.string(dir > 0 ? "previewSwipeRight" : "previewSwipeLeft")
+        let isFile = shot.fileURL != nil
+        switch action {
+        case "none": break
+        case "save": if isFile { revealTapped() } else { saveTapped() }
+        case "copy": if isFile { copyFileTapped() } else { copyTapped() }
+        case "edit": edit()
+        case "pin": if isFile { dismiss() } else { pinTapped() }
+        default: swipeShift = dir * 160; dismiss()
+        }
+    }
 
     /// Typed while hovering: ⌘C copy, ⌘S save, ⌘E or Return edit, ⌘P pin, ⌫ delete from the Library, Esc close.
     private func handleKey(_ e: NSEvent) -> Bool {
@@ -369,11 +395,11 @@ final class PreviewController: NSObject {
         switch (e.charactersIgnoringModifiers ?? "", e.keyCode) {
         case (_, 53): dismiss()
         case (_, 36): edit()
-        case ("c", _) where cmd: copyTapped()
+        case ("c", _) where cmd: if shot.fileURL != nil { copyFileTapped() } else { copyTapped() }
         case ("s", _) where cmd: saveTapped()
         case ("e", _) where cmd: edit()
         case ("p", _) where cmd: pinTapped()
-        case (_, 51), (_, 117): deleteFromLibrary()
+        case (_, 51), (_, 117): if shot.fileURL != nil { trashRecording() } else { deleteFromLibrary() }
         default: return false
         }
         return true
@@ -382,6 +408,14 @@ final class PreviewController: NSObject {
     @objc private func moreTapped(_ sender: NSButton) {
         closeWork?.cancel()
         let menu = NSMenu()
+        if shot.fileURL != nil {
+            let i = NSMenuItem(title: L("Close All"), action: #selector(closeAllTapped), keyEquivalent: "")
+            i.target = self
+            menu.addItem(i)
+            menu.popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height + 4), in: sender)
+            scheduleClose()
+            return
+        }
         func add(_ title: String, _ sel: Selector, _ symbol: String) {
             let i = NSMenuItem(title: L(title), action: sel, keyEquivalent: "")
             i.target = self
@@ -409,10 +443,30 @@ final class PreviewController: NSObject {
 
     @objc private func saveAsTapped() { Exporter.saveAs(shot.image, scale: shot.scale, window: nil) }
     @objc private func shareTapped(_ sender: NSButton) {
+        if let file = shot.fileURL {
+            NSSharingServicePicker(items: [file]).show(relativeTo: sender.bounds, of: sender, preferredEdge: .minY)
+            return
+        }
         let size = NSSize(width: CGFloat(shot.image.width) / shot.scale, height: CGFloat(shot.image.height) / shot.scale)
         NSSharingServicePicker(items: [NSImage(cgImage: shot.image, size: size)]).show(relativeTo: sender.bounds, of: sender, preferredEdge: .minY)
     }
+    @objc private func revealTapped() { if let f = shot.fileURL { NSWorkspace.shared.activateFileViewerSelecting([f]) } }
+
+    private func trashRecording() {
+        guard let file = shot.fileURL else { return }
+        try? FileManager.default.trashItem(at: file, resultingItemURL: nil)
+        RecordingLog.remove(path: file.path)
+        Toast.show(L("Moved to the Trash"), symbol: "checkmark.circle.fill")
+        dismiss()
+    }
+
     @objc private func copyFileTapped() {
+        if let file = shot.fileURL {
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.writeObjects([file as NSURL])
+            Toast.show(L("Copied as file"), symbol: "checkmark.circle.fill")
+            return
+        }
         let prepared = Exporter.prepared(shot.image, scale: shot.scale)
         guard let (data, ext) = Exporter.encode(prepared.image, forceLossless: Exporter.hasTransparency(prepared.image)) else { return }
         let dir = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("SnapixCopy", isDirectory: true)
@@ -443,13 +497,14 @@ final class PreviewController: NSObject {
             EditorWindowController.open(redacted)
         }
     }
-    @objc private func deleteTapped() { deleteFromLibrary() }
+    @objc private func deleteTapped() { if shot.fileURL != nil { trashRecording() } else { deleteFromLibrary() } }
     @objc private func closeAllTapped() { Self.dismissAll() }
 
     @objc private func closeTapped() { dismiss() }
     @objc private func editTapped() { edit() }
-    @objc private func copyTapped() { Exporter.copy(shot.image, scale: shot.scale); scheduleClose() }
-    @objc private func saveTapped() { Exporter.save(shot.image, scale: shot.scale); scheduleClose() }
+    @objc private func copyTapped() { Exporter.copy(shot.image, scale: shot.scale); cue(); scheduleClose() }
+    @objc private func saveTapped() { Exporter.save(shot.image, scale: shot.scale); cue(); scheduleClose() }
+    private func cue() { if Pref.bool("quickAccessSounds") { NSSound(named: "Tink")?.play() } }
     @objc private func ocrTapped() { OCR.recognizeAndCopy(shot.image); scheduleClose() }
     @objc private func pinTapped() { PinController.pin(shot); dismiss() }
 }

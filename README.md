@@ -54,6 +54,7 @@ Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 - **Image overlay**: lay a clipboard image over the screenshot, drag to align, a slider sets the opacity.
 - **Hide sensitive data** (More menu): finds emails, card numbers, IBANs, phone numbers, API tokens and IP addresses with on-device OCR and pixelates each one.
 - **Remove background**: isolates the main subject on a transparent background (on-device), in the editor or straight from a capture; combine it with the backdrop.
+- **Library**: screenshots *and* recordings (MP4, GIF) in one window with All / Screenshots / Videos / GIFs filters and a default filter; recordings open, copy as a file, reveal or go to the Trash from the context menu.
 - **Library search**: type words to find screenshots by the text they contain (read on your Mac in the background, cached next to the images).
 - **Library**: every capture is kept (last 200, optionally deleted after 7, 30 or 90 days). Click thumbnails to select them, then reopen, copy, pin, delete, or combine them vertically or horizontally into one image, with an adjustable gap.
 
@@ -66,7 +67,7 @@ Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 ### 📤 Output
 
 - **Copy**, **save** (PNG, JPEG, or automatic by content), **save as** (PNG, JPEG, HEIC, PDF), **share** (system share sheet), downscale Retina, filename template, **upload** to your own HTTP endpoint.
-- **Quick Access**: the floating preview after a capture now sits in the place you choose (4 corners or top/bottom centre, 3 sizes, slide or fade) and closes with a two-finger swipe, has a *More* menu (save as, share, copy as file, upload, hide sensitive data, delete) and answers to keys while hovered (⌘C, ⌘S, ⌘E, ⌘P, Delete, Esc). `⇧⌘6` brings back your last four captures as a persistent stack.
+- **Quick Access**: the floating preview after a capture now sits in the place you choose (4 corners or top/bottom centre, 3 sizes, slide or fade) and runs an action of your choice on a two-finger swipe left or right (dismiss, copy, save, edit, pin…); finished recordings get their own card (play, copy file, reveal, share, trash), and optional sound effects, has a *More* menu (save as, share, copy as file, upload, hide sensitive data, delete) and answers to keys while hovered (⌘C, ⌘S, ⌘E, ⌘P, Delete, Esc). `⇧⌘6` brings back your last four captures as a persistent stack.
 - **Pin to screen**: drag, scroll to resize, ⌥-scroll for opacity, double-click to edit, right-click menu.
 - **Menu bar**: a *Recent Captures* submenu with thumbnails (open, copy, pin, reveal).
 - **Capture options**: optionally hide desktop icons from screenshots and recordings.
@@ -187,7 +188,7 @@ Snapix/
 │   ├── EditorWindow, EditorChrome, ToolGlyph, CanvasView, OptionsPanel, BackdropPanel
 │   ├── Model, StylePreset, BackdropPreset, CropGeometry, Watermark, Renderer, Exporter, ImageDrag, ImageTransform # Annotations, drawing, output
 │   ├── OCR, Redaction, Cutout, ColorTools      # Vision, sensitive data, background removal, colour
-│   ├── History, Combine, PinWindow, HomeWindow # Library, stitching images, pins, home
+│   ├── History, Library, Combine, PinWindow, HomeWindow # Library, stitching images, pins, home
 │   ├── Toast, Feedback, ShortcutSheet, Onboarding, UpdateCheck          # Feedback, shutter sound, cheat sheet
 │   ├── Settings, Preferences, HotKey, L10n     # Preferences, shortcuts, localisation
 │   └── SelfTest.swift                          # Behind --selftest

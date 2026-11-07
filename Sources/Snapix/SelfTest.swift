@@ -260,6 +260,22 @@ enum SelfTest {
         check(bal.enabled && bal.padding == 48 && bal.innerRadius == 7 && bal.shadow && bal.ratio == nil, "auto-balance proportions")
         check(BackdropConfig().balanced(for: CGSize(width: 40, height: 40)).padding == 24, "auto-balance minimum padding")
 
+        // Recording log.
+        let logFile = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("snapix-rec-\(UUID().uuidString).json")
+        let recA = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("snapix-a-\(UUID().uuidString).mp4")
+        let recB = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("snapix-b-\(UUID().uuidString).gif")
+        FileManager.default.createFile(atPath: recA.path, contents: Data([0])); FileManager.default.createFile(atPath: recB.path, contents: Data([0]))
+        RecordingLog.add(recA, date: Date(timeIntervalSince1970: 1000), to: logFile)
+        RecordingLog.add(recB, date: Date(timeIntervalSince1970: 2000), to: logFile)
+        check(RecordingLog.all(from: logFile).map(\.path) == [recB.path, recA.path], "recording log lists newest first")
+        try? FileManager.default.removeItem(at: recA)
+        check(RecordingLog.all(from: logFile).map(\.path) == [recB.path], "recording log hides missing files")
+        RecordingLog.remove(path: recB.path, from: logFile)
+        check(RecordingLog.all(from: logFile).isEmpty, "recording log remove")
+        try? FileManager.default.removeItem(at: recB); try? FileManager.default.removeItem(at: logFile)
+        check(LibraryItem.kind(of: URL(fileURLWithPath: "/x/a.mp4")) == .video && LibraryItem.kind(of: URL(fileURLWithPath: "/x/a.GIF")) == .gif && LibraryItem.kind(of: URL(fileURLWithPath: "/x/a.png")) == .screenshot, "library item kinds")
+        check(LibraryFilter.videos.includes(.video) && !LibraryFilter.videos.includes(.gif) && LibraryFilter.all.includes(.screenshot), "library filters")
+
         // Export formats.
         let enc = Exporter.data(for: strip, as: .pdf, scale: 2)
         check(enc.map { $0.starts(with: Data("%PDF".utf8)) } == true, "PDF export")
