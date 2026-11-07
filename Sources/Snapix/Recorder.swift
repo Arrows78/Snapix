@@ -162,8 +162,17 @@ final class Recorder {
 
     // MARK: Start / stop
 
-    func start(format: Format) async throws {
-        guard !isRecording, let (rect, screen) = try await Capture.selectRegion() else { return }
+    enum Target { case area, fullscreen, window }
+
+    func start(format: Format, target: Target = .area) async throws {
+        guard !isRecording else { return }
+        let region: (rect: CGRect, screen: NSScreen)?
+        switch target {
+        case .area: region = try await Capture.selectRegion()
+        case .fullscreen: region = Capture.fullscreenRegion()
+        case .window: region = try await Capture.selectWindowRegion()
+        }
+        guard let (rect, screen) = region else { return }
         let countdown = UserDefaults.standard.integer(forKey: "recordCountdown")
         for n in stride(from: countdown, through: 1, by: -1) {
             Toast.show(LF("Recording in %d…", n), duration: 1)

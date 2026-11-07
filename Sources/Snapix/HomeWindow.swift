@@ -19,6 +19,8 @@ extension Action {
         case .cutout: return "person.crop.circle.badge.minus"
         case .record: return "record.circle"
         case .recordGIF: return "photo.stack"
+        case .recordFullscreen: return "display.and.arrow.down"
+        case .recordWindow: return "macwindow.badge.plus"
         case .pickColor: return "eyedropper"
         case .contrast: return "circle.lefthalf.filled"
         case .clipboard: return "doc.on.clipboard"
@@ -31,7 +33,7 @@ extension Action {
         switch self {
         case .area, .fullscreen, .window, .activeWindow, .element, .delayed, .repeatArea: return Color(nsColor: NSColor(hex: 0x5B8CFF))
         case .scrolling, .scrollingUp, .scrollingManual: return Color(nsColor: NSColor(hex: 0x9B6BFF))
-        case .record, .recordGIF: return Color(nsColor: NSColor(hex: 0xFF5A52))
+        case .record, .recordGIF, .recordFullscreen, .recordWindow: return Color(nsColor: NSColor(hex: 0xFF5A52))
         default: return Color(nsColor: NSColor(hex: 0x2CB1BC))
         }
     }
@@ -107,7 +109,7 @@ private struct HomeView: View {
                 VStack(alignment: .leading, spacing: 18) {
                     section("Capture", [.area, .fullscreen, .window, .activeWindow, .element, .delayed, .repeatArea])
                     section("Scrolling", [.scrolling, .scrollingUp, .scrollingManual])
-                    section("Recording", [.record, .recordGIF])
+                    section("Recording", [.record, .recordFullscreen, .recordWindow, .recordGIF])
                     section("Tools", [.quickAccess, .ocr, .cutout, .pickColor, .contrast])
                 }
                 .padding(.vertical, 2)

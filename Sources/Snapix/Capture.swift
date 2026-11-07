@@ -201,6 +201,21 @@ enum Capture {
         return Shot(image: crop, scale: f.screen.backingScaleFactor, screenRect: screenRect, placeAtRegion: true, anchorPoint: end)
     }
 
+    /// The whole screen under the mouse, as a region to record.
+    static func fullscreenRegion() -> (rect: CGRect, screen: NSScreen) {
+        let s = screenUnderMouse()
+        return (s.frame, s)
+    }
+
+    /// Lets the user click a window and returns its bounds (the window is recorded as the region it covers).
+    static func selectWindowRegion() async throws -> (rect: CGRect, screen: NSScreen)? {
+        let frozen = try await freeze()
+        guard case let .window(id) = await SelectionOverlay.run(frozen: frozen, mode: .window),
+              let info = visibleWindows().first(where: { $0.id == id }), let screen = screen(containing: info.rect) else { return nil }
+        try? await Task.sleep(nanoseconds: 150_000_000) // let the overlay fade out
+        return (info.rect.intersection(screen.frame), screen)
+    }
+
     /// Area selection that returns the geometry only (scrolling capture needs a live region, not a frozen crop).
     static func selectRegion() async throws -> (rect: CGRect, screen: NSScreen)? {
         let frozen = try await freeze()

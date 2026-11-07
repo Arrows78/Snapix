@@ -71,7 +71,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let name = url.host ?? url.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         let map: [String: Action] = [
             "area": .area, "fullscreen": .fullscreen, "window": .window, "active-window": .activeWindow, "delayed": .delayed,
-            "repeat": .repeatArea, "scrolling": .scrolling, "scrolling-up": .scrollingUp, "scrolling-manual": .scrollingManual, "ocr": .ocr, "cutout": .cutout, "quick-access": .quickAccess, "element": .element, "record": .record, "record-gif": .recordGIF,
+            "repeat": .repeatArea, "scrolling": .scrolling, "scrolling-up": .scrollingUp, "scrolling-manual": .scrollingManual, "ocr": .ocr, "cutout": .cutout, "quick-access": .quickAccess, "element": .element, "record": .record, "record-gif": .recordGIF, "record-fullscreen": .recordFullscreen, "record-window": .recordWindow,
             "pick-color": .pickColor, "contrast": .contrast, "clipboard": .clipboard, "library": .library, "shortcuts": .shortcuts,
         ]
         switch name {
@@ -124,7 +124,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(.separator())
         [Action.scrolling, .scrollingUp, .scrollingManual].forEach(add)
         menu.addItem(.separator())
-        [Action.record, .recordGIF].forEach(add)
+        [Action.record, .recordFullscreen, .recordWindow, .recordGIF].forEach(add)
         menu.addItem(.separator())
         [Action.quickAccess, .ocr, .cutout, .pickColor, .contrast].forEach(add)
         menu.addItem(.separator())
@@ -241,7 +241,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     // MARK: Orchestration
 
     func perform(_ action: Action, then override: [After]? = nil) {
-        if (action == .record || action == .recordGIF), Recorder.shared.isRecording {
+        if [.record, .recordGIF, .recordFullscreen, .recordWindow].contains(action), Recorder.shared.isRecording {
             Task { await Recorder.shared.stop() }
             return
         }
@@ -285,6 +285,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                     }
                 case .record: try await Recorder.shared.start(format: .video)
                 case .recordGIF: try await Recorder.shared.start(format: .gif)
+                case .recordFullscreen: try await Recorder.shared.start(format: .video, target: .fullscreen)
+                case .recordWindow: try await Recorder.shared.start(format: .video, target: .window)
                 case .ocr: if let s = try await Capture.area(remember: false) { OCR.recognizeAndCopy(s.image) }
                 default: break
                 }

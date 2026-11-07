@@ -464,3 +464,5 @@
 "Style name" = "Nom du style";
 "Padding, colours, corners, shadow and pattern are stored under this name." = "La marge, les couleurs, les coins, l'ombre et le motif sont enregistrés sous ce nom.";
 "You can save up to %d styles. Delete one first." = "Vous pouvez enregistrer jusqu'à %d styles. Supprimez-en un d'abord.";
+"Record Fullscreen" = "Enregistrer tout l'écran";
+"Record a Window" = "Enregistrer une fenêtre";
