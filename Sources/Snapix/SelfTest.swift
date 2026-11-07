@@ -96,6 +96,14 @@ enum SelfTest {
         let wide = Renderer.canvasSize(ds)
         check(abs(wide.width / wide.height - 16.0 / 9) < 0.01 && wide.height >= 120, "backdrop 16:9 canvas \(wide)")
 
+        // Glow and pattern sample, written for a visual check.
+        do {
+            var gs = DocState(image: page(rows: 0..<240))
+            gs.backdrop = BackdropConfig(enabled: true, padding: 70, innerRadius: 14)
+            gs.backdrop.glow = true; gs.backdrop.pattern = 1; gs.backdrop.windowFrame = true; gs.backdrop.ratio = 16.0 / 9
+            if let img = Renderer.render(gs) { write(img, "\(outDir)/glow.png"); check(img.width > 400, "glow backdrop renders") }
+        }
+
         // Window frame adds a title bar above the screenshot.
         var wf = DocState(image: strip)
         wf.backdrop = BackdropConfig(enabled: true, padding: 10)

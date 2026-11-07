@@ -128,6 +128,7 @@ struct BackdropPanel: View {
                     if model.cfg.gradient { ColorPicker("To", selection: colorBinding(\.toHex)) }
                 }
                 if model.cfg.gradient { slider("Angle", $model.cfg.angle, 0...360) }
+                Toggle("Glow", isOn: Binding(get: { model.cfg.glow == true }, set: { model.cfg.glow = $0 ? true : nil }))
                 Picker("Pattern", selection: Binding(get: { model.cfg.pattern ?? 0 }, set: { model.cfg.pattern = $0 == 0 ? nil : $0 })) {
                     Text("None").tag(0); Text("Dots").tag(1); Text("Grid").tag(2); Text("Lines").tag(3)
                 }

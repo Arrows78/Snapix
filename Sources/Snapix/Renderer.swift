@@ -124,6 +124,7 @@ enum Renderer {
             ctx.setFillColor(b.from.cgColor)
             ctx.fill(full)
         }
+        if b.glow == true, s.backdropImage == nil { drawGlow(b, in: full, ctx: ctx) }
         if let kind = b.pattern, kind > 0 { drawPattern(kind, in: full, ctx: ctx) }
         ctx.restoreGState()
 
@@ -136,6 +137,23 @@ enum Renderer {
             ctx.fillPath()
             ctx.restoreGState()
         }
+    }
+
+    /// Three large soft blobs in the backdrop colours (and a lighter mix), layered for a mesh-gradient feel.
+    static func drawGlow(_ b: BackdropConfig, in r: CGRect, ctx: CGContext) {
+        let radius = max(r.width, r.height) * 0.7
+        let blobs: [(CGPoint, NSColor)] = [
+            (CGPoint(x: r.minX + r.width * 0.15, y: r.minY + r.height * 0.2), b.to),
+            (CGPoint(x: r.minX + r.width * 0.85, y: r.minY + r.height * 0.3), b.from.blended(withFraction: 0.5, of: .white) ?? b.from),
+            (CGPoint(x: r.minX + r.width * 0.5, y: r.minY + r.height * 0.95), b.from),
+        ]
+        ctx.saveGState()
+        ctx.clip(to: r)
+        for (center, color) in blobs {
+            guard let g = CGGradient(colorsSpace: sRGB, colors: [color.withAlphaComponent(0.85).cgColor, color.withAlphaComponent(0).cgColor] as CFArray, locations: nil) else { continue }
+            ctx.drawRadialGradient(g, startCenter: center, startRadius: 0, endCenter: center, endRadius: radius, options: [])
+        }
+        ctx.restoreGState()
     }
 
     /// A subtle texture (white at low opacity) laid over the backdrop; the context is top-left based.

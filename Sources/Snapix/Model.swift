@@ -211,6 +211,8 @@ struct BackdropConfig: Codable, Equatable {
     var windowFrame: Bool?
     /// Texture over the background: 1 dots, 2 grid, 3 diagonal lines. Optional for the same reason as `windowFrame`.
     var pattern: Int?
+    /// Soft overlapping colour blobs over the background ("glow"). Optional so older saved settings still decode.
+    var glow: Bool?
 
     static let ratios: [(name: String, value: CGFloat?)] = [
         ("Auto", nil), ("1:1", 1), ("4:3", 4.0 / 3), ("3:2", 1.5), ("16:9", 16.0 / 9), ("2:1", 2), ("9:16", 9.0 / 16),
