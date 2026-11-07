@@ -34,6 +34,7 @@ Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 - **Fullscreen**, **any window** (hover to pick), **active window**, **delayed (3–15 s)**, **repeat last area**.
 - **Scrolling capture**: automatic down or up (synthetic scroll and frame stitching), or manual (scroll either way, press Done).
 - **Adjustable selection** (optional): handles, move by dragging or holding Space, arrow-key nudge, Return or double-click to capture.
+- **Screen recording**: select an area and record it to **MP4** (optional system audio, cursor on or off) or an animated **GIF**. A red frame and a small timer pill show what is recorded; press the shortcut again or click Stop. The file lands in your screenshots folder and on the clipboard.
 - **Open an image** from the clipboard or a file.
 
 ### ✏️ Editor
@@ -77,7 +78,7 @@ The other actions (active window, repeat last area, scrolling upwards or manuall
 
 ### 🔗 URL scheme
 
-`snapix://area`, `fullscreen`, `window`, `active-window`, `delayed`, `repeat`, `scrolling`, `scrolling-up`, `scrolling-manual`, `library`, `shortcuts`, `ocr`, `cutout`, `pick-color`, `contrast`, `clipboard`, with an optional `?then=copy,save,edit,pin`.
+`snapix://area`, `fullscreen`, `window`, `active-window`, `delayed`, `repeat`, `scrolling`, `scrolling-up`, `scrolling-manual`, `library`, `shortcuts`, `ocr`, `cutout`, `record`, `record-gif`, `pick-color`, `contrast`, `clipboard`, with an optional `?then=copy,save,edit,pin`.
 
 ```bash
 open "snapix://area?then=copy"
@@ -167,7 +168,7 @@ Snapix/
 ├── Resources/             # Info.plist, app icon and its generator, fr.lproj
 ├── Sources/Snapix/
 │   ├── main.swift, AppDelegate.swift   # Entry point, menu bar, URL scheme
-│   ├── Capture, ScrollCapture, SelectionOverlay, PreviewPanel
+│   ├── Capture, ScrollCapture, Recorder, SelectionOverlay, PreviewPanel
 │   ├── EditorWindow, EditorChrome, CanvasView, OptionsPanel, BackdropPanel
 │   ├── Model, Renderer, Exporter, ImageDrag    # Annotations, drawing, output
 │   ├── OCR, Redaction, Cutout, ColorTools      # Vision, sensitive data, background removal, colour

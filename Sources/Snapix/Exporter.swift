@@ -80,7 +80,7 @@ enum Exporter {
         if !quiet { Toast.show(L("Copied to the clipboard")) }
     }
 
-    static func filename(ext: String) -> String {
+    static func filename(ext: String, suffix: String = "") -> String {
         let now = Date()
         let d = DateFormatter(); d.dateFormat = "yyyy-MM-dd"
         let t = DateFormatter(); t.dateFormat = "HH.mm.ss"
@@ -89,10 +89,10 @@ enum Exporter {
             .replacingOccurrences(of: "{time}", with: t.string(from: now))
             .replacingOccurrences(of: "{timestamp}", with: String(Int(now.timeIntervalSince1970)))
             .replacingOccurrences(of: "/", with: "-")
-        return "\(name).\(ext)"
+        return "\(name)\(suffix).\(ext)"
     }
 
-    private static func uniqueURL(in folder: URL, name: String) -> URL {
+    static func uniqueURL(in folder: URL, name: String) -> URL {
         var url = folder.appendingPathComponent(name)
         let base = url.deletingPathExtension().lastPathComponent, ext = url.pathExtension
         var n = 2

@@ -60,7 +60,7 @@ enum Capture {
         return NSScreen.screens.first { NSMouseInRect(p, $0.frame, false) } ?? NSScreen.main ?? NSScreen.screens[0]
     }
 
-    private static func displayID(_ s: NSScreen) -> CGDirectDisplayID {
+    static func displayID(_ s: NSScreen) -> CGDirectDisplayID {
         (s.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value ?? 0
     }
 

@@ -85,6 +85,9 @@ struct PreferencesView: View {
     @AppStorage("wheelZoom") private var wheelZoom = true
     @AppStorage("keepHistory") private var keepHistory = true
     @AppStorage("historyRetentionDays") private var retentionDays = 0
+    @AppStorage("recordAudio") private var recordAudio = false
+    @AppStorage("recordCursor") private var recordCursor = true
+    @AppStorage("recordReveal") private var recordReveal = false
     @AppStorage("captureSound") private var captureSound = true
     @AppStorage("captureDelay") private var captureDelay = 3
     @AppStorage("uploadURL") private var uploadURL = ""
@@ -127,6 +130,13 @@ struct PreferencesView: View {
                 Picker("Delayed screenshot timer", selection: $captureDelay) {
                     ForEach([3, 5, 10, 15], id: \.self) { Text("\($0) s").tag($0) }
                 }
+            }
+            Section("Screen recording") {
+                Toggle("Record the mouse cursor", isOn: $recordCursor)
+                Toggle("Record system audio (MP4 only)", isOn: $recordAudio)
+                Toggle("Show the file in Finder when done", isOn: $recordReveal)
+                Text("Press the shortcut again, or click Stop, to end a recording. The file is saved in your screenshots folder and copied to the clipboard.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
             Section("Area selection") {
                 Toggle("Adjust the selection before capturing", isOn: $areaAdjust)

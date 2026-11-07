@@ -63,7 +63,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let name = url.host ?? url.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         let map: [String: Action] = [
             "area": .area, "fullscreen": .fullscreen, "window": .window, "active-window": .activeWindow, "delayed": .delayed,
-            "repeat": .repeatArea, "scrolling": .scrolling, "scrolling-up": .scrollingUp, "scrolling-manual": .scrollingManual, "ocr": .ocr, "cutout": .cutout,
+            "repeat": .repeatArea, "scrolling": .scrolling, "scrolling-up": .scrollingUp, "scrolling-manual": .scrollingManual, "ocr": .ocr, "cutout": .cutout, "record": .record, "record-gif": .recordGIF,
             "pick-color": .pickColor, "contrast": .contrast, "clipboard": .clipboard, "library": .library, "shortcuts": .shortcuts,
         ]
         guard let action = map[name] else { return }
@@ -110,6 +110,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         [Action.area, .fullscreen, .window, .activeWindow, .delayed, .repeatArea].forEach(add)
         menu.addItem(.separator())
         [Action.scrolling, .scrollingUp, .scrollingManual].forEach(add)
+        menu.addItem(.separator())
+        [Action.record, .recordGIF].forEach(add)
         menu.addItem(.separator())
         [Action.ocr, .cutout, .pickColor, .contrast].forEach(add)
         menu.addItem(.separator())
@@ -173,6 +175,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     // MARK: Orchestration
 
     func perform(_ action: Action, then override: [After]? = nil) {
+        if (action == .record || action == .recordGIF), Recorder.shared.isRecording {
+            Task { await Recorder.shared.stop() }
+            return
+        }
         guard !busy else { return }
         switch action {
         case .pickColor: ColorTools.pickAndCopy(); return
@@ -209,6 +215,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                         shot.image = cut
                         deliver(shot, override)
                     }
+                case .record: try await Recorder.shared.start(format: .video)
+                case .recordGIF: try await Recorder.shared.start(format: .gif)
                 case .ocr: if let s = try await Capture.area(remember: false) { OCR.recognizeAndCopy(s.image) }
                 default: break
                 }

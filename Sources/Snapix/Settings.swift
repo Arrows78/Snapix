@@ -29,6 +29,9 @@ enum Pref {
         "wheelZoom": true,
         "keepHistory": true,
         "captureSound": true,
+        "recordAudio": false,
+        "recordCursor": true,
+        "recordReveal": false,
         "captureDelay": 3,
         "uploadURL": "",
         "uploadField": "file",
@@ -81,7 +84,7 @@ enum Pref {
 /// Everything the user can trigger from the menu bar, a hotkey or a `snapix://` URL.
 enum Action: String, CaseIterable {
     case area, fullscreen, window, activeWindow, delayed, repeatArea
-    case scrolling, scrollingUp, scrollingManual, ocr, cutout, pickColor, contrast, clipboard, library, shortcuts
+    case scrolling, scrollingUp, scrollingManual, ocr, cutout, record, recordGIF, pickColor, contrast, clipboard, library, shortcuts
 
     var title: String {
         switch self {
@@ -96,6 +99,8 @@ enum Action: String, CaseIterable {
         case .scrollingManual: return L("Manual Scrolling Capture")
         case .ocr: return L("Recognize Text / QR Code")
         case .cutout: return L("Capture Subject Without Background")
+        case .record: return L("Record Screen Area")
+        case .recordGIF: return L("Record Screen Area as GIF")
         case .pickColor: return L("Pick Color")
         case .contrast: return L("Check Contrast")
         case .clipboard: return L("Open From Clipboard")

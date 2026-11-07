@@ -220,3 +220,17 @@
 "Press Esc or click to close" = "Échap ou clic pour fermer";
 "Backdrop" = "Arrière-plan";
 "Capture Subject Without Background" = "Capturer un sujet sans arrière-plan";
+"Record Screen Area" = "Enregistrer une zone de l'écran";
+"Record Screen Area as GIF" = "Enregistrer une zone en GIF";
+"Recording" = "Enregistrement";
+"recording" = "enregistrement";
+"Stop" = "Arrêter";
+"Nothing was recorded" = "Rien n'a été enregistré";
+"Creating the GIF…" = "Création du GIF…";
+"Could not create the GIF" = "Impossible de créer le GIF";
+"Recording saved and copied: %@" = "Enregistrement sauvegardé et copié : %@";
+"Screen recording" = "Enregistrement d'écran";
+"Record the mouse cursor" = "Enregistrer le curseur de la souris";
+"Record system audio (MP4 only)" = "Enregistrer le son du système (MP4 uniquement)";
+"Show the file in Finder when done" = "Afficher le fichier dans le Finder à la fin";
+"Press the shortcut again, or click Stop, to end a recording. The file is saved in your screenshots folder and copied to the clipboard." = "Appuyez de nouveau sur le raccourci, ou cliquez sur Arrêter, pour terminer. Le fichier est enregistré dans le dossier des captures et copié dans le presse-papiers.";

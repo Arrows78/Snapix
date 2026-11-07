@@ -15,6 +15,8 @@ extension Action {
         case .scrollingManual: return "hand.draw"
         case .ocr: return "text.viewfinder"
         case .cutout: return "person.crop.circle.badge.minus"
+        case .record: return "record.circle"
+        case .recordGIF: return "photo.stack"
         case .pickColor: return "eyedropper"
         case .contrast: return "circle.lefthalf.filled"
         case .clipboard: return "doc.on.clipboard"
@@ -27,6 +29,7 @@ extension Action {
         switch self {
         case .area, .fullscreen, .window, .activeWindow, .delayed, .repeatArea: return Color(nsColor: NSColor(hex: 0x5B8CFF))
         case .scrolling, .scrollingUp, .scrollingManual: return Color(nsColor: NSColor(hex: 0x9B6BFF))
+        case .record, .recordGIF: return Color(nsColor: NSColor(hex: 0xFF5A52))
         default: return Color(nsColor: NSColor(hex: 0x2CB1BC))
         }
     }
@@ -95,6 +98,7 @@ private struct HomeView: View {
             }
             section("Capture", [.area, .fullscreen, .window, .activeWindow, .delayed, .repeatArea])
             section("Scrolling", [.scrolling, .scrollingUp, .scrollingManual])
+            section("Recording", [.record, .recordGIF])
             section("Tools", [.ocr, .cutout, .pickColor, .contrast])
             Spacer(minLength: 0)
             HStack(spacing: 10) {
