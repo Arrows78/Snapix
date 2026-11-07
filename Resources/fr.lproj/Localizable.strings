@@ -482,3 +482,7 @@
 "Mirror the camera" = "Effet miroir";
 "Camera unavailable or access denied: recording without it" = "Caméra indisponible ou accès refusé : enregistrement sans caméra";
 "Dotted" = "Points";
+"Mute" = "Couper le son";
+"Normal speed" = "Vitesse normale";
+"Playback speed of the saved video" = "Vitesse de lecture de la vidéo enregistrée";
+"Processing…" = "Traitement…";

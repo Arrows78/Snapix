@@ -215,6 +215,9 @@ enum SelfTest {
         check(CameraBubble.frame(side: 180, corner: "topLeft", in: area) == CGRect(x: 116, y: 604, width: 180, height: 180), "camera top left")
         check(CameraBubble.side(for: "small") == 120 && CameraBubble.side(for: "large") == 260 && CameraBubble.side(for: "x") == 180, "camera sizes")
 
+        // Review speed.
+        check(RecordingReview.outputDuration(range: 10, speed: 2) == 5 && RecordingReview.outputDuration(range: 10, speed: 0.5) == 20 && RecordingReview.outputDuration(range: 10, speed: 0) == 10, "review output duration")
+
         // Export formats.
         let enc = Exporter.data(for: strip, as: .pdf, scale: 2)
         check(enc.map { $0.starts(with: Data("%PDF".utf8)) } == true, "PDF export")

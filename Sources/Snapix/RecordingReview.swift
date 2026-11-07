@@ -14,6 +14,12 @@ final class RecordingReview: NSObject, NSWindowDelegate {
     private let onSave: (URL) -> Void
     private var finished = false
     private weak var trimButton: NSButton?
+    private let speedPopup = NSPopUpButton(frame: .zero, pullsDown: false)
+    private let muteCheck = NSButton(checkboxWithTitle: L("Mute"), target: nil, action: nil)
+    static let speeds: [Double] = [0.5, 1, 1.5, 2, 4]
+
+    /// Length of the exported clip: the selected range played at `speed`.
+    static func outputDuration(range: Double, speed: Double) -> Double { speed > 0 ? range / speed : range }
 
     /// `onSave` receives either the original file or a trimmed copy; the review deletes whatever it no longer needs.
     static func show(url: URL, onSave: @escaping (URL) -> Void) {
@@ -61,7 +67,10 @@ final class RecordingReview: NSObject, NSWindowDelegate {
         let save = button(L("Save"), "square.and.arrow.down", #selector(saveTapped), primary: true)
         let spacer = NSView()
         spacer.setContentHuggingPriority(.init(1), for: .horizontal)
-        let bar = NSStackView(views: [trim, spacer, discard, gif, save])
+        speedPopup.addItems(withTitles: Self.speeds.map { $0 == 1 ? L("Normal speed") : String(format: "%g×", $0) })
+        speedPopup.selectItem(at: 1)
+        speedPopup.toolTip = L("Playback speed of the saved video")
+        let bar = NSStackView(views: [trim, speedPopup, muteCheck, spacer, discard, gif, save])
         bar.edgeInsets = NSEdgeInsets(top: 10, left: 14, bottom: 12, right: 14)
 
         let stack = NSStackView(views: [playerView, bar])
@@ -119,10 +128,23 @@ final class RecordingReview: NSObject, NSWindowDelegate {
                 self?.finish()
             }
         }
-        guard trimmed else { deliver(url); return }
+        let speed = Self.speeds[max(0, speedPopup.indexOfSelectedItem)]
+        let mute = muteCheck.state == .on
+        guard trimmed || speed != 1 || mute else { deliver(url); return }
 
-        Toast.show(L("Trimming…"), duration: 30)
+        Toast.show(L("Processing…"), duration: 60)
         let source = url
+        if speed != 1 || mute {
+            let range = trimmed ? CMTimeRange(start: start, end: end) : CMTimeRange(start: .zero, duration: duration)
+            let out = url.deletingLastPathComponent().appendingPathComponent(UUID().uuidString + ".mp4")
+            Task { @MainActor [weak self] in
+                let ok = await Self.render(source: source, range: range, speed: speed, mute: mute, to: out)
+                if ok { try? FileManager.default.removeItem(at: source) }
+                deliver(ok ? out : source) // keep the original recording rather than lose it
+                _ = self
+            }
+            return
+        }
         let out = url.deletingLastPathComponent().appendingPathComponent(UUID().uuidString + ".mp4")
         guard let export = AVAssetExportSession(asset: AVURLAsset(url: source), presetName: AVAssetExportPresetPassthrough) else {
             deliver(url); return
@@ -143,6 +165,35 @@ final class RecordingReview: NSObject, NSWindowDelegate {
                     }
                 }
             }
+        }
+    }
+
+    /// Re-encodes `range` of the video at `speed`, optionally without sound.
+    private static func render(source: URL, range: CMTimeRange, speed: Double, mute: Bool, to out: URL) async -> Bool {
+        let asset = AVURLAsset(url: source)
+        let comp = AVMutableComposition()
+        do {
+            if let v = try await asset.loadTracks(withMediaType: .video).first, let ct = comp.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid) {
+                try ct.insertTimeRange(range, of: v, at: .zero)
+                ct.preferredTransform = try await v.load(.preferredTransform)
+            }
+            if !mute {
+                for a in try await asset.loadTracks(withMediaType: .audio) {
+                    guard let ct = comp.addMutableTrack(withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid) else { continue }
+                    try ct.insertTimeRange(range, of: a, at: .zero)
+                }
+            }
+        } catch { return false }
+        if speed != 1 {
+            comp.scaleTimeRange(CMTimeRange(start: .zero, duration: range.duration),
+                                toDuration: CMTime(seconds: outputDuration(range: range.duration.seconds, speed: speed), preferredTimescale: 600))
+        }
+        guard let export = AVAssetExportSession(asset: comp, presetName: AVAssetExportPresetHighestQuality) else { return false }
+        export.outputURL = out
+        export.outputFileType = .mp4
+        nonisolated(unsafe) let session = export
+        return await withCheckedContinuation { cont in
+            session.exportAsynchronously { cont.resume(returning: session.status == .completed) }
         }
     }
 
