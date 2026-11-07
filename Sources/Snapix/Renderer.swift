@@ -217,6 +217,14 @@ enum Renderer {
             drawArrow(a, in: ctx)
         case .pen:
             strokePolyline(a.points, in: ctx)
+        case .pencil:
+            // A soft wide pass under a thin dark one gives the graphite look.
+            ctx.setStrokeColor(a.color.withAlphaComponent(0.35).cgColor)
+            ctx.setLineWidth(a.width * 0.95)
+            strokePolyline(a.points, in: ctx)
+            ctx.setStrokeColor(a.color.withAlphaComponent(0.9).cgColor)
+            ctx.setLineWidth(max(1, a.width * 0.45))
+            strokePolyline(a.points, in: ctx)
         case .highlighter:
             ctx.setBlendMode(.multiply)
             ctx.setLineCap(.butt)

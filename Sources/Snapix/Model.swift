@@ -1,7 +1,7 @@
 import AppKit
 
 enum Tool: String, CaseIterable {
-    case select, arrow, rect, oval, line, pen, text, highlighter, blur, spotlight, counter, ruler, magnifier, overlay, crop
+    case select, arrow, rect, oval, line, pen, pencil, text, highlighter, blur, spotlight, counter, ruler, magnifier, overlay, crop
 
     var title: String {
         switch self {
@@ -11,6 +11,7 @@ enum Tool: String, CaseIterable {
         case .oval: return L("Oval")
         case .line: return L("Line")
         case .pen: return L("Freehand")
+        case .pencil: return L("Pencil")
         case .text: return L("Text")
         case .highlighter: return L("Highlighter")
         case .blur: return L("Blur / Erase")
@@ -31,6 +32,7 @@ enum Tool: String, CaseIterable {
         case .oval: return "circle"
         case .line: return "line.diagonal"
         case .pen: return "scribble"
+        case .pencil: return "pencil"
         case .text: return "textformat"
         case .highlighter: return "highlighter"
         case .blur: return "square.dotted"
@@ -51,6 +53,7 @@ enum Tool: String, CaseIterable {
         case .oval: return "o"
         case .line: return "l"
         case .pen: return "p"
+        case .pencil: return "e"
         case .text: return "t"
         case .highlighter: return "h"
         case .blur: return "b"
@@ -154,7 +157,7 @@ struct Annotation: Identifiable {
             return rect.insetBy(dx: -t, dy: -t).contains(p)
         case .line, .arrow, .ruler:
             return distanceToStroke(p) <= max(t, width / 2 + t)
-        case .pen, .highlighter:
+        case .pen, .pencil, .highlighter:
             guard points.count > 1 else { return false }
             for i in 1..<points.count where Geometry.distance(from: p, toSegment: points[i - 1], points[i]) <= max(t, width / 2 + t) {
                 return true

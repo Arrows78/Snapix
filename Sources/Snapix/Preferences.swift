@@ -84,16 +84,16 @@ private enum Pane: String, CaseIterable, Identifiable {
 
     var symbol: String {
         switch self {
-        case .general: return "gearshape.fill"
+        case .general: return "gearshape"
         case .capture: return "viewfinder"
-        case .recording: return "record.circle.fill"
-        case .editor: return "pencil.tip.crop.circle.fill"
-        case .shortcuts: return "keyboard.fill"
-        case .output: return "square.and.arrow.down.fill"
-        case .upload: return "icloud.and.arrow.up.fill"
-        case .backup: return "externaldrive.fill"
-        case .permissions: return "lock.shield.fill"
-        case .about: return "info.circle.fill"
+        case .recording: return "record.circle"
+        case .editor: return "pencil.tip.crop.circle"
+        case .shortcuts: return "keyboard"
+        case .output: return "square.and.arrow.down"
+        case .upload: return "icloud.and.arrow.up"
+        case .backup: return "externaldrive"
+        case .permissions: return "lock.shield"
+        case .about: return "info.circle"
         }
     }
 
@@ -178,7 +178,7 @@ private struct Page<Content: View>: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 HStack(spacing: 10) {
-                    Image(systemName: pane.symbol).font(.system(size: 14, weight: .semibold)).foregroundStyle(.white)
+                    Image(systemName: pane.symbol).font(.system(size: 14, weight: .medium)).foregroundStyle(.white)
                         .frame(width: 28, height: 28).background(RoundedRectangle(cornerRadius: 7).fill(pane.tint.gradient))
                     Text(pane.title).font(.system(size: 20, weight: .bold)).foregroundStyle(.white)
                 }
@@ -307,7 +307,7 @@ struct PreferencesView: View {
             ForEach(Pane.allCases) { p in
                 Button { pane = p } label: {
                     HStack(spacing: 9) {
-                        Image(systemName: p.symbol).font(.system(size: 11, weight: .semibold)).foregroundStyle(.white)
+                        Image(systemName: p.symbol).font(.system(size: 11, weight: .medium)).foregroundStyle(.white)
                             .frame(width: 22, height: 22).background(RoundedRectangle(cornerRadius: 6).fill(p.tint.gradient))
                         Text(p.title).font(.system(size: 13)).foregroundStyle(.white.opacity(pane == p ? 1 : 0.8))
                         Spacer()

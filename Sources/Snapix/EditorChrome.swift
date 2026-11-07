@@ -23,6 +23,7 @@ class IconButton: NSButton {
         image = NSImage(systemSymbolName: symbol, accessibilityDescription: tip)?
             .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: pointSize, weight: .regular))
         imagePosition = .imageOnly
+        imageScaling = .scaleNone
         isBordered = false
         setButtonType(.momentaryChange)
         self.target = target

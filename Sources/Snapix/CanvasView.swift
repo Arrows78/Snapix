@@ -111,7 +111,7 @@ final class CanvasView: NSView, NSTextFieldDelegate {
             let r = hypot(a.p2.x - a.p1.x, a.p2.y - a.p1.y)
             box = CGRect(x: a.p1.x - r, y: a.p1.y - r, width: r * 2, height: r * 2)
         case .counter: box = CGRect(x: a.p1.x - a.counterRadius, y: a.p1.y - a.counterRadius, width: a.counterRadius * 2, height: a.counterRadius * 2)
-        case .pen, .highlighter:
+        case .pen, .pencil, .highlighter:
             let xs = a.points.map(\.x), ys = a.points.map(\.y)
             box = CGRect(x: xs.min() ?? 0, y: ys.min() ?? 0, width: (xs.max() ?? 0) - (xs.min() ?? 0), height: (ys.max() ?? 0) - (ys.min() ?? 0))
         default: box = a.rect
@@ -275,7 +275,7 @@ final class CanvasView: NSView, NSTextFieldDelegate {
                 p = snapped(p, for: a.tool)
             }
             doc.state.annotations[i].p2 = p
-            if a.tool == .pen || a.tool == .highlighter {
+            if a.tool == .pen || a.tool == .pencil || a.tool == .highlighter {
                 if a.tool == .highlighter && shift { doc.state.annotations[i].points = [a.p1, p] }
                 else { doc.state.annotations[i].points.append(p) }
             }
@@ -315,7 +315,7 @@ final class CanvasView: NSView, NSTextFieldDelegate {
         let a = doc.state.annotations[i]
         let degenerate: Bool
         switch a.tool {
-        case .pen, .highlighter: degenerate = a.points.count < 2
+        case .pen, .pencil, .highlighter: degenerate = a.points.count < 2
         default: degenerate = hypot(a.p2.x - a.p1.x, a.p2.y - a.p1.y) < 3
         }
         if degenerate {

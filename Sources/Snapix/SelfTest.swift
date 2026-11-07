@@ -229,6 +229,26 @@ enum SelfTest {
         NSGraphicsContext.restoreGraphicsState()
         check(TextIndex.matches("invoice", in: OCR.plainText(of: ocrImage.makeImage()!, fast: true)), "OCR reads rendered text")
 
+        // Contact sheet of the icon family, for a visual check.
+        do {
+            let tools = Tool.allCases
+            let cell = 80, cols = 9, rows = (tools.count + 2 + cols - 1) / cols
+            if let sheet = CGContext(data: nil, width: cell * cols, height: cell * rows, bitsPerComponent: 8, bytesPerRow: 0, space: Renderer.sRGB, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) {
+                sheet.setFillColor(CGColor(srgbRed: 0.145, green: 0.145, blue: 0.157, alpha: 1)); sheet.fill(CGRect(x: 0, y: 0, width: cell * cols, height: cell * rows))
+                NSGraphicsContext.saveGraphicsState()
+                NSGraphicsContext.current = NSGraphicsContext(cgContext: sheet, flipped: false)
+                let images = tools.map { ToolGlyph.image(for: $0) } + [ToolGlyph.backdrop, ToolGlyph.more]
+                for (i, img) in images.enumerated() {
+                    let r = NSRect(x: (i % cols) * cell + 10, y: (rows - 1 - i / cols) * cell + 10, width: 60, height: 60)
+                    let tinted = NSImage(size: img.size, flipped: false) { rect in
+                        img.draw(in: rect); NSColor.white.withAlphaComponent(0.9).setFill(); rect.fill(using: .sourceAtop); return true }
+                    tinted.draw(in: r)
+                }
+                NSGraphicsContext.restoreGraphicsState()
+                if let img = sheet.makeImage() { write(img, "\(outDir)/glyphs.png") }
+            }
+        }
+
         // Export formats.
         let enc = Exporter.data(for: strip, as: .pdf, scale: 2)
         check(enc.map { $0.starts(with: Data("%PDF".utf8)) } == true, "PDF export")

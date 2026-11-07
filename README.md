@@ -42,7 +42,7 @@ Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 ### ✏️ Editor
 
 - **Default tool**: pick the tool the editor opens with, or let it remember the last one.
-- **Tools**, one key each: select `V`, arrow `A` (3 styles, curvable), rectangle `R` (outline, filled or dashed), oval `O`, line `L` (solid or dashed), freehand `P`, text `T` (optional background), highlighter `H`, blur / erase `B` (pixelate, gaussian, erase), spotlight `S`, counter `C`, ruler `M`, magnifier `G`, image overlay `I`, crop `X`.
+- **Tools**, one key each: select `V`, arrow `A` (3 styles, curvable), rectangle `R` (outline, filled, dashed or dotted), oval `O`, line `L` (solid, dashed or dotted), freehand `P`, pencil `E`, text `T` (optional background), highlighter `H`, blur / erase `B` (pixelate, gaussian, hexagonal, erase), spotlight `S`, counter `C`, ruler `M`, magnifier `G`, image overlay `I`, crop `X`.
 - **Editing**: select, move and resize shapes, Delete, arrow-key nudge, Shift to constrain, unlimited undo / redo, zoom and pinch, colour under the cursor.
 - **Style presets** (More menu): four built-in looks plus your own, saved by name; applying one restyles the selected shape too.
 - **Backdrop** (`K`): padding, inner and outer radius, shadow, gradient or solid, angle, 16 presets, optional window title bar, aspect ratio (1:1, 4:3, 16:9, 9:16…), randomize, and up to 20 named styles of your own.
@@ -183,7 +183,7 @@ Snapix/
 ├── Sources/Snapix/
 │   ├── main.swift, AppDelegate.swift   # Entry point, menu bar, URL scheme
 │   ├── Capture, ScrollCapture, Recorder, RecordingReview, SelectionOverlay, PreviewPanel
-│   ├── EditorWindow, EditorChrome, CanvasView, OptionsPanel, BackdropPanel
+│   ├── EditorWindow, EditorChrome, ToolGlyph, CanvasView, OptionsPanel, BackdropPanel
 │   ├── Model, StylePreset, BackdropPreset, CropGeometry, Watermark, Renderer, Exporter, ImageDrag, ImageTransform # Annotations, drawing, output
 │   ├── OCR, Redaction, Cutout, ColorTools      # Vision, sensitive data, background removal, colour
 │   ├── History, Combine, PinWindow, HomeWindow # Library, stitching images, pins, home

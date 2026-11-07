@@ -154,16 +154,20 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         for t in Tool.allCases {
             let b = IconButton(symbol: t.symbol, tip: "\(t.title) (\(t.key.uppercased()))", target: self, action: #selector(toolPicked(_:)),
                                size: toolSize, pointSize: 13)
+            b.image = ToolGlyph.image(for: t)
             b.tag = Tool.allCases.firstIndex(of: t) ?? 0
             toolButtons[t] = b
             toolStack.addArrangedSubview(b)
         }
         let backdrop = IconButton(symbol: "rectangle.dashed.badge.record", tip: L("Backdrop (K)"), target: self, action: #selector(showBackdrop(_:)),
                                   size: toolSize, pointSize: 13)
+        backdrop.image = ToolGlyph.backdrop
         backdropButton = backdrop
         toolStack.addArrangedSubview(backdrop)
-        toolStack.addArrangedSubview(IconButton(symbol: "ellipsis", tip: L("More tools and actions"), target: self, action: #selector(showMore(_:)),
-                                                size: toolSize, pointSize: 13))
+        let moreButton = IconButton(symbol: "ellipsis", tip: L("More tools and actions"), target: self, action: #selector(showMore(_:)),
+                                    size: toolSize, pointSize: 13)
+        moreButton.image = ToolGlyph.more
+        toolStack.addArrangedSubview(moreButton)
 
         options.setColor(canvas.color)
         options.onColor = { [weak self] c in self?.canvas.color = c }
