@@ -583,3 +583,11 @@
 "Solid color" = "Couleur unie";
 "Background color" = "Couleur de fond";
 "Used for the solid color, and behind a transparent desktop picture." = "Utilisée pour la couleur unie, et derrière une image de bureau transparente.";
+"Color Statistics of Selection" = "Statistiques de couleur de la sélection";
+"Color statistics" = "Statistiques de couleur";
+"Average" = "Moyenne";
+"Darkest" = "Plus sombre";
+"Lightest" = "Plus claire";
+"Dominant colors" = "Couleurs dominantes";
+"Click a color to copy it" = "Cliquez sur une couleur pour la copier";
+"Nothing to analyse" = "Rien à analyser";

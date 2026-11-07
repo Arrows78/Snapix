@@ -372,6 +372,16 @@ enum SelfTest {
             check(c.width == 448 && c.height == 98 && px.color(x: 2, y: 2)?.hexValue == 0xFF0000 && px.color(x: m + 5, y: m + 3)?.hexValue == PixelBuffer(win)?.color(x: 5, y: 3)?.hexValue, "window background adds a margin around the window")
         } else { check(false, "window background compose") }
 
+        // Colour statistics.
+        let stripeCtx = CGContext(data: nil, width: 100, height: 40, bitsPerComponent: 8, bytesPerRow: 0, space: Renderer.sRGB, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+        stripeCtx.setFillColor(CGColor(srgbRed: 1, green: 0, blue: 0, alpha: 1)); stripeCtx.fill(CGRect(x: 0, y: 0, width: 75, height: 40))
+        stripeCtx.setFillColor(CGColor(srgbRed: 0, green: 0, blue: 1, alpha: 1)); stripeCtx.fill(CGRect(x: 75, y: 0, width: 25, height: 40))
+        if let st = ColorStats.compute(stripeCtx.makeImage()!) {
+            check(st.palette.first == 0xFF0000 && st.palette.contains(0x0000FF) && st.palette.count == 2, "colour stats dominant palette")
+            check(st.lightest == 0xFF0000 && st.darkest == 0x0000FF, "colour stats lightest and darkest")
+            check(Int(st.average >> 16) == 191 && Int(st.average & 0xFF) == 63, "colour stats average (\(String(st.average, radix: 16)))")
+        } else { check(false, "colour stats") }
+
         // Export formats.
         let enc = Exporter.data(for: strip, as: .pdf, scale: 2)
         check(enc.map { $0.starts(with: Data("%PDF".utf8)) } == true, "PDF export")

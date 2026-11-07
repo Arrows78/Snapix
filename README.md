@@ -68,6 +68,7 @@ Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 - **OCR and QR / barcodes** (Vision) from a dragged area or the editor, with an optional *remove line breaks* and an offer to open links found in the text.
 - **Custom OCR server** (optional): send the image to a server of your choice that speaks the common chat-completions format with image input (address, model, prompt, key, connection test). QR codes are always read locally and the built-in engine is the fallback.
 - **Colour picker**: HEX, RGB, CSS, HSL, Swift, C#, Android and UIKit output, in a card that lists every format and keeps the recent colours.
+- **Color statistics** (More menu): average, darkest and lightest colour and a dominant palette of the selection, each one click to copy.
 - **Contrast checker**: WCAG ratio and APCA Lc. Pick two colours, or analyse a region in the editor.
 
 ### 📤 Output

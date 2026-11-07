@@ -294,6 +294,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         }
         add(L("Recognize text / QR code"), #selector(runOCR(_:)), symbol: "text.viewfinder")
         add(L("Check Contrast of Selection"), #selector(contrastAction(_:)), symbol: "circle.lefthalf.filled")
+        add(L("Color Statistics of Selection"), #selector(colorStatsAction(_:)), symbol: "paintpalette")
         add(L("Resize Image…"), #selector(resizeImage(_:)), symbol: "arrow.up.left.and.arrow.down.right")
         add(L("Uncrop"), #selector(uncropAction(_:)), symbol: "arrow.uturn.left")
         add(L("Rotate Left"), #selector(rotateLeftAction(_:)), symbol: "rotate.left")
@@ -668,6 +669,10 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
             return
         }
         ColorTools.report(text: pair.text, background: pair.background)
+    }
+
+    @objc func colorStatsAction(_ sender: Any?) {
+        if let img = croppedFocus() { ColorStatsPanel.show(for: img) }
     }
 
     @objc func cropAction(_ sender: Any?) { selectTool(.crop) }
