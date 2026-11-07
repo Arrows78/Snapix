@@ -41,6 +41,7 @@ Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 
 - **Tools**, one key each: select `V`, arrow `A` (3 styles, curvable), rectangle `R`, oval `O`, line `L`, freehand `P`, text `T` (optional background), highlighter `H`, blur / erase `B` (pixelate, gaussian, erase), spotlight `S`, counter `C`, ruler `M`, magnifier `G`, image overlay `I`, crop `X`.
 - **Editing**: select, move and resize shapes, Delete, arrow-key nudge, Shift to constrain, unlimited undo / redo, zoom and pinch, colour under the cursor.
+- **Style presets** (More menu): four built-in looks plus your own, saved by name; applying one restyles the selected shape too.
 - **Backdrop** (`K`): padding, inner and outer radius, shadow, gradient or solid, angle, presets, randomize.
 - **Snapping**: edge snapping for boxes and crop (hold ⌥ to bypass), and *Snap to Similar Region* (right-click a shape).
 - **Image**: resize, crop (Return to apply) with Uncrop, merge annotations into the image, print, drag the result out of the editor into other apps.
@@ -170,7 +171,7 @@ Snapix/
 │   ├── main.swift, AppDelegate.swift   # Entry point, menu bar, URL scheme
 │   ├── Capture, ScrollCapture, Recorder, SelectionOverlay, PreviewPanel
 │   ├── EditorWindow, EditorChrome, CanvasView, OptionsPanel, BackdropPanel
-│   ├── Model, Renderer, Exporter, ImageDrag    # Annotations, drawing, output
+│   ├── Model, StylePreset, Renderer, Exporter, ImageDrag    # Annotations, drawing, output
 │   ├── OCR, Redaction, Cutout, ColorTools      # Vision, sensitive data, background removal, colour
 │   ├── History, Combine, PinWindow, HomeWindow # Library, stitching images, pins, home
 │   ├── Toast, Feedback, ShortcutSheet          # Feedback, shutter sound, cheat sheet

@@ -266,6 +266,10 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         add(L("Erase Text in Selection"), #selector(eraseTextAction(_:)), symbol: "text.badge.minus")
         add(L("Hide Sensitive Data"), #selector(redactAction(_:)), symbol: "eye.slash")
         add(L("Remove Background"), #selector(cutoutAction(_:)), symbol: "person.crop.circle.badge.minus")
+        let presets = NSMenuItem(title: L("Style Presets"), action: nil, keyEquivalent: "")
+        presets.image = NSImage(systemSymbolName: "paintpalette", accessibilityDescription: nil)
+        presets.submenu = presetsMenu()
+        menu.addItem(presets)
         menu.addItem(.separator())
         add(L("Zoom to Selection"), #selector(zoomSelectionAction(_:)), symbol: "plus.magnifyingglass")
         add(L("Annotation Shadows"), #selector(toggleShadows(_:)), symbol: "shadow")
@@ -276,6 +280,75 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         add(L("Print…"), #selector(printDocument(_:)), symbol: "printer")
         menu.popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height + 4), in: sender)
     }
+
+    // MARK: Style presets
+
+    private func presetsMenu() -> NSMenu {
+        let m = NSMenu()
+        func item(_ p: StylePreset, builtIn: Bool) {
+            let i = NSMenuItem(title: builtIn ? L(p.name) : p.name, action: #selector(applyPreset(_:)), keyEquivalent: "")
+            i.target = self
+            i.representedObject = p.name
+            let dot = NSImage(size: NSSize(width: 12, height: 12), flipped: false) { r in p.color.setFill(); NSBezierPath(ovalIn: r.insetBy(dx: 1, dy: 1)).fill(); return true }
+            i.image = dot
+            m.addItem(i)
+        }
+        StylePreset.builtIn.forEach { item($0, builtIn: true) }
+        let saved = StylePreset.saved()
+        if !saved.isEmpty { m.addItem(.separator()); saved.forEach { item($0, builtIn: false) } }
+        m.addItem(.separator())
+        let save = NSMenuItem(title: L("Save Current Style…"), action: #selector(savePreset(_:)), keyEquivalent: "")
+        save.target = self
+        m.addItem(save)
+        if !saved.isEmpty {
+            let del = NSMenuItem(title: L("Delete Preset"), action: nil, keyEquivalent: "")
+            let sub = NSMenu()
+            for p in saved {
+                let d = NSMenuItem(title: p.name, action: #selector(deletePreset(_:)), keyEquivalent: "")
+                d.target = self
+                sub.addItem(d)
+            }
+            del.submenu = sub
+            m.addItem(del)
+        }
+        return m
+    }
+
+    /// Makes the preset the current style; a selected shape follows because the canvas applies changes to it.
+    @objc private func applyPreset(_ sender: NSMenuItem) {
+        guard let name = sender.representedObject as? String,
+              let p = (StylePreset.builtIn + StylePreset.saved()).first(where: { $0.name == name }) else { return }
+        canvas.arrowStyle = p.arrowStyle
+        canvas.filled = p.filled
+        canvas.blurMode = BlurMode(rawValue: p.blur) ?? .pixelate
+        canvas.color = p.color
+        canvas.lineWidth = p.width
+        canvas.fontSize = max(12, p.width * 6 + 8)
+        options.setColor(p.color)
+        options.setSlider(Double(p.width))
+        refreshOptions(for: canvas.selectedAnnotation?.tool ?? canvas.tool, from: canvas.selectedAnnotation)
+        Toast.show(LF("Style “%@” applied", sender.title))
+    }
+
+    @objc private func savePreset(_ sender: Any?) {
+        let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 220, height: 24))
+        field.placeholderString = L("Preset name")
+        let alert = NSAlert()
+        alert.messageText = L("Save current style")
+        alert.informativeText = L("Colour, stroke width and options of the current tool are stored as a preset.")
+        alert.accessoryView = field
+        alert.addButton(withTitle: L("Save"))
+        alert.addButton(withTitle: L("Cancel"))
+        alert.window.initialFirstResponder = field
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        let name = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return }
+        StylePreset.save(StylePreset(name: name, colorHex: canvas.color.hexValue, width: canvas.lineWidth, arrowStyle: canvas.arrowStyle,
+                                     filled: canvas.filled, blur: canvas.blurMode.rawValue))
+        Toast.show(LF("Style “%@” saved", name))
+    }
+
+    @objc private func deletePreset(_ sender: NSMenuItem) { StylePreset.delete(named: sender.title) }
 
     // MARK: Zoom
 

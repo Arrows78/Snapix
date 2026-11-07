@@ -234,3 +234,15 @@
 "Record system audio (MP4 only)" = "Enregistrer le son du système (MP4 uniquement)";
 "Show the file in Finder when done" = "Afficher le fichier dans le Finder à la fin";
 "Press the shortcut again, or click Stop, to end a recording. The file is saved in your screenshots folder and copied to the clipboard." = "Appuyez de nouveau sur le raccourci, ou cliquez sur Arrêter, pour terminer. Le fichier est enregistré dans le dossier des captures et copié dans le presse-papiers.";
+"Style Presets" = "Styles prédéfinis";
+"Alert" = "Alerte";
+"Highlight" = "Mise en avant";
+"Note" = "Note";
+"Subtle" = "Discret";
+"Save Current Style…" = "Enregistrer le style actuel…";
+"Delete Preset" = "Supprimer un style";
+"Style “%@” applied" = "Style « %@ » appliqué";
+"Style “%@” saved" = "Style « %@ » enregistré";
+"Preset name" = "Nom du style";
+"Save current style" = "Enregistrer le style actuel";
+"Colour, stroke width and options of the current tool are stored as a preset." = "La couleur, l'épaisseur et les options de l'outil actuel sont enregistrées dans un style.";

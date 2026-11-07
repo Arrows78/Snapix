@@ -66,6 +66,17 @@ enum SelfTest {
         check(Pref.restore(Data("nope".utf8)) == nil, "backup rejects garbage")
         suite.removePersistentDomain(forName: "snapix.selftest")
 
+        // Style presets.
+        let ps = UserDefaults(suiteName: "snapix.selftest3")!
+        ps.removePersistentDomain(forName: "snapix.selftest3")
+        StylePreset.save(StylePreset(name: "A", colorHex: 0x112233, width: 7, filled: true), in: ps)
+        StylePreset.save(StylePreset(name: "B", colorHex: 0x445566, width: 2), in: ps)
+        StylePreset.save(StylePreset(name: "A", colorHex: 0x778899, width: 9), in: ps)
+        check(StylePreset.saved(in: ps).map(\.name) == ["B", "A"] && StylePreset.saved(in: ps).last?.colorHex == 0x778899, "preset save replaces by name")
+        StylePreset.delete(named: "B", in: ps)
+        check(StylePreset.saved(in: ps).map(\.name) == ["A"], "preset delete")
+        ps.removePersistentDomain(forName: "snapix.selftest3")
+
         // Combining screenshots.
         let colA = page(rows: 0..<100), colB = page(rows: 200..<260)
         if let v = Combine.images([colA, colB], horizontal: false) { check(v.width == 400 && v.height == 160, "combine vertical size \(v.width)x\(v.height)") } else { check(false, "combine vertical") }
