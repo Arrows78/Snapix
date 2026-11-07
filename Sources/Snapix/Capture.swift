@@ -147,17 +147,17 @@ enum Capture {
     static func repeatArea() async throws -> Shot {
         guard let rect = lastArea, let screen = screen(containing: rect) else { throw CaptureError.notFound }
         let img = try await captureRegion(rect, on: screen, excludingSelf: false)
-        return Shot(image: img, scale: screen.backingScaleFactor, screenRect: rect)
+        return Shot(image: img, scale: screen.backingScaleFactor, screenRect: rect, placeAtRegion: true)
     }
 
     /// Lets the user drag a rectangle on a frozen copy of the screen.
     static func area(remember: Bool = true) async throws -> Shot? {
         let frozen = try await freeze()
         switch await SelectionOverlay.run(frozen: frozen, mode: .area) {
-        case let .area(f, pixelRect, screenRect):
+        case let .area(f, pixelRect, screenRect, end):
             guard let crop = f.image.cropping(to: pixelRect) else { return nil }
             if remember { lastArea = screenRect }
-            return Shot(image: crop, scale: f.screen.backingScaleFactor, screenRect: screenRect)
+            return Shot(image: crop, scale: f.screen.backingScaleFactor, screenRect: screenRect, placeAtRegion: true, anchorPoint: end)
         default:
             return nil
         }
@@ -177,7 +177,7 @@ enum Capture {
     /// Area selection that returns the geometry only (scrolling capture needs a live region, not a frozen crop).
     static func selectRegion() async throws -> (rect: CGRect, screen: NSScreen)? {
         let frozen = try await freeze()
-        if case let .area(f, _, screenRect) = await SelectionOverlay.run(frozen: frozen, mode: .area) { return (screenRect, f.screen) }
+        if case let .area(f, _, screenRect, _) = await SelectionOverlay.run(frozen: frozen, mode: .area) { return (screenRect, f.screen) }
         return nil
     }
 }

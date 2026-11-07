@@ -15,7 +15,13 @@ enum OCR {
             let textRequest = VNRecognizeTextRequest()
             textRequest.recognitionLevel = .accurate
             textRequest.usesLanguageCorrection = true
-            textRequest.automaticallyDetectsLanguage = true
+            let lang = Pref.string("ocrLanguage")
+            if lang.isEmpty || lang == "auto" {
+                textRequest.automaticallyDetectsLanguage = true
+            } else {
+                textRequest.recognitionLanguages = [lang]
+                textRequest.automaticallyDetectsLanguage = false
+            }
             let barcodeRequest = VNDetectBarcodesRequest()
 
             let handler = VNImageRequestHandler(cgImage: image, options: [:])
@@ -28,6 +34,29 @@ enum OCR {
             let codes = (barcodeRequest.results ?? []).compactMap { $0.payloadStringValue }
             DispatchQueue.main.async { completion(Result(text: text, qrPayloads: codes)) }
         }
+    }
+
+    /// Line-level boxes of the text found in `region`, in image pixel coordinates (top-left origin).
+    static func textBoxes(in image: CGImage, region: CGRect, completion: @escaping ([CGRect]) -> Void) {
+        let r = region.integral.intersection(CGRect(x: 0, y: 0, width: image.width, height: image.height))
+        guard r.width >= 4, r.height >= 4, let crop = image.cropping(to: r) else { completion([]); return }
+        DispatchQueue.global(qos: .userInitiated).async {
+            let req = VNRecognizeTextRequest()
+            req.recognitionLevel = .accurate
+            try? VNImageRequestHandler(cgImage: crop, options: [:]).perform([req])
+            let boxes = (req.results ?? []).map { o -> CGRect in
+                let b = o.boundingBox // normalized, origin bottom-left
+                return CGRect(x: r.minX + b.minX * r.width, y: r.minY + (1 - b.maxY) * r.height, width: b.width * r.width, height: b.height * r.height)
+            }
+            DispatchQueue.main.async { completion(boxes) }
+        }
+    }
+
+    /// Languages Vision can recognise with the accurate model, for the preferences picker.
+    static var supportedLanguages: [String] {
+        let req = VNRecognizeTextRequest()
+        req.recognitionLevel = .accurate
+        return (try? req.supportedRecognitionLanguages()) ?? []
     }
 
     @MainActor

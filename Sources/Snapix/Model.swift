@@ -91,6 +91,8 @@ struct Annotation: Identifiable {
     var filled = false
     var style = 0
     var blur: BlurMode = .pixelate
+    /// Quadratic Bézier control point: bends arrows and lines (nil = straight).
+    var ctrl: CGPoint?
 
     var rect: CGRect {
         CGRect(x: min(p1.x, p2.x), y: min(p1.y, p2.y), width: abs(p2.x - p1.x), height: abs(p2.y - p1.y))
@@ -110,9 +112,37 @@ struct Annotation: Identifiable {
 
     var textRect: CGRect { CGRect(origin: p1, size: textSize) }
 
+    var isCurvable: Bool { tool == .line || (tool == .arrow && style != 2) }
+
+    /// Point of the curve halfway along it, where the bend handle sits.
+    var curveMid: CGPoint {
+        guard let c = ctrl else { return CGPoint(x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2) }
+        return CGPoint(x: (p1.x + 2 * c.x + p2.x) / 4, y: (p1.y + 2 * c.y + p2.y) / 4)
+    }
+
+    /// Bends the stroke so that it passes through `m` at its middle; close to the chord means straight again.
+    mutating func bend(through m: CGPoint) {
+        let mid = CGPoint(x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2)
+        ctrl = hypot(m.x - mid.x, m.y - mid.y) < 3 ? nil : CGPoint(x: 2 * m.x - mid.x, y: 2 * m.y - mid.y)
+    }
+
+    func distanceToStroke(_ p: CGPoint) -> CGFloat {
+        guard let c = ctrl, isCurvable else { return Geometry.distance(from: p, toSegment: p1, p2) }
+        var best = CGFloat.greatestFiniteMagnitude
+        var prev = p1
+        for i in 1...16 {
+            let t = CGFloat(i) / 16, u = 1 - t
+            let q = CGPoint(x: u * u * p1.x + 2 * u * t * c.x + t * t * p2.x, y: u * u * p1.y + 2 * u * t * c.y + t * t * p2.y)
+            best = min(best, Geometry.distance(from: p, toSegment: prev, q))
+            prev = q
+        }
+        return best
+    }
+
     mutating func translate(by d: CGSize) {
         p1.x += d.width; p1.y += d.height
         p2.x += d.width; p2.y += d.height
+        if let c = ctrl { ctrl = CGPoint(x: c.x + d.width, y: c.y + d.height) }
         points = points.map { CGPoint(x: $0.x + d.width, y: $0.y + d.height) }
     }
 
@@ -121,7 +151,7 @@ struct Annotation: Identifiable {
         case .rect, .oval, .blur, .spotlight, .crop:
             return rect.insetBy(dx: -t, dy: -t).contains(p)
         case .line, .arrow, .ruler:
-            return Geometry.distance(from: p, toSegment: p1, p2) <= max(t, width / 2 + t)
+            return distanceToStroke(p) <= max(t, width / 2 + t)
         case .pen, .highlighter:
             guard points.count > 1 else { return false }
             for i in 1..<points.count where Geometry.distance(from: p, toSegment: points[i - 1], points[i]) <= max(t, width / 2 + t) {
@@ -169,6 +199,7 @@ struct BackdropConfig: Codable, Equatable {
     var fromHex: UInt32 = 0x7F5AF0
     var toHex: UInt32 = 0x2CB1BC
     var angle: CGFloat = 45
+    var radial = false
 
     var from: NSColor { NSColor(hex: fromHex) }
     var to: NSColor { NSColor(hex: toHex) }
@@ -216,6 +247,10 @@ struct DocState {
     var backdrop = BackdropConfig.load()
     var overlay: OverlayImage?
     var uncrop: UncropInfo?
+    /// Soft drop shadow under every annotation.
+    var shadows = false
+    /// Picture used instead of the gradient behind the screenshot (session only).
+    var backdropImage: CGImage?
 }
 
 final class Document {

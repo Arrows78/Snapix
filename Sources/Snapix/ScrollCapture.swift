@@ -210,6 +210,6 @@ enum ScrollCapture {
 
     private static func finish(_ s: Stitcher, scale: CGFloat, rect: CGRect) -> Shot? {
         guard let img = s.result() else { return nil }
-        return Shot(image: img, scale: scale, screenRect: rect)
+        return Shot(image: img, scale: scale, screenRect: rect, placeAtRegion: true)
     }
 }

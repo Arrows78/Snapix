@@ -12,7 +12,7 @@ private final class CenteringClipView: NSClipView {
 }
 
 /// Drag from this button to drop the edited image into Finder, Mail, Slack, etc.
-private final class ImageDragButton: NSButton, NSDraggingSource {
+private final class ImageDragButton: IconButton, NSDraggingSource {
     var imageProvider: (() -> (image: CGImage, scale: CGFloat)?)?
     private var started = false
 
@@ -20,18 +20,7 @@ private final class ImageDragButton: NSButton, NSDraggingSource {
 
     override func mouseDragged(with event: NSEvent) {
         guard !started, let (img, scale) = imageProvider?() else { return }
-        let prepared = Exporter.prepared(img, scale: scale)
-        guard let (data, ext) = Exporter.encode(prepared.image, forceLossless: Exporter.hasTransparency(prepared.image)) else { return }
-        let dir = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("SnapixDrag", isDirectory: true)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        let url = dir.appendingPathComponent(Exporter.filename(ext: ext))
-        guard (try? data.write(to: url)) != nil else { return }
-        started = true
-
-        let item = NSDraggingItem(pasteboardWriter: url as NSURL)
-        let preview = NSImage(cgImage: img, size: NSSize(width: 120, height: 120 * CGFloat(img.height) / CGFloat(max(1, img.width))))
-        item.setDraggingFrame(NSRect(x: 0, y: 0, width: preview.size.width, height: preview.size.height), contents: preview)
-        beginDraggingSession(with: [item], event: event, source: self)
+        started = ImageDrag.begin(from: self, source: self, event: event, image: img, scale: scale)
     }
 
     func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation { .copy }
@@ -40,16 +29,16 @@ private final class ImageDragButton: NSButton, NSDraggingSource {
 @MainActor
 final class EditorWindowController: NSWindowController, NSWindowDelegate {
     private static var open: [EditorWindowController] = []
+    static var hasOpenEditors: Bool { !open.isEmpty }
 
     private let doc: Document
     private let canvas: CanvasView
-    private let scroll = NSScrollView()
-    private let toolControl = NSSegmentedControl()
-    private let colorWell = NSColorWell(style: .minimal)
-    private let widthSlider = NSSlider(value: 4, minValue: 1, maxValue: 30, target: nil, action: nil)
-    private let styleButton = NSPopUpButton(frame: .zero, pullsDown: false)
-    private let status = NSTextField(labelWithString: "")
-    private var cursorInfo = ""
+    private let scroll = ZoomScrollView()
+    private var toolButtons: [Tool: IconButton] = [:]
+    private var backdropButton: IconButton?
+    private let options = OptionsPanel()
+    private let colorChip = Chip(), sizeChip = Chip(), zoomChip = Chip()
+    private var lastCursorColor: NSColor?
     private var backdropPopover: NSPopover?
     private var backdropModel: BackdropModel?
 
@@ -100,9 +89,13 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         canvas = CanvasView(doc: doc)
 
         let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1000, height: 700),
-                         styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
+                         styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView], backing: .buffered, defer: false)
         w.isReleasedWhenClosed = false
-        w.minSize = NSSize(width: 900, height: 360)
+        w.titlebarAppearsTransparent = true
+        w.titleVisibility = .hidden
+        w.appearance = NSAppearance(named: .darkAqua)
+        w.backgroundColor = Theme.window
+        w.minSize = NSSize(width: 980, height: 420)
         super.init(window: w)
         w.delegate = self
         w.title = "Snapix"
@@ -114,6 +107,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         canvas.onToolShortcut = { [weak self] t in self?.selectTool(t) }
         canvas.onToggleBackdrop = { [weak self] in self?.toggleBackdrop() }
         canvas.onSelectionChanged = { [weak self] a in self?.selectionChanged(a) }
+        canvas.onCopyColor = { [weak self] in self?.copyCursorColor() }
         canvas.color = NSColor(hex: 0xFF3B30)
         buildUI(in: w, size: shot)
         selectTool(.arrow)
@@ -122,24 +116,12 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
 
     required init?(coder: NSCoder) { fatalError() }
 
-    private func symbolImage(_ name: String, _ tip: String) -> NSImage {
-        let img = NSImage(systemSymbolName: name, accessibilityDescription: tip) ?? NSImage()
-        return img
+    private func iconButton(_ symbol: String, _ tip: String, _ action: Selector) -> IconButton {
+        IconButton(symbol: symbol, tip: L(tip), target: self, action: action)
     }
 
-    private func button(_ symbol: String, _ tip: String, _ action: Selector) -> NSButton {
-        let b = NSButton(image: symbolImage(symbol, tip), target: self, action: action)
-        b.bezelStyle = .texturedRounded
-        b.toolTip = L(tip)
-        b.imagePosition = .imageOnly
-        return b
-    }
-
-    private func dragButton() -> NSButton {
-        let b = ImageDragButton(image: symbolImage("hand.draw", "Drag the image into another app"), target: nil, action: nil)
-        b.bezelStyle = .texturedRounded
-        b.imagePosition = .imageOnly
-        b.toolTip = L("Drag the edited image into another app")
+    private func dragButton() -> IconButton {
+        let b = ImageDragButton(symbol: "hand.draw", tip: L("Drag the edited image into another app"), target: nil, action: nil)
         b.imageProvider = { [weak self] in
             guard let self, let img = self.flattened() else { return nil }
             return (img, self.doc.scale)
@@ -149,87 +131,148 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
 
     private func buildUI(in w: NSWindow, size shot: Shot) {
         let content = NSView()
+        content.wantsLayer = true
+        content.layer?.backgroundColor = Theme.window.cgColor
         w.contentView = content
 
-        toolControl.segmentCount = Tool.allCases.count
-        toolControl.trackingMode = .selectOne
-        toolControl.segmentStyle = .texturedRounded
-        for (i, t) in Tool.allCases.enumerated() {
-            toolControl.setImage(symbolImage(t.symbol, t.title), forSegment: i)
-            toolControl.setWidth(28, forSegment: i)
-            toolControl.setToolTip("\(t.title) (\(t.key.uppercased()))", forSegment: i)
+        let wordmark = NSTextField(labelWithString: "snapix")
+        var wordFont = NSFont.systemFont(ofSize: 19, weight: .semibold)
+        if let d = wordFont.fontDescriptor.withDesign(.rounded), let f = NSFont(descriptor: d, size: 19) { wordFont = f }
+        wordmark.font = wordFont
+        wordmark.textColor = NSColor(hex: 0xA78BFA)
+
+        // Every tool on one row, in one rounded group; the active tool is lit in the accent colour.
+        let toolSize = NSSize(width: 25, height: 26)
+        let toolStack = NSStackView()
+        toolStack.spacing = 2
+        toolStack.edgeInsets = NSEdgeInsets(top: 3, left: 3, bottom: 3, right: 3)
+        toolStack.wantsLayer = true
+        toolStack.layer?.backgroundColor = Theme.pill.cgColor
+        toolStack.layer?.cornerRadius = 8
+        for t in Tool.allCases {
+            let b = IconButton(symbol: t.symbol, tip: "\(t.title) (\(t.key.uppercased()))", target: self, action: #selector(toolPicked(_:)),
+                               size: toolSize, pointSize: 13)
+            b.tag = Tool.allCases.firstIndex(of: t) ?? 0
+            toolButtons[t] = b
+            toolStack.addArrangedSubview(b)
         }
-        toolControl.target = self
-        toolControl.action = #selector(toolPicked(_:))
+        let backdrop = IconButton(symbol: "rectangle.dashed.badge.record", tip: L("Backdrop (K)"), target: self, action: #selector(showBackdrop(_:)),
+                                  size: toolSize, pointSize: 13)
+        backdropButton = backdrop
+        toolStack.addArrangedSubview(backdrop)
+        toolStack.addArrangedSubview(IconButton(symbol: "ellipsis", tip: L("More tools and actions"), target: self, action: #selector(showMore(_:)),
+                                                size: toolSize, pointSize: 13))
 
-        colorWell.color = canvas.color
-        colorWell.target = self
-        colorWell.action = #selector(colorPicked(_:))
-        colorWell.widthAnchor.constraint(equalToConstant: 38).isActive = true
-
-        widthSlider.target = self
-        widthSlider.action = #selector(widthPicked(_:))
-        widthSlider.widthAnchor.constraint(equalToConstant: 90).isActive = true
-        widthSlider.toolTip = L("Size / thickness")
-
-        styleButton.target = self
-        styleButton.action = #selector(stylePicked(_:))
-        styleButton.controlSize = .small
+        options.setColor(canvas.color)
+        options.onColor = { [weak self] c in self?.canvas.color = c }
+        options.onSlider = { [weak self] v in self?.sliderChanged(v) }
+        options.onOption = { [weak self] i in self?.optionPicked(i) }
 
         let spacer = NSView()
         spacer.setContentHuggingPriority(.init(1), for: .horizontal)
         let bar = NSStackView(views: [
-            toolControl, colorWell, widthSlider, styleButton, spacer,
-            button("rectangle.dashed.badge.record", "Backdrop (K)", #selector(showBackdrop(_:))),
-            button("text.viewfinder", "Recognize text / QR code", #selector(runOCR(_:))),
-            button("arrow.uturn.backward", "Undo", #selector(undo(_:))),
+            wordmark,
+            iconButton("doc.on.doc", "Copy (⌘C)", #selector(copy(_:))),
+            iconButton("square.and.arrow.down", "Save (⌘S)", #selector(saveDocument(_:))),
+            iconButton("pin", "Pin to screen", #selector(pinImage(_:))),
             dragButton(),
-            button("pin", "Pin to screen", #selector(pinImage(_:))),
-            button("doc.on.doc", "Copy (⌘C)", #selector(copy(_:))),
-            button("square.and.arrow.down", "Save (⌘S)", #selector(saveDocument(_:))),
+            verticalSeparator(), toolStack, spacer,
+            colorChip, sizeChip, zoomChip,
         ])
         bar.orientation = .horizontal
+        bar.alignment = .centerY
         bar.spacing = 8
-        bar.edgeInsets = NSEdgeInsets(top: 6, left: 10, bottom: 6, right: 10)
+        bar.setCustomSpacing(16, after: wordmark)
+        bar.setCustomSpacing(16, after: colorChip)
+        bar.setCustomSpacing(16, after: sizeChip)
+        bar.edgeInsets = NSEdgeInsets(top: 0, left: 84, bottom: 0, right: 16)
 
-        scroll.contentView = CenteringClipView()
+        let topBar = NSView()
+        topBar.wantsLayer = true
+        topBar.layer?.backgroundColor = Theme.bar.cgColor
+        let topLine = NSView()
+        topLine.wantsLayer = true
+        topLine.layer?.backgroundColor = Theme.line.cgColor
+
+        // The checkerboard fills the whole workspace; the (transparent) scroll view floats above it.
+        let checker = CheckerView()
+        let clip = CenteringClipView()
+        clip.drawsBackground = false
+        scroll.contentView = clip
         scroll.documentView = canvas
         scroll.hasVerticalScroller = true
         scroll.hasHorizontalScroller = true
+        scroll.scrollerStyle = .overlay
+        scroll.autohidesScrollers = true
         scroll.allowsMagnification = true
         scroll.minMagnification = 0.02
         scroll.maxMagnification = 32
-        scroll.drawsBackground = true
-        scroll.backgroundColor = .underPageBackgroundColor
+        scroll.drawsBackground = false
         NotificationCenter.default.addObserver(self, selector: #selector(zoomChanged), name: NSScrollView.didEndLiveMagnifyNotification, object: scroll)
 
-        status.font = .monospacedDigitSystemFont(ofSize: 11, weight: .regular)
-        status.textColor = .secondaryLabelColor
-        status.lineBreakMode = .byTruncatingTail
-
-        for v in [bar, scroll, status] as [NSView] {
-            v.translatesAutoresizingMaskIntoConstraints = false
-            content.addSubview(v)
-        }
+        for v in [topBar, bar, topLine, checker, scroll, options] as [NSView] { v.translatesAutoresizingMaskIntoConstraints = false }
+        for v in [checker, scroll, topBar, topLine, bar, options] as [NSView] { content.addSubview(v) } // options above the canvas
         NSLayoutConstraint.activate([
-            bar.topAnchor.constraint(equalTo: content.topAnchor),
-            bar.leadingAnchor.constraint(equalTo: content.leadingAnchor),
-            bar.trailingAnchor.constraint(equalTo: content.trailingAnchor),
-            scroll.topAnchor.constraint(equalTo: bar.bottomAnchor),
+            topBar.topAnchor.constraint(equalTo: content.topAnchor),
+            topBar.leadingAnchor.constraint(equalTo: content.leadingAnchor),
+            topBar.trailingAnchor.constraint(equalTo: content.trailingAnchor),
+            topBar.heightAnchor.constraint(equalToConstant: 46),
+            bar.topAnchor.constraint(equalTo: topBar.topAnchor),
+            bar.bottomAnchor.constraint(equalTo: topBar.bottomAnchor),
+            bar.leadingAnchor.constraint(equalTo: topBar.leadingAnchor),
+            bar.trailingAnchor.constraint(equalTo: topBar.trailingAnchor),
+            topLine.topAnchor.constraint(equalTo: topBar.bottomAnchor),
+            topLine.leadingAnchor.constraint(equalTo: content.leadingAnchor),
+            topLine.trailingAnchor.constraint(equalTo: content.trailingAnchor),
+            topLine.heightAnchor.constraint(equalToConstant: 1),
+            scroll.topAnchor.constraint(equalTo: topLine.bottomAnchor),
             scroll.leadingAnchor.constraint(equalTo: content.leadingAnchor),
             scroll.trailingAnchor.constraint(equalTo: content.trailingAnchor),
-            scroll.bottomAnchor.constraint(equalTo: status.topAnchor, constant: -4),
-            status.leadingAnchor.constraint(equalTo: content.leadingAnchor, constant: 10),
-            status.trailingAnchor.constraint(equalTo: content.trailingAnchor, constant: -10),
-            status.bottomAnchor.constraint(equalTo: content.bottomAnchor, constant: -4),
+            scroll.bottomAnchor.constraint(equalTo: content.bottomAnchor),
+            checker.topAnchor.constraint(equalTo: topLine.bottomAnchor),
+            checker.leadingAnchor.constraint(equalTo: content.leadingAnchor),
+            checker.trailingAnchor.constraint(equalTo: content.trailingAnchor),
+            checker.bottomAnchor.constraint(equalTo: content.bottomAnchor),
+            options.topAnchor.constraint(equalTo: topLine.bottomAnchor, constant: 10),
+            options.trailingAnchor.constraint(equalTo: content.trailingAnchor, constant: -12),
         ])
 
         let screen = NSScreen.main?.visibleFrame.size ?? NSSize(width: 1400, height: 900)
         let natural = Renderer.canvasSize(doc.state)
         let k = 1 / doc.scale
-        w.setContentSize(NSSize(width: min(max(natural.width * k + 40, 820), screen.width * 0.92),
-                                height: min(max(natural.height * k + 100, 420), screen.height * 0.9)))
+        let grow: CGFloat = Pref.bool("largerWindow") ? 1.3 : 1
+        w.setContentSize(NSSize(width: min(max(natural.width * k * grow, 1040), screen.width * 0.92),
+                                height: min(max((natural.height * k + 47) * grow, 460), screen.height * 0.9)))
         w.center()
+        if Pref.bool("editorOnTop") { w.level = .floating }
+        colorChip.set("—", caption: L("Tab to copy"))
+    }
+
+    // MARK: "More" menu
+
+    @objc private func showMore(_ sender: NSButton) {
+        let menu = NSMenu()
+        func add(_ title: String, _ action: Selector, symbol: String) {
+            let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
+            item.target = self
+            item.image = NSImage(systemSymbolName: symbol, accessibilityDescription: title)
+            menu.addItem(item)
+        }
+        add(L("Recognize text / QR code"), #selector(runOCR(_:)), symbol: "text.viewfinder")
+        add(L("Check Contrast of Selection"), #selector(contrastAction(_:)), symbol: "circle.lefthalf.filled")
+        add(L("Resize Image…"), #selector(resizeImage(_:)), symbol: "arrow.up.left.and.arrow.down.right")
+        add(L("Uncrop"), #selector(uncropAction(_:)), symbol: "arrow.uturn.left")
+        add(L("Merge Annotations Into Image"), #selector(rasterizeAction(_:)), symbol: "square.stack.3d.down.right")
+        add(L("Erase Text in Selection"), #selector(eraseTextAction(_:)), symbol: "text.badge.minus")
+        menu.addItem(.separator())
+        add(L("Zoom to Selection"), #selector(zoomSelectionAction(_:)), symbol: "plus.magnifyingglass")
+        add(L("Annotation Shadows"), #selector(toggleShadows(_:)), symbol: "shadow")
+        menu.items.last?.state = doc.state.shadows ? .on : .off
+        add(L("Copy as File"), #selector(copyAsFile(_:)), symbol: "doc.badge.arrow.up")
+        menu.addItem(.separator())
+        add(L("Upload"), #selector(uploadImage(_:)), symbol: "icloud.and.arrow.up")
+        add(L("Print…"), #selector(printDocument(_:)), symbol: "printer")
+        menu.popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height + 4), in: sender)
     }
 
     // MARK: Zoom
@@ -265,79 +308,97 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
     }
 
     private func updateCursor(_ p: CGPoint?, _ c: NSColor?) {
-        if let p, let c { cursorInfo = "  ·  \(Int(p.x)), \(Int(p.y))  \(ColorFormat.hex.string(for: c))" } else { cursorInfo = "" }
-        updateStatus()
+        lastCursorColor = c
+        if let c {
+            colorChip.set(ColorFormat.hex.string(for: c), caption: L("Tab to copy"), swatch: c)
+        } else {
+            colorChip.set("—", caption: L("Tab to copy"))
+        }
+    }
+
+    private func copyCursorColor() {
+        guard let c = lastCursorColor else { return }
+        let text = ColorFormat.current.string(for: c)
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
+        Toast.show(LF("Copied %@", text))
     }
 
     private func updateStatus() {
         let pct = Int((scroll.magnification * (window?.backingScaleFactor ?? 2) * 100).rounded())
-        var parts = "\(doc.state.image.width) × \(doc.state.image.height) px  ·  \(pct)%"
-        if doc.state.backdrop.enabled { parts += "  ·  " + L("backdrop") }
-        status.stringValue = parts + cursorInfo
+        sizeChip.set("\(doc.state.image.width)×\(doc.state.image.height)px", caption: L("Image size"))
+        zoomChip.set("\(pct)%", caption: L("Zoom"))
+        backdropButton?.isOn = doc.state.backdrop.enabled
     }
 
     private func selectionChanged(_ a: Annotation?) {
-        guard let a else { return }
-        colorWell.color = a.color
-        widthSlider.doubleValue = Double(a.width)
-        refreshStyleMenu(for: a.tool)
+        guard let a else { refreshOptions(for: canvas.tool); return }
+        refreshOptions(for: a.tool, from: a)
+        options.setColor(a.color)
+        options.setSlider(Double(a.width))
     }
 
-    // MARK: Tool / style controls
+    // MARK: Tool / option controls
 
     private func selectTool(_ t: Tool) {
         if t == .overlay, doc.state.overlay == nil, !loadOverlay() {
-            toolControl.selectedSegment = Tool.allCases.firstIndex(of: canvas.tool) ?? 0
+            highlightTool(canvas.tool)
             return
         }
-        if t == .overlay { widthSlider.doubleValue = Double((doc.state.overlay?.opacity ?? 0.5) * 30) }
         canvas.tool = t
-        toolControl.selectedSegment = Tool.allCases.firstIndex(of: t) ?? 0
-        refreshStyleMenu(for: t)
+        highlightTool(t)
+        refreshOptions(for: t)
+        if t == .overlay { options.setSlider(Double((doc.state.overlay?.opacity ?? 0.5) * 30)) }
         window?.makeFirstResponder(canvas)
     }
 
-    private func refreshStyleMenu(for t: Tool) {
-        styleButton.removeAllItems()
+    /// Fills the floating options card with what the tool (or the selected shape) can change.
+    private func refreshOptions(for t: Tool, from a: Annotation? = nil) {
+        let showColor = ![.select, .crop, .blur, .spotlight, .overlay].contains(t)
+        let showSlider = ![.select, .crop, .spotlight].contains(t)
+        func symbol(_ name: String) -> NSImage { NSImage(systemSymbolName: name, accessibilityDescription: nil) ?? NSImage() }
+        var opts: [OptionsPanel.Option] = []
+        var selected = 0
         switch t {
         case .arrow:
-            styleButton.addItems(withTitles: ["Classic arrow", "Open arrow", "Tapered arrow"].map { L($0) })
-            styleButton.selectItem(at: canvas.arrowStyle)
-            styleButton.isHidden = false
+            opts = ["Classic arrow", "Open arrow", "Tapered arrow"].enumerated().map {
+                OptionsPanel.Option(image: ArrowGlyph.image(style: $0.offset), tip: L($0.element))
+            }
+            selected = a?.style ?? canvas.arrowStyle
         case .blur:
-            styleButton.addItems(withTitles: BlurMode.allCases.map(\.title))
-            styleButton.selectItem(at: canvas.blurMode.rawValue)
-            styleButton.isHidden = false
+            let icons = ["square.grid.3x3.fill", "drop.fill", "eraser.fill"]
+            opts = BlurMode.allCases.map { OptionsPanel.Option(image: symbol(icons[$0.rawValue]), tip: $0.title) }
+            selected = (a?.blur ?? canvas.blurMode).rawValue
         case .rect, .oval:
-            styleButton.addItems(withTitles: ["Outline", "Filled"].map { L($0) })
-            styleButton.selectItem(at: canvas.filled ? 1 : 0)
-            styleButton.isHidden = false
+            opts = [OptionsPanel.Option(image: symbol("square"), tip: L("Outline")), OptionsPanel.Option(image: symbol("square.fill"), tip: L("Filled"))]
+            selected = (a?.filled ?? canvas.filled) ? 1 : 0
         case .text:
-            styleButton.addItems(withTitles: ["Plain text", "Text with background"].map { L($0) })
-            styleButton.selectItem(at: canvas.filled ? 1 : 0)
-            styleButton.isHidden = false
-        default:
-            styleButton.isHidden = true
+            opts = [OptionsPanel.Option(image: symbol("textformat"), tip: L("Plain text")),
+                    OptionsPanel.Option(image: symbol("t.square.fill"), tip: L("Text with background"))]
+            selected = (a?.filled ?? canvas.filled) ? 1 : 0
+        default: break
         }
+        options.configure(showColor: showColor, showSlider: showSlider, options: opts, selected: selected)
     }
 
-    @objc private func toolPicked(_ s: NSSegmentedControl) { selectTool(Tool.allCases[s.selectedSegment]); }
+    @objc private func toolPicked(_ s: NSButton) { selectTool(Tool.allCases[s.tag]) }
 
-    @objc private func colorPicked(_ s: NSColorWell) { canvas.color = s.color }
+    private func highlightTool(_ t: Tool) {
+        for (tool, b) in toolButtons { b.isOn = tool == t }
+    }
 
-    @objc private func widthPicked(_ s: NSSlider) {
+    private func sliderChanged(_ v: Double) {
         if canvas.tool == .overlay { // the slider doubles as overlay opacity
-            doc.state.overlay?.opacity = CGFloat(s.doubleValue / 30)
+            doc.state.overlay?.opacity = CGFloat(v / 30)
             canvas.needsDisplay = true
             return
         }
-        canvas.lineWidth = CGFloat(s.doubleValue)
-        canvas.fontSize = max(12, CGFloat(s.doubleValue) * 6 + 8)
+        canvas.lineWidth = CGFloat(v)
+        canvas.fontSize = max(12, CGFloat(v) * 6 + 8)
     }
 
-    @objc private func stylePicked(_ s: NSPopUpButton) {
-        let i = s.indexOfSelectedItem
-        switch canvas.tool {
+    private func optionPicked(_ i: Int) {
+        switch canvas.selectedAnnotation?.tool ?? canvas.tool {
         case .arrow: canvas.arrowStyle = i
         case .blur: canvas.blurMode = BlurMode(rawValue: i) ?? .pixelate
         case .rect, .oval, .text: canvas.filled = i == 1
@@ -458,6 +519,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
                 s.annotations[i].p1 = f(s.annotations[i].p1)
                 s.annotations[i].p2 = f(s.annotations[i].p2)
                 s.annotations[i].points = s.annotations[i].points.map(f)
+                s.annotations[i].ctrl = s.annotations[i].ctrl.map(f)
             }
         }
         fitToWindow()
@@ -508,6 +570,51 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         NSPrintOperation(view: view, printInfo: info).runModal(for: w, delegate: nil, didRun: nil, contextInfo: nil)
     }
 
+    // MARK: More actions
+
+    /// Finds the text lines in the selection (or the whole image) and covers each with an "erase" patch.
+    @objc func eraseTextAction(_ sender: Any?) {
+        Toast.show(L("Recognizing…"), duration: 1)
+        OCR.textBoxes(in: doc.state.image, region: canvas.focusRect) { [weak self] boxes in
+            guard let self else { return }
+            guard !boxes.isEmpty else { Toast.show(L("No text or QR code found")); return }
+            let color = self.canvas.color
+            self.doc.mutate { s in
+                for b in boxes.map({ $0.insetBy(dx: -3, dy: -2) }) {
+                    var a = Annotation(tool: .blur, p1: CGPoint(x: b.minX, y: b.minY), p2: CGPoint(x: b.maxX, y: b.maxY), color: color, width: 6)
+                    a.blur = .erase
+                    s.annotations.append(a)
+                }
+            }
+            Toast.show(LF("%d text regions erased", boxes.count))
+        }
+    }
+
+    @objc func zoomSelectionAction(_ sender: Any?) {
+        let o = Renderer.origin(doc.state)
+        let r = canvas.focusRect.offsetBy(dx: o.x, dy: o.y).insetBy(dx: -12, dy: -12)
+        scroll.magnify(toFit: r)
+        updateStatus()
+    }
+
+    @objc func toggleShadows(_ sender: Any?) {
+        doc.mutate { $0.shadows.toggle() }
+    }
+
+    /// Puts the edited image on the pasteboard as a file, so it pastes into Finder, Mail, chat apps as an attachment.
+    @objc func copyAsFile(_ sender: Any?) {
+        guard let img = flattened() else { return }
+        let prepared = Exporter.prepared(img, scale: doc.scale)
+        guard let (data, ext) = Exporter.encode(prepared.image, forceLossless: Exporter.hasTransparency(prepared.image)) else { return }
+        let dir = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("SnapixCopy", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let url = dir.appendingPathComponent(Exporter.filename(ext: ext))
+        guard (try? data.write(to: url)) != nil else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.writeObjects([url as NSURL])
+        Toast.show(L("Copied as file"))
+    }
+
     // MARK: Closing
 
     private func finishWithEscape() {
@@ -521,6 +628,6 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
         canvas.commitText()
         EditorWindowController.open.removeAll { $0 === self }
-        if EditorWindowController.open.isEmpty { NSApp.setActivationPolicy(.accessory) }
+        if EditorWindowController.open.isEmpty { NSApp.setActivationPolicy(AppDelegate.restingPolicy) }
     }
 }

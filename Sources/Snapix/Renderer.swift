@@ -58,7 +58,7 @@ enum Renderer {
         ctx.restoreGState()
 
         for a in s.annotations where a.tool != .spotlight && a.id != skipID {
-            draw(a, image: s.image, in: ctx)
+            draw(a, image: s.image, shadow: s.shadows, in: ctx)
         }
         ctx.restoreGState()
     }
@@ -87,7 +87,16 @@ enum Renderer {
             ctx.addPath(CGPath(roundedRect: full, cornerWidth: b.outerRadius, cornerHeight: b.outerRadius, transform: nil))
             ctx.clip()
         }
-        if b.gradient, let g = CGGradient(colorsSpace: sRGB, colors: [b.from.cgColor, b.to.cgColor] as CFArray, locations: nil) {
+        if let bg = s.backdropImage {
+            let k = max(full.width / CGFloat(bg.width), full.height / CGFloat(bg.height))
+            let w = CGFloat(bg.width) * k, h = CGFloat(bg.height) * k
+            ctx.interpolationQuality = .high
+            ctx.drawFlipped(bg, in: CGRect(x: full.midX - w / 2, y: full.midY - h / 2, width: w, height: h)) // cover
+        } else if b.gradient, b.radial, let g = CGGradient(colorsSpace: sRGB, colors: [b.from.cgColor, b.to.cgColor] as CFArray, locations: nil) {
+            let c = CGPoint(x: full.midX, y: full.midY)
+            ctx.drawRadialGradient(g, startCenter: c, startRadius: 0, endCenter: c, endRadius: hypot(full.width, full.height) / 2,
+                                   options: [.drawsAfterEndLocation])
+        } else if b.gradient, let g = CGGradient(colorsSpace: sRGB, colors: [b.from.cgColor, b.to.cgColor] as CFArray, locations: nil) {
             let rad = b.angle * .pi / 180
             let half = (abs(full.width * cos(rad)) + abs(full.height * sin(rad))) / 2
             let c = CGPoint(x: full.midX, y: full.midY)
@@ -125,9 +134,12 @@ enum Renderer {
         ctx.restoreGState()
     }
 
-    static func draw(_ a: Annotation, image: CGImage, in ctx: CGContext) {
+    static func draw(_ a: Annotation, image: CGImage, shadow: Bool = false, in ctx: CGContext) {
         ctx.saveGState()
         defer { ctx.restoreGState() }
+        if shadow && ![.blur, .highlighter, .spotlight, .overlay, .select, .crop].contains(a.tool) {
+            ctx.setShadow(offset: CGSize(width: 0, height: -2), blur: 6, color: NSColor.black.withAlphaComponent(0.45).cgColor)
+        }
         ctx.setStrokeColor(a.color.cgColor)
         ctx.setFillColor(a.color.cgColor)
         ctx.setLineWidth(a.width)
@@ -140,7 +152,9 @@ enum Renderer {
         case .oval:
             if a.filled { ctx.fillEllipse(in: a.rect) } else { ctx.strokeEllipse(in: a.rect) }
         case .line:
-            ctx.move(to: a.p1); ctx.addLine(to: a.p2); ctx.strokePath()
+            ctx.move(to: a.p1)
+            if let c = a.ctrl { ctx.addQuadCurve(to: a.p2, control: c) } else { ctx.addLine(to: a.p2) }
+            ctx.strokePath()
         case .arrow:
             drawArrow(a, in: ctx)
         case .pen:
@@ -203,14 +217,16 @@ enum Renderer {
         let dx = a.p2.x - a.p1.x, dy = a.p2.y - a.p1.y
         let len = hypot(dx, dy)
         guard len > 1 else { return }
-        let ang = atan2(dy, dx)
+        let bend = a.style == 2 ? nil : a.ctrl // the tapered arrow stays straight
+        let ang = bend.map { atan2(a.p2.y - $0.y, a.p2.x - $0.x) } ?? atan2(dy, dx)
         let head = min(len * 0.7, a.width * 3.5 + 12)
         func wing(_ delta: CGFloat) -> CGPoint {
             CGPoint(x: a.p2.x - cos(ang + delta) * head, y: a.p2.y - sin(ang + delta) * head)
         }
         switch a.style {
         case 1: // open chevron
-            ctx.move(to: a.p1); ctx.addLine(to: a.p2)
+            ctx.move(to: a.p1)
+            if let c = bend { ctx.addQuadCurve(to: a.p2, control: c) } else { ctx.addLine(to: a.p2) }
             ctx.move(to: wing(0.5)); ctx.addLine(to: a.p2); ctx.addLine(to: wing(-0.5))
             ctx.strokePath()
         case 2: // tapered wedge
@@ -224,7 +240,9 @@ enum Renderer {
             ctx.closePath(); ctx.fillPath()
         default: // classic filled head
             let base = CGPoint(x: a.p2.x - cos(ang) * head * 0.8, y: a.p2.y - sin(ang) * head * 0.8)
-            ctx.move(to: a.p1); ctx.addLine(to: base); ctx.strokePath()
+            ctx.move(to: a.p1)
+            if let c = bend { ctx.addQuadCurve(to: base, control: c) } else { ctx.addLine(to: base) }
+            ctx.strokePath()
             ctx.move(to: a.p2); ctx.addLine(to: wing(0.45)); ctx.addLine(to: wing(-0.45))
             ctx.closePath(); ctx.fillPath()
         }

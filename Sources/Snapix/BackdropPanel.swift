@@ -19,6 +19,28 @@ final class BackdropModel: ObservableObject {
         self.doc = doc
         self.refresh = refresh
         cfg = doc.state.backdrop
+        hasImage = doc.state.backdropImage != nil
+    }
+
+    @Published var hasImage = false
+
+    func reverse() { (cfg.fromHex, cfg.toHex) = (cfg.toHex, cfg.fromHex) }
+
+    func loadImage() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.png, .jpeg, .heic, .tiff]
+        guard panel.runModal() == .OK, let url = panel.url, let img = NSImage(contentsOf: url),
+              let cg = img.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return }
+        doc.state.backdropImage = cg
+        hasImage = true
+        cfg.enabled = true
+        refresh()
+    }
+
+    func removeImage() {
+        doc.state.backdropImage = nil
+        hasImage = false
+        refresh()
     }
 
     func randomize() {
@@ -54,7 +76,13 @@ struct BackdropPanel: View {
                 slider("Inner radius", $model.cfg.innerRadius, 0...60)
                 slider("Outer radius", $model.cfg.outerRadius, 0...80)
                 Toggle("Shadow", isOn: $model.cfg.shadow)
-                Toggle("Gradient", isOn: $model.cfg.gradient)
+                HStack {
+                    Toggle("Gradient", isOn: $model.cfg.gradient)
+                    if model.cfg.gradient {
+                        Toggle("Radial", isOn: $model.cfg.radial)
+                        Button("Reverse", action: model.reverse).controlSize(.small)
+                    }
+                }
                 HStack {
                     ColorPicker(LocalizedStringKey(model.cfg.gradient ? "From" : "Color"), selection: colorBinding(\.fromHex))
                     if model.cfg.gradient { ColorPicker("To", selection: colorBinding(\.toHex)) }
@@ -76,7 +104,11 @@ struct BackdropPanel: View {
                     .buttonStyle(.plain)
                 }
             }
-            Button("Randomize", action: model.randomize).disabled(!model.cfg.enabled)
+            HStack {
+                Button("Randomize", action: model.randomize).disabled(!model.cfg.enabled)
+                Button("Image…", action: model.loadImage)
+                if model.hasImage { Button("Remove image", action: model.removeImage) }
+            }
         }
         .padding(16)
         .frame(width: 320)

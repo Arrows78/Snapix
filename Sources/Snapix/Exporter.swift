@@ -8,6 +8,10 @@ struct Shot {
     var scale: CGFloat
     /// Position on screen in AppKit global coordinates, used to place pins where the capture happened.
     var screenRect: CGRect?
+    /// True for region captures (area, repeat, scrolling): the floating preview appears where the region was, not in the screen corner.
+    var placeAtRegion = false
+    /// Where an area selection ended (AppKit global coordinates); the preview appears next to it.
+    var anchorPoint: CGPoint?
 }
 
 @MainActor

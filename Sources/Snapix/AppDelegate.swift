@@ -5,13 +5,47 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var statusItem: NSStatusItem!
     private var busy = false
 
+    /// Set when macOS refuses to show our menu bar icon (crowded or restricted menu bar): the Dock becomes the entry point.
+    static var forceDock = false
+    static var restingPolicy: NSApplication.ActivationPolicy { (forceDock || Pref.bool("showDockIcon")) ? .regular : .accessory }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         Pref.register()
-        NSApp.setActivationPolicy(.accessory)
+        NSApp.setActivationPolicy(Self.restingPolicy)
         buildMainMenu()
         buildStatusItem()
+        checkStatusItemVisibility()
+        if !Pref.bool("hideHome") { HomeWindow.show() }
         reloadHotkeys()
         if !CGPreflightScreenCaptureAccess() { CGRequestScreenCaptureAccess() }
+    }
+
+    func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
+        refreshMenuShortcuts()
+        return statusItem?.menu?.copy() as? NSMenu
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if !flag { HomeWindow.show() }
+        return true
+    }
+
+    private func checkStatusItemVisibility() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [self] in
+            let w = statusItem.button?.window
+            // A placed status item sits in the menu bar strip at the top of a screen; an unplaced one is a zero-height window at the origin.
+            let onScreen = w.map { win in
+                win.isVisible && win.frame.height > 4 && NSScreen.screens.contains { $0.frame.maxY - win.frame.maxY < 8 && $0.frame.intersects(win.frame) }
+            } ?? false
+            if ProcessInfo.processInfo.environment["SNAPIX_DIAG"] != nil {
+                print("statusItem window=\(String(describing: w?.frame)) visible=\(w?.isVisible ?? false) onScreen=\(onScreen)")
+                exit(0)
+            }
+            guard !onScreen else { return }
+            Self.forceDock = true
+            NSApp.setActivationPolicy(.regular)
+            Toast.show(L("The menu bar icon is hidden by macOS — Snapix is available from the Dock instead"), duration: 6)
+        }
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
@@ -84,6 +118,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         open.target = self
         menu.addItem(open)
         menu.addItem(.separator())
+        let home = NSMenuItem(title: L("Show Snapix Window"), action: #selector(showHome), keyEquivalent: "")
+        home.target = self
+        menu.addItem(home)
         let prefs = NSMenuItem(title: L("Preferences…"), action: #selector(showPreferences), keyEquivalent: ",")
         prefs.target = self
         menu.addItem(prefs)
@@ -98,6 +135,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func openFile() { EditorWindowController.openFile() }
     @objc func showPreferences() { PreferencesWindow.show() }
+    @objc private func showHome() { HomeWindow.show() }
 
     private func buildMainMenu() {
         let main = NSMenu()
@@ -179,6 +217,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if actions.contains(.copy) { Exporter.copy(shot.image, scale: shot.scale, quiet: actions.count > 1) }
         if actions.contains(.save) { Exporter.save(shot.image, scale: shot.scale, quiet: actions.contains(.copy)) }
         if actions.contains(.pin) { PinController.pin(shot) }
+        if actions.contains(.preview) { PreviewController.show(shot) }
         if actions.contains(.edit) { EditorWindowController.open(shot) }
     }
 }

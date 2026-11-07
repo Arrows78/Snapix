@@ -77,6 +77,7 @@ enum SelfTest {
         add(.blur, CGPoint(x: 240, y: 480), CGPoint(x: 380, y: 540)) { $0.blur = .erase }
         add(.spotlight, CGPoint(x: 10, y: 100), CGPoint(x: 390, y: 200))
         add(.magnifier, CGPoint(x: 320, y: 250), CGPoint(x: 360, y: 250))
+        add(.arrow, CGPoint(x: 30, y: 520), CGPoint(x: 220, y: 580)) { $0.bend(through: CGPoint(x: 90, y: 590)) }
         doc.state.overlay = OverlayImage(image: page(rows: 100..<160), origin: CGPoint(x: 30, y: 540), opacity: 0.6, scale: 1)
         var plain = doc.state
         if let img = Renderer.render(plain) {
@@ -117,6 +118,35 @@ enum SelfTest {
             check(buf.snap(CGPoint(x: 100, y: 60), radius: 8) == CGPoint(x: 100, y: 60), "no snap in flat area")
             check(buf.similarRegion(from: 100, 60) == CGRect(x: 50, y: 30, width: 100, height: 60), "similar region = white box")
         }
+
+        // Preview placement: inside a big region's corner, beside a small one, never off screen.
+        let vis = CGRect(x: 0, y: 0, width: 1600, height: 900), psz = NSSize(width: 232, height: 300)
+        let big = PreviewController.anchoredFrame(region: CGRect(x: 100, y: 100, width: 800, height: 600), size: psz, visible: vis)
+        check(big.maxX == 888 && big.minY == 112, "preview inside big region, bottom-right (got \(big))")
+        let small = PreviewController.anchoredFrame(region: CGRect(x: 100, y: 100, width: 150, height: 80), size: psz, visible: vis)
+        check(small.minX == 262 && small.minY == 100, "preview beside small region (got \(small))")
+        let edge = PreviewController.anchoredFrame(region: CGRect(x: 1500, y: 20, width: 90, height: 60), size: psz, visible: vis)
+        check(edge.maxX <= 1600 && edge.minX >= 0 && edge.minY >= 0 && edge.maxY <= 900 && !edge.intersects(CGRect(x: 1500, y: 20, width: 90, height: 60)),
+              "preview kept on screen next to a region at the edge (got \(edge))")
+
+        // Preview next to where the selection ended: below-right, flipping when cramped.
+        let n1 = PreviewController.frame(near: CGPoint(x: 400, y: 600), size: psz, visible: vis)
+        check(n1.minX == 416 && n1.maxY == 584, "preview below-right of the end point (got \(n1))")
+        let n2 = PreviewController.frame(near: CGPoint(x: 1550, y: 600), size: psz, visible: vis)
+        check(n2.maxX == 1534 && n2.maxY == 584, "preview flips left near the right edge (got \(n2))")
+        let n3 = PreviewController.frame(near: CGPoint(x: 400, y: 120), size: psz, visible: vis)
+        check(n3.minY == 136 && n3.minX == 416, "preview flips above near the bottom (got \(n3))")
+
+        // Curved arrows: the bend handle sits on the curve and survives hit-testing.
+        var curved = Annotation(tool: .arrow, p1: CGPoint(x: 0, y: 0), p2: CGPoint(x: 100, y: 0), color: .red, width: 4)
+        curved.bend(through: CGPoint(x: 50, y: -40))
+        check(curved.ctrl == CGPoint(x: 50, y: -80) && curved.curveMid == CGPoint(x: 50, y: -40), "bend handle lies on the curve (ctrl \(String(describing: curved.ctrl)))")
+        check(curved.hitTest(CGPoint(x: 50, y: -40), tolerance: 6) && !curved.hitTest(CGPoint(x: 50, y: 0), tolerance: 6), "hit-test follows the curve")
+        curved.bend(through: CGPoint(x: 50, y: 1))
+        check(curved.ctrl == nil, "dragging the handle back to the chord straightens the arrow")
+        var tapered = curved
+        tapered.style = 2
+        check(!tapered.isCurvable, "tapered arrows stay straight")
 
         // Localization: only meaningful inside the bundled app run with a French locale.
         if Bundle.main.localizations.contains("fr"), Locale.preferredLanguages.first?.hasPrefix("fr") == true {

@@ -63,7 +63,9 @@ private struct HotkeyRecorder: NSViewRepresentable {
 struct PreferencesView: View {
     @AppStorage("afterCopy") private var afterCopy = true
     @AppStorage("afterSave") private var afterSave = false
-    @AppStorage("afterEdit") private var afterEdit = true
+    @AppStorage("afterEdit") private var afterEdit = false
+    @AppStorage("afterPreview") private var afterPreview = true
+    @AppStorage("previewClosing") private var previewClosing = "8"
     @AppStorage("afterPin") private var afterPin = false
     @AppStorage("saveFolder") private var saveFolder = ""
     @AppStorage("filenameTemplate") private var template = ""
@@ -78,6 +80,8 @@ struct PreferencesView: View {
     @AppStorage("pinsOnTop") private var pinsOnTop = true
     @AppStorage("areaAdjust") private var areaAdjust = false
     @AppStorage("snapEdges") private var snapEdges = true
+    @AppStorage("showDockIcon") private var showDockIcon = false
+    @AppStorage("wheelZoom") private var wheelZoom = true
     @AppStorage("keepHistory") private var keepHistory = true
     @AppStorage("uploadURL") private var uploadURL = ""
     @AppStorage("uploadField") private var uploadField = "file"
@@ -101,6 +105,15 @@ struct PreferencesView: View {
             Section("After taking a screenshot") {
                 Toggle("Copy to clipboard", isOn: $afterCopy)
                 Toggle("Save to folder", isOn: $afterSave)
+                Toggle("Show floating preview", isOn: $afterPreview)
+                if afterPreview {
+                    Picker("Close the preview", selection: $previewClosing) {
+                        Text("After 4 seconds").tag("4")
+                        Text("After 8 seconds").tag("8")
+                        Text("After 15 seconds").tag("15")
+                        Text("Never").tag("never")
+                    }
+                }
                 Toggle("Show in editor", isOn: $afterEdit)
                 Toggle("Pin to screen", isOn: $afterPin)
             }
@@ -117,6 +130,8 @@ struct PreferencesView: View {
                 Toggle("Launch at login", isOn: Binding(get: { launchAtLogin }, set: { launchAtLogin = $0; Pref.setLaunchAtLogin($0) }))
                 Toggle("Pins stay on top of other windows", isOn: $pinsOnTop)
                 Toggle("Keep a history of screenshots in the Library", isOn: $keepHistory)
+                Toggle("Show Snapix in the Dock", isOn: $showDockIcon)
+                    .onChange(of: showDockIcon) { _, _ in NSApp.setActivationPolicy(AppDelegate.restingPolicy) }
             }
         }
         .formStyle(.grouped)
@@ -162,6 +177,7 @@ struct PreferencesView: View {
                 ForEach(ColorFormat.allCases, id: \.rawValue) { Text($0.title).tag($0.rawValue) }
             }
             Toggle("Snap shapes to edges in the screenshot (hold ⌥ to disable)", isOn: $snapEdges)
+            Toggle("Mouse wheel zooms the image (trackpad scrolls, ⌥ or ⌘ swaps)", isOn: $wheelZoom)
             Toggle("Remove line breaks from recognized text", isOn: $removeBreaks)
             Toggle("Reverse direction for automatic scrolling capture", isOn: $reverseScroll)
             Text("Enable this if a third-party app reverses your scroll direction.").font(.caption).foregroundStyle(.secondary)

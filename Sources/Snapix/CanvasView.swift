@@ -16,6 +16,7 @@ final class CanvasView: NSView, NSTextFieldDelegate {
     var onEscape: (() -> Void)?
     var onToolShortcut: ((Tool) -> Void)?
     var onToggleBackdrop: (() -> Void)?
+    var onCopyColor: (() -> Void)?
     var onSelectionChanged: ((Annotation?) -> Void)?
 
     private(set) var selectedID: UUID? { didSet { if oldValue != selectedID { onSelectionChanged?(selectedAnnotation) } } }
@@ -88,7 +89,11 @@ final class CanvasView: NSView, NSTextFieldDelegate {
         ctx.restoreGState()
     }
 
-    private func handles(for a: Annotation) -> [CGPoint] { a.tool.isTwoPoint ? [a.p1, a.p2] : [] }
+    /// Drag handles: both ends, plus a bend handle in the middle of curvable strokes.
+    private func handles(for a: Annotation) -> [CGPoint] {
+        guard a.tool.isTwoPoint else { return [] }
+        return a.isCurvable ? [a.p1, a.p2, a.curveMid] : [a.p1, a.p2]
+    }
 
     private func drawSelection(_ a: Annotation, in ctx: CGContext) {
         let k = 1 / magnification
@@ -196,8 +201,15 @@ final class CanvasView: NSView, NSTextFieldDelegate {
             a.number = doc.nextCounter
             doc.checkpoint()
             doc.state.annotations.append(a)
+            selectedID = a.id
             needsDisplay = true
         default:
+            // Right after drawing, the new shape stays selected: grab its handles to adjust it before starting another.
+            if let sel = selectedAnnotation,
+               let n = handles(for: sel).firstIndex(where: { hypot($0.x - p.x, $0.y - p.y) <= 7 / magnification }) {
+                drag = .handle(sel.id, n + 1)
+                return
+            }
             let a = newAnnotation(tool: tool, at: snapped(p, for: tool))
             doc.checkpoint()
             doc.state.annotations.append(a)
@@ -262,6 +274,7 @@ final class CanvasView: NSView, NSTextFieldDelegate {
         case let .handle(id, which):
             guard let i = index(of: id) else { return }
             if !didCheckpointForDrag { doc.checkpoint(); didCheckpointForDrag = true }
+            if which == 3 { doc.state.annotations[i].bend(through: raw); break }
             var p = raw
             let other = which == 1 ? doc.state.annotations[i].p2 : doc.state.annotations[i].p1
             if shift && [.arrow, .line, .ruler].contains(doc.state.annotations[i].tool) { p = Geometry.snapAngle(raw, around: other) }
@@ -294,6 +307,8 @@ final class CanvasView: NSView, NSTextFieldDelegate {
         if degenerate {
             doc.state.annotations.remove(at: i)
             doc.discardCheckpoint()
+        } else {
+            selectedID = id
         }
     }
 
@@ -450,6 +465,9 @@ final class CanvasView: NSView, NSTextFieldDelegate {
         let chars = event.charactersIgnoringModifiers ?? ""
 
         switch event.keyCode {
+        case 48: // tab copies the colour under the cursor
+            onCopyColor?()
+            return
         case 53: // esc
             if cropRect != nil { cancelCrop() } else if selectedID != nil { selectedID = nil; needsDisplay = true } else { onEscape?() }
             return

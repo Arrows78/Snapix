@@ -7,7 +7,9 @@ enum Pref {
     static let defaults: [String: Any] = [
         "afterCopy": true,
         "afterSave": false,
-        "afterEdit": true,
+        "afterEdit": false,
+        "afterPreview": true,
+        "previewClosing": "8",
         "afterPin": false,
         "saveFolder": (NSHomeDirectory() as NSString).appendingPathComponent("Pictures/Snapix"),
         "filenameTemplate": "Snapix {date} at {time}",
@@ -22,6 +24,9 @@ enum Pref {
         "pinsOnTop": true,
         "areaAdjust": false,
         "snapEdges": true,
+        "showDockIcon": false,
+        "hideHome": false,
+        "wheelZoom": true,
         "keepHistory": true,
         "uploadURL": "",
         "uploadField": "file",
@@ -96,7 +101,7 @@ enum Action: String, CaseIterable {
 
 /// What to do with a fresh capture.
 enum After: String {
-    case copy, save, edit, pin
+    case copy, save, edit, pin, preview
 
     static func fromPreferences() -> [After] {
         var out: [After] = []
@@ -104,6 +109,7 @@ enum After: String {
         if Pref.bool("afterSave") { out.append(.save) }
         if Pref.bool("afterEdit") { out.append(.edit) }
         if Pref.bool("afterPin") { out.append(.pin) }
+        if Pref.bool("afterPreview") { out.append(.preview) }
         return out
     }
 }

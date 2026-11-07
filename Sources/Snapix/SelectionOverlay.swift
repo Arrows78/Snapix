@@ -10,8 +10,9 @@ final class OverlayWindow: NSWindow {
 final class SelectionOverlay {
     enum Mode { case area, window }
     enum Result {
-        /// Frozen screen, pixel rect inside its image, rect in AppKit global coordinates.
-        case area(Frozen, CGRect, CGRect)
+        /// Frozen screen, pixel rect inside its image, rect in AppKit global coordinates, and where the selection ended
+        /// (cursor position, AppKit global coordinates).
+        case area(Frozen, CGRect, CGRect, CGPoint)
         case window(CGWindowID)
         case cancelled
     }
@@ -287,7 +288,8 @@ private final class OverlayView: NSView {
         let px = CGRect(x: r.minX * k, y: r.minY * k, width: r.width * k, height: r.height * k).integral
         let sf = frozen.screen.frame
         let global = CGRect(x: sf.minX + r.minX, y: sf.maxY - r.maxY, width: r.width, height: r.height)
-        owner.finish(.area(frozen, px, global))
+        let end = mouse ?? CGPoint(x: r.maxX, y: r.maxY)
+        owner.finish(.area(frozen, px, global, CGPoint(x: sf.minX + end.x, y: sf.maxY - end.y)))
     }
 
     override func rightMouseDown(with event: NSEvent) { owner.finish(.cancelled) }
