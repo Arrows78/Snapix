@@ -64,7 +64,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let map: [String: Action] = [
             "area": .area, "fullscreen": .fullscreen, "window": .window, "active-window": .activeWindow, "delayed": .delayed,
             "repeat": .repeatArea, "scrolling": .scrolling, "scrolling-up": .scrollingUp, "scrolling-manual": .scrollingManual, "ocr": .ocr,
-            "pick-color": .pickColor, "contrast": .contrast, "clipboard": .clipboard, "library": .library,
+            "pick-color": .pickColor, "contrast": .contrast, "clipboard": .clipboard, "library": .library, "shortcuts": .shortcuts,
         ]
         guard let action = map[name] else { return }
         var then: [After]?
@@ -115,6 +115,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(.separator())
         add(.clipboard)
         add(.library)
+        add(.shortcuts)
         let open = NSMenuItem(title: L("Open Image…"), action: #selector(openFile), keyEquivalent: "")
         open.target = self
         menu.addItem(open)
@@ -178,6 +179,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         case .contrast: ColorTools.contrastCheck(); return
         case .clipboard: EditorWindowController.openFromClipboard(); return
         case .library: LibraryWindow.show(); return
+        case .shortcuts: ShortcutSheet.show(); return
         default: break
         }
         guard Capture.ensurePermission() else { Capture.showPermissionAlert(); return }

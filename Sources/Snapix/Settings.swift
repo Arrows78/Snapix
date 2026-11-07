@@ -81,7 +81,7 @@ enum Pref {
 /// Everything the user can trigger from the menu bar, a hotkey or a `snapix://` URL.
 enum Action: String, CaseIterable {
     case area, fullscreen, window, activeWindow, delayed, repeatArea
-    case scrolling, scrollingUp, scrollingManual, ocr, pickColor, contrast, clipboard, library
+    case scrolling, scrollingUp, scrollingManual, ocr, pickColor, contrast, clipboard, library, shortcuts
 
     var title: String {
         switch self {
@@ -99,6 +99,7 @@ enum Action: String, CaseIterable {
         case .contrast: return L("Check Contrast")
         case .clipboard: return L("Open From Clipboard")
         case .library: return L("Open Library")
+        case .shortcuts: return L("Show Shortcuts")
         }
     }
 

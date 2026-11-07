@@ -18,6 +18,7 @@ extension Action {
         case .contrast: return "circle.lefthalf.filled"
         case .clipboard: return "doc.on.clipboard"
         case .library: return "photo.on.rectangle"
+        case .shortcuts: return "keyboard"
         }
     }
 
@@ -99,6 +100,7 @@ private struct HomeView: View {
                 pill("photo.on.rectangle", L("Open Library")) { onAction(.library) }
                 pill("doc.on.clipboard", L("Open From Clipboard")) { onAction(.clipboard) }
                 pill("folder", L("Open Image…"), onOpenImage)
+                pill("keyboard", L("Show Shortcuts")) { onAction(.shortcuts) }
                 Spacer()
                 Toggle("Show this window at launch", isOn: Binding(get: { !hideHome }, set: { hideHome = !$0 }))
                     .toggleStyle(.checkbox).font(.system(size: 11)).foregroundStyle(.white.opacity(0.55))

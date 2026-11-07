@@ -74,7 +74,7 @@ The other actions (active window, repeat last area, scrolling upwards or manuall
 
 ### 🔗 URL scheme
 
-`snapix://area`, `fullscreen`, `window`, `active-window`, `delayed`, `repeat`, `scrolling`, `scrolling-up`, `scrolling-manual`, `library`, `ocr`, `pick-color`, `contrast`, `clipboard`, with an optional `?then=copy,save,edit,pin`.
+`snapix://area`, `fullscreen`, `window`, `active-window`, `delayed`, `repeat`, `scrolling`, `scrolling-up`, `scrolling-manual`, `library`, `shortcuts`, `ocr`, `pick-color`, `contrast`, `clipboard`, with an optional `?then=copy,save,edit,pin`.
 
 ```bash
 open "snapix://area?then=copy"
