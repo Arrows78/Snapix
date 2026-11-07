@@ -100,6 +100,14 @@ open "snapix://area?then=copy"
 
 ## 📦 Installation
 
+### Homebrew
+
+```bash
+brew install arrows78/snapix/snapix
+```
+
+Use the full name: Homebrew 7 only loads casks from third-party taps you trust, and naming the tap in the command trusts that cask. If you ran `brew tap arrows78/snapix` first, run `brew trust --tap arrows78/snapix` before installing. Update with `brew upgrade --cask snapix`; `brew uninstall --zap --cask snapix` also removes its settings. The tap is [`Arrows78/homebrew-snapix`](https://github.com/Arrows78/homebrew-snapix).
+
 ### Download
 
 Grab `Snapix-<version>.zip` from the [latest release](https://github.com/Arrows78/Snapix/releases/latest), unzip it and move **Snapix.app** to `/Applications`. Releases are universal (Apple Silicon and Intel) and need macOS 14 or later.
@@ -138,6 +146,7 @@ Or build and install into `/Applications` in one go (quits the running copy and 
 | `./scripts/ci.sh` | Runs the release tool tests, the release files check, the build and the self-test: the same checks as CI. |
 | `build/Snapix.app/Contents/MacOS/Snapix --selftest <dir>` | Non-interactive checks (stitching, rendering, snapping, preview placement, curved arrows, contrast, formats, undo), writing sample images to `<dir>`. |
 | `swift Resources/make_icon.swift <out.png>` | Renders the 1024 px app icon. |
+| `scripts/render_cask.sh VERSION SHA256` | Prints the Homebrew cask of a release (used by the release workflow). |
 | `python3 scripts/release.py prepare` | Next version, version bump and changelog from the commit messages ([`docs/RELEASING.md`](docs/RELEASING.md)). |
 
 To publish a release (details in [`docs/RELEASING.md`](docs/RELEASING.md)):
@@ -163,6 +172,7 @@ Snapix/
 │   ├── Settings, Preferences, HotKey, L10n     # Preferences, shortcuts, localisation
 │   └── SelfTest.swift                          # Behind --selftest
 ├── scripts/               # CI, release tool and its tests
+├── packaging/homebrew/    # Cask template for the Homebrew tap
 ├── docs/                  # Releasing guide, release notes
 └── .github/workflows/     # CI and release
 ```
