@@ -17,6 +17,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         checkStatusItemVisibility()
         if !Pref.bool("hideHome") { HomeWindow.show() }
         reloadHotkeys()
+        History.pruneNow()
         if !CGPreflightScreenCaptureAccess() { CGRequestScreenCaptureAccess() }
     }
 

@@ -66,6 +66,15 @@ enum SelfTest {
         check(Pref.restore(Data("nope".utf8)) == nil, "backup rejects garbage")
         suite.removePersistentDomain(forName: "snapix.selftest")
 
+        // Combining screenshots.
+        let colA = page(rows: 0..<100), colB = page(rows: 200..<260)
+        if let v = Combine.images([colA, colB], horizontal: false) { check(v.width == 400 && v.height == 160, "combine vertical size \(v.width)x\(v.height)") } else { check(false, "combine vertical") }
+        if let hz = Combine.images([colA, colB], horizontal: true, spacing: 10) { check(hz.width == 810 && hz.height == 100, "combine horizontal size \(hz.width)x\(hz.height)") } else { check(false, "combine horizontal") }
+        if let v = Combine.images([colA, colB], horizontal: false) {
+            check(PixelBuffer(v)?.color(x: 5, y: 10)?.hexValue == PixelBuffer(colA)?.color(x: 5, y: 10)?.hexValue, "combine keeps first image on top")
+            check(PixelBuffer(v)?.color(x: 5, y: 110)?.hexValue == PixelBuffer(colB)?.color(x: 5, y: 10)?.hexValue, "combine puts second image below")
+        }
+
         // Sensitive-data detection.
         func hits(_ t: String) -> [String] { Redaction.ranges(in: t).map { String(t[$0]) } }
         check(hits("write to jane.doe@example.com now") == ["jane.doe@example.com"], "redaction: email")

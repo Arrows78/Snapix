@@ -26,9 +26,22 @@ enum History {
     }
 
     nonisolated private static func prune(in dir: URL) {
-        guard let files = try? FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil)
+        guard let files = try? FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: [.contentModificationDateKey])
             .filter({ $0.pathExtension == "png" }).sorted(by: { $0.lastPathComponent > $1.lastPathComponent }) else { return }
         for old in files.dropFirst(limit) { try? FileManager.default.removeItem(at: old) }
+        let days = UserDefaults.standard.integer(forKey: "historyRetentionDays")
+        guard days > 0, let cutoff = Calendar.current.date(byAdding: .day, value: -days, to: Date()) else { return }
+        for url in files.prefix(limit) {
+            if let d = (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate, d < cutoff {
+                try? FileManager.default.removeItem(at: url)
+            }
+        }
+    }
+
+    /// Applies the retention preference without waiting for the next capture (called at launch).
+    static func pruneNow() {
+        let dir = folder
+        DispatchQueue.global(qos: .utility).async { prune(in: dir) }
     }
 
     /// Newest first.
@@ -80,12 +93,37 @@ private struct Thumb: View {
 
 private struct LibraryView: View {
     @State private var items = History.items()
+    /// In the order the user clicked, which is the order images are combined in.
+    @State private var selection: [URL] = []
+
+    private func combine(horizontal: Bool) {
+        let images = selection.compactMap { History.shot(for: $0)?.image }
+        guard let img = Combine.images(images, horizontal: horizontal, spacing: 0) else { return }
+        let scale = selection.first.map(History.scale(of:)) ?? 1
+        EditorWindowController.open(Shot(image: img, scale: scale, screenRect: nil))
+        selection = []
+    }
+
+    private func toggle(_ url: URL) {
+        if let i = selection.firstIndex(of: url) { selection.remove(at: i) } else { selection.append(url) }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
             HStack {
                 Text(LF("%d screenshot(s)", items.count)).foregroundStyle(.secondary)
                 Spacer()
+                if !selection.isEmpty {
+                    Text(LF("%d selected", selection.count)).foregroundStyle(.secondary)
+                    Button("Combine Vertically") { combine(horizontal: false) }.disabled(selection.count < 2)
+                    Button("Combine Horizontally") { combine(horizontal: true) }.disabled(selection.count < 2)
+                    Button("Delete Selected", role: .destructive) {
+                        selection.forEach { try? FileManager.default.removeItem(at: $0) }
+                        selection = []
+                        items = History.items()
+                    }
+                    Button("Deselect") { selection = [] }
+                }
                 Button("Reveal in Finder") { NSWorkspace.shared.open(History.folder) }
                 Button("Clear All", role: .destructive) { History.clear(); items = [] }.disabled(items.isEmpty)
             }
@@ -99,17 +137,26 @@ private struct LibraryView: View {
                         ForEach(items, id: \.self) { url in
                             VStack(spacing: 4) {
                                 Thumb(url: url)
+                                    .overlay(alignment: .topLeading) {
+                                        if let n = selection.firstIndex(of: url) {
+                                            Text("\(n + 1)").font(.caption.bold()).foregroundStyle(.white)
+                                                .frame(width: 20, height: 20).background(Circle().fill(Color.accentColor)).padding(6)
+                                        }
+                                    }
+                                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.accentColor, lineWidth: selection.contains(url) ? 2 : 0))
                                 Text(url.deletingPathExtension().lastPathComponent.components(separatedBy: "@").first ?? "")
                                     .font(.caption2).foregroundStyle(.secondary)
                             }
+                            .contentShape(Rectangle())
                             .onTapGesture(count: 2) { if let s = History.shot(for: url) { EditorWindowController.open(s) } }
+                            .onTapGesture { toggle(url) }
                             .contextMenu {
                                 Button("Open in Editor") { if let s = History.shot(for: url) { EditorWindowController.open(s) } }
                                 Button("Copy") { if let s = History.shot(for: url) { Exporter.copy(s.image, scale: s.scale) } }
                                 Button("Pin") { if let s = History.shot(for: url) { PinController.pin(s) } }
                                 Button("Reveal in Finder") { NSWorkspace.shared.activateFileViewerSelecting([url]) }
                                 Divider()
-                                Button("Delete", role: .destructive) { try? FileManager.default.removeItem(at: url); items = History.items() }
+                                Button("Delete", role: .destructive) { try? FileManager.default.removeItem(at: url); selection.removeAll { $0 == url }; items = History.items() }
                             }
                         }
                     }

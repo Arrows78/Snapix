@@ -84,6 +84,7 @@ struct PreferencesView: View {
     @AppStorage("showDockIcon") private var showDockIcon = false
     @AppStorage("wheelZoom") private var wheelZoom = true
     @AppStorage("keepHistory") private var keepHistory = true
+    @AppStorage("historyRetentionDays") private var retentionDays = 0
     @AppStorage("captureSound") private var captureSound = true
     @AppStorage("captureDelay") private var captureDelay = 3
     @AppStorage("uploadURL") private var uploadURL = ""
@@ -140,6 +141,14 @@ struct PreferencesView: View {
                 Toggle("Launch at login", isOn: Binding(get: { launchAtLogin }, set: { launchAtLogin = $0; Pref.setLaunchAtLogin($0) }))
                 Toggle("Pins stay on top of other windows", isOn: $pinsOnTop)
                 Toggle("Keep a history of screenshots in the Library", isOn: $keepHistory)
+                if keepHistory {
+                    Picker("Delete library screenshots", selection: $retentionDays) {
+                        Text("Never").tag(0)
+                        Text("After 7 days").tag(7)
+                        Text("After 30 days").tag(30)
+                        Text("After 90 days").tag(90)
+                    }
+                }
                 Toggle("Show Snapix in the Dock", isOn: $showDockIcon)
                     .onChange(of: showDockIcon) { _, _ in NSApp.setActivationPolicy(AppDelegate.restingPolicy) }
             }

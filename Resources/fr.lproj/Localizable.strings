@@ -206,3 +206,12 @@
 "This file is not a Snapix backup" = "Ce fichier n'est pas une sauvegarde Snapix";
 "Settings imported — reopen Preferences to see them" = "Réglages importés — rouvrez les Préférences pour les voir";
 "A backup holds your preferences, shortcuts and backdrop style. The upload authorization header is never exported." = "Une sauvegarde contient vos préférences, raccourcis et style de fond. L'en-tête d'autorisation de l'envoi n'est jamais exporté.";
+"Delete library screenshots" = "Supprimer les captures de la bibliothèque";
+"After 7 days" = "Après 7 jours";
+"After 30 days" = "Après 30 jours";
+"After 90 days" = "Après 90 jours";
+"%d selected" = "%d sélectionnée(s)";
+"Combine Vertically" = "Assembler verticalement";
+"Combine Horizontally" = "Assembler horizontalement";
+"Delete Selected" = "Supprimer la sélection";
+"Deselect" = "Désélectionner";
