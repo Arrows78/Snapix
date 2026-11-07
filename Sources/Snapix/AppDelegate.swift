@@ -117,6 +117,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(.separator())
         add(.clipboard)
         add(.library)
+        addRecentCaptures(to: menu)
         add(.shortcuts)
         let open = NSMenuItem(title: L("Open Image…"), action: #selector(openFile), keyEquivalent: "")
         open.target = self
@@ -130,6 +131,51 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(prefs)
         menu.addItem(withTitle: L("Quit Snapix"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
     }
+
+    /// The last few captures, each with Open / Copy / Pin / Reveal.
+    private func addRecentCaptures(to menu: NSMenu) {
+        let recent = Array(History.items().prefix(8))
+        guard !recent.isEmpty else { return }
+        let parent = NSMenuItem(title: L("Recent Captures"), action: nil, keyEquivalent: "")
+        parent.image = NSImage(systemSymbolName: "clock.arrow.circlepath", accessibilityDescription: nil)
+        let sub = NSMenu()
+        for url in recent {
+            let stamp = url.deletingPathExtension().lastPathComponent.components(separatedBy: "@").first ?? ""
+            let item = NSMenuItem(title: Self.prettyStamp(stamp), action: nil, keyEquivalent: "")
+            if let cg = History.thumbnail(for: url, maxPixel: 64) {
+                item.image = NSImage(cgImage: cg, size: NSSize(width: 32, height: 32 * CGFloat(cg.height) / CGFloat(max(1, cg.width))))
+            }
+            let actions = NSMenu()
+            for (title, sel) in [(L("Open in Editor"), #selector(recentOpen(_:))), (L("Copy"), #selector(recentCopy(_:))),
+                                 (L("Pin"), #selector(recentPin(_:))), (L("Reveal in Finder"), #selector(recentReveal(_:)))] {
+                let a = NSMenuItem(title: title, action: sel, keyEquivalent: "")
+                a.target = self
+                a.representedObject = url
+                actions.addItem(a)
+            }
+            item.submenu = actions
+            sub.addItem(item)
+        }
+        parent.submenu = sub
+        menu.addItem(parent)
+    }
+
+    /// "20261107-231905-123" -> "07/11/2026 23:19" in the user's locale.
+    private static func prettyStamp(_ stamp: String) -> String {
+        let f = DateFormatter()
+        f.dateFormat = "yyyyMMdd-HHmmss-SSS"
+        guard let d = f.date(from: stamp) else { return stamp }
+        let out = DateFormatter()
+        out.dateStyle = .short
+        out.timeStyle = .short
+        return out.string(from: d)
+    }
+
+    private func recentShot(_ sender: NSMenuItem) -> Shot? { (sender.representedObject as? URL).flatMap { History.shot(for: $0) } }
+    @objc private func recentOpen(_ sender: NSMenuItem) { if let s = recentShot(sender) { EditorWindowController.open(s) } }
+    @objc private func recentCopy(_ sender: NSMenuItem) { if let s = recentShot(sender) { Exporter.copy(s.image, scale: s.scale) } }
+    @objc private func recentPin(_ sender: NSMenuItem) { if let s = recentShot(sender) { PinController.pin(s) } }
+    @objc private func recentReveal(_ sender: NSMenuItem) { if let u = sender.representedObject as? URL { NSWorkspace.shared.activateFileViewerSelecting([u]) } }
 
     @objc private func menuAction(_ sender: NSMenuItem) {
         guard let raw = sender.representedObject as? String, let a = Action(rawValue: raw) else { return }

@@ -305,3 +305,11 @@
 "Permissions" = "Permissions";
 "About" = "À propos";
 "Recording in %d…" = "Enregistrement dans %d…";
+"Review Recording" = "Relire l'enregistrement";
+"Trim" = "Découper";
+"Discard" = "Supprimer";
+"Recording discarded" = "Enregistrement supprimé";
+"Trimming…" = "Découpage…";
+"Review and trim before saving" = "Relire et découper avant d'enregistrer";
+"Opens the recording in a player where you can cut the start and the end." = "Ouvre l'enregistrement dans un lecteur où vous pouvez couper le début et la fin.";
+"Recent Captures" = "Captures récentes";

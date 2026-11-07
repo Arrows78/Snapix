@@ -61,6 +61,8 @@ Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 
 - **Copy**, **save** (PNG, JPEG, or automatic by content), **save as**, downscale Retina, filename template, **upload** to your own HTTP endpoint.
 - **Pin to screen**: drag, scroll to resize, ⌥-scroll for opacity, double-click to edit, right-click menu.
+- **Menu bar**: a *Recent Captures* submenu with thumbnails (open, copy, pin, reveal).
+- **Capture options**: optionally hide desktop icons from screenshots and recordings.
 - **After-capture actions**, Esc to copy or save, launch at login, optional shutter sound.
 - **Shortcuts cheat sheet** and **settings backup**: list every shortcut in one floating sheet; export or import preferences (never the upload credential) from **Preferences › Backup**.
 - **Languages**: English and French, following macOS.
@@ -170,7 +172,7 @@ Snapix/
 ├── Resources/             # Info.plist, app icon and its generator, fr.lproj
 ├── Sources/Snapix/
 │   ├── main.swift, AppDelegate.swift   # Entry point, menu bar, URL scheme
-│   ├── Capture, ScrollCapture, Recorder, SelectionOverlay, PreviewPanel
+│   ├── Capture, ScrollCapture, Recorder, RecordingReview, SelectionOverlay, PreviewPanel
 │   ├── EditorWindow, EditorChrome, CanvasView, OptionsPanel, BackdropPanel
 │   ├── Model, StylePreset, Renderer, Exporter, ImageDrag    # Annotations, drawing, output
 │   ├── OCR, Redaction, Cutout, ColorTools      # Vision, sensitive data, background removal, colour

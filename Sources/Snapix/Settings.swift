@@ -31,6 +31,7 @@ enum Pref {
         "captureSound": true,
         "hideDesktopIcons": false,
         "recordCountdown": 3,
+        "recordReview": true,
         "largerWindow": false,
         "editorOnTop": false,
         "redact.email": true, "redact.card": true, "redact.iban": true,

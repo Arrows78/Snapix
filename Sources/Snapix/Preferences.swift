@@ -227,6 +227,7 @@ struct PreferencesView: View {
     @AppStorage("recordCursor") private var recordCursor = true
     @AppStorage("recordReveal") private var recordReveal = false
     @AppStorage("recordCountdown") private var recordCountdown = 3
+    @AppStorage("recordReview") private var recordReview = true
     @AppStorage("uploadURL") private var uploadURL = ""
     @AppStorage("uploadField") private var uploadField = "file"
     @AppStorage("uploadAuthHeader") private var uploadAuth = ""
@@ -354,6 +355,7 @@ struct PreferencesView: View {
                 }
                 ToggleRow("Record the mouse cursor", isOn: $recordCursor)
                 ToggleRow("Record system audio (MP4 only)", isOn: $recordAudio)
+                ToggleRow("Review and trim before saving", "Opens the recording in a player where you can cut the start and the end.", isOn: $recordReview)
                 ToggleRow("Show the file in Finder when done", isOn: $recordReveal, last: true)
             }
             Text("Press the shortcut again, or click Stop, to end a recording. The file is saved in your screenshots folder and copied to the clipboard.")

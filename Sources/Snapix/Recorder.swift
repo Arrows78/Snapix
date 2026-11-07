@@ -146,6 +146,8 @@ final class Recorder {
             try? FileManager.default.removeItem(at: url)
             guard let gif else { Toast.show(L("Could not create the GIF"), symbol: "exclamationmark.triangle.fill"); return }
             finalize(gif)
+        } else if Pref.bool("recordReview") {
+            RecordingReview.show(url: url) { [weak self] file in self?.finalize(file) }
         } else {
             finalize(url)
         }
