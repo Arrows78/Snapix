@@ -95,13 +95,13 @@ jobs:
             --title "Snapix $VERSION" $prerelease --notes-file release-notes.md
 
       # Needs a fine-grained token with "Contents: read and write" on Arrows78/homebrew-snapix, stored as the
-      # HOMEBREW_TAP_TOKEN secret of this repository. Without it the release is still published and the tap is left alone.
+      # HOMEBREW_TAP_SNAPIX_TOKEN secret of this repository. Without it the release is still published and the tap is left alone.
       - name: Update Homebrew tap
         env:
-          TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_SNAPIX_TOKEN }}
         run: |
           if [ -z "$TAP_TOKEN" ]; then
-            echo "::notice::HOMEBREW_TAP_TOKEN is not set: the Homebrew tap was not updated."
+            echo "::notice::HOMEBREW_TAP_SNAPIX_TOKEN is not set: the Homebrew tap was not updated."
             exit 0
           fi
           sha=$(cut -d' ' -f1 "Snapix-$VERSION.zip.sha256")

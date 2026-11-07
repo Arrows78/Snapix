@@ -56,7 +56,7 @@ The tap is the public repository `Arrows78/homebrew-snapix`. The release workflo
 from `packaging/homebrew/snapix.rb.in` and the SHA-256 of the zip (`scripts/render_cask.sh`).
 
 - One-time setup: create a fine-grained personal access token limited to **only** `Arrows78/homebrew-snapix` with the permission
-  **Contents: read and write**, then store it as the `HOMEBREW_TAP_TOKEN` secret of this repository
-  (`gh secret set HOMEBREW_TAP_TOKEN --repo Arrows78/Snapix`).
+  **Contents: read and write**, then store it as the `HOMEBREW_TAP_SNAPIX_TOKEN` secret of this repository
+  (`gh secret set HOMEBREW_TAP_SNAPIX_TOKEN --repo Arrows78/Snapix`).
 - Without that secret the release is still published and the tap is left alone (the workflow only prints a notice).
 - The cask is never edited by hand: fix the template and release again.
