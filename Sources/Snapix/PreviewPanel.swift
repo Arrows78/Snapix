@@ -68,6 +68,21 @@ private final class PreviewContent: NSVisualEffectView, NSDraggingSource {
     var onExit: (() -> Void)?
     /// Receives a key typed while the pointer is over the preview; returns true when handled.
     var onKey: ((NSEvent) -> Bool)?
+    /// Called with the horizontal direction (-1 left, 1 right) after a two-finger swipe.
+    var onSwipe: ((CGFloat) -> Void)?
+    private var swipeSum: CGFloat = 0
+
+    override func scrollWheel(with event: NSEvent) {
+        guard Pref.bool("previewSwipe"), event.hasPreciseScrollingDeltas, abs(event.scrollingDeltaX) > abs(event.scrollingDeltaY) * 0.8 || swipeSum != 0 else {
+            super.scrollWheel(with: event); return
+        }
+        swipeSum += event.scrollingDeltaX
+        if event.phase == .ended || event.phase == .cancelled {
+            let sum = swipeSum
+            swipeSum = 0
+            if abs(sum) > 90 { onSwipe?(sum > 0 ? 1 : -1) }
+        }
+    }
 
     override var acceptsFirstResponder: Bool { true }
     override func keyDown(with event: NSEvent) { if onKey?(event) != true { super.keyDown(with: event) } }
@@ -114,6 +129,8 @@ final class PreviewController: NSObject {
     private let anchorPoint: CGPoint?
     private let height: CGFloat
     private var closeWork: DispatchWorkItem?
+    /// Extra horizontal travel when a swipe dismissed the card, so it leaves in the swipe direction.
+    private var swipeShift: CGFloat = 0
 
     static func show(_ shot: Shot, persistent: Bool = false) {
         let c = PreviewController(shot: shot, persistent: persistent)
@@ -196,6 +213,7 @@ final class PreviewController: NSObject {
         }
 
         content.onKey = { [weak self] e in self?.handleKey(e) ?? false }
+        content.onSwipe = { [weak self] dir in self?.swipeShift = dir * 160; self?.dismiss() }
         content.onEnter = { [weak self] in self?.closeWork?.cancel() }
         content.onExit = { [weak self] in self?.scheduleClose() }
     }
@@ -239,7 +257,7 @@ final class PreviewController: NSObject {
     }
 
     private enum Corner {
-        case bottomRight, bottomLeft, topRight, topLeft
+        case bottomRight, bottomLeft, topRight, topLeft, centerTop, centerBottom
         init() { self = Corner(rawValue: Pref.string("previewCorner")) ?? .bottomRight }
         init?(rawValue: String) {
             switch rawValue {
@@ -247,11 +265,14 @@ final class PreviewController: NSObject {
             case "bottomLeft": self = .bottomLeft
             case "topRight": self = .topRight
             case "topLeft": self = .topLeft
+            case "centerTop": self = .centerTop
+            case "centerBottom": self = .centerBottom
             default: return nil
             }
         }
         var onRight: Bool { self == .bottomRight || self == .topRight }
-        var onBottom: Bool { self == .bottomRight || self == .bottomLeft }
+        var onBottom: Bool { self == .bottomRight || self == .bottomLeft || self == .centerBottom }
+        var centered: Bool { self == .centerTop || self == .centerBottom }
     }
 
     private func present() {
@@ -263,8 +284,13 @@ final class PreviewController: NSObject {
             panel.setFrame(start, display: false)
         } else {
             // Corner previews slide in from the right edge.
-            panel.setFrame(NSRect(x: corner.onRight ? vf.maxX : vf.minX - Self.width, y: corner.onBottom ? vf.minY + Self.margin : vf.maxY - Self.margin - height,
-                                  width: Self.width, height: height), display: false)
+            let fade = Pref.string("previewAnimation") == "fade"
+            let restX = corner.centered ? vf.midX - Self.width / 2 : (corner.onRight ? vf.maxX - Self.width - Self.margin : vf.minX + Self.margin)
+            let restY = corner.onBottom ? vf.minY + Self.margin : vf.maxY - Self.margin - height
+            let startX = fade || corner.centered ? restX : (corner.onRight ? vf.maxX : vf.minX - Self.width)
+            var startY = restY
+            if fade { startY -= 14 } else if corner.centered { startY = corner.onBottom ? vf.minY - height : vf.maxY }
+            panel.setFrame(NSRect(x: startX, y: startY, width: Self.width, height: height), display: false)
         }
         panel.alphaValue = 0
         panel.orderFrontRegardless()
@@ -284,7 +310,7 @@ final class PreviewController: NSObject {
             if let t = c.anchoredTarget(size: NSSize(width: width, height: c.height), visible: vf) {
                 target = t
             } else {
-                let x = corner.onRight ? vf.maxX - width - margin : vf.minX + margin
+                let x = corner.centered ? vf.midX - width / 2 : (corner.onRight ? vf.maxX - width - margin : vf.minX + margin)
                 let ty = corner.onBottom ? vf.minY + margin + y : vf.maxY - margin - y - c.height
                 target = NSRect(x: x, y: ty, width: width, height: c.height)
                 offsets[key] = y + c.height + 12
@@ -314,7 +340,11 @@ final class PreviewController: NSObject {
         Self.open.removeAll { $0 === self }
         let vf = screen.visibleFrame
         var out = panel.frame
-        if anchor != nil || anchorPoint != nil { out.origin.y -= 14 } else { out.origin.x = Corner().onRight ? vf.maxX + 10 : vf.minX - out.width - 10 }
+        let corner = Corner()
+        if anchor != nil || anchorPoint != nil || Pref.string("previewAnimation") == "fade" { out.origin.y -= 14 }
+        else if corner.centered { out.origin.y = corner.onBottom ? vf.minY - out.height : vf.maxY }
+        else { out.origin.x = corner.onRight ? vf.maxX + 10 : vf.minX - out.width - 10 }
+        out.origin.x += swipeShift
         if Self.open.isEmpty { Self.showingRecent = false }
         NSAnimationContext.runAnimationGroup({ ctx in
             ctx.duration = 0.22

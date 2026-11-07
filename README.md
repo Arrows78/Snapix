@@ -57,14 +57,14 @@ Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 
 ### 🔎 Analysis
 
-- **OCR and QR / barcodes** (Vision) from a dragged area or the editor, with an optional *remove line breaks*.
+- **OCR and QR / barcodes** (Vision) from a dragged area or the editor, with an optional *remove line breaks* and an offer to open links found in the text.
 - **Colour picker**: HEX, RGB, CSS, HSL, Swift and C# output.
 - **Contrast checker**: WCAG ratio and APCA Lc. Pick two colours, or analyse a region in the editor.
 
 ### 📤 Output
 
 - **Copy**, **save** (PNG, JPEG, or automatic by content), **save as** (PNG, JPEG, HEIC, PDF), **share** (system share sheet), downscale Retina, filename template, **upload** to your own HTTP endpoint.
-- **Quick Access**: the floating preview after a capture now sits in the corner you choose (4 corners, 3 sizes), has a *More* menu (save as, share, copy as file, upload, hide sensitive data, delete) and answers to keys while hovered (⌘C, ⌘S, ⌘E, ⌘P, Delete, Esc). `⇧⌘6` brings back your last four captures as a persistent stack.
+- **Quick Access**: the floating preview after a capture now sits in the place you choose (4 corners or top/bottom centre, 3 sizes, slide or fade) and closes with a two-finger swipe, has a *More* menu (save as, share, copy as file, upload, hide sensitive data, delete) and answers to keys while hovered (⌘C, ⌘S, ⌘E, ⌘P, Delete, Esc). `⇧⌘6` brings back your last four captures as a persistent stack.
 - **Pin to screen**: drag, scroll to resize, ⌥-scroll for opacity, double-click to edit, right-click menu.
 - **Menu bar**: a *Recent Captures* submenu with thumbnails (open, copy, pin, reveal).
 - **Capture options**: optionally hide desktop icons from screenshots and recordings.

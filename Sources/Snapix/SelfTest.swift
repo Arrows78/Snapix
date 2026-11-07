@@ -170,6 +170,9 @@ enum SelfTest {
         check(KeystrokeFormat.label(keyCode: 124, characters: nil, flags: [.shift, .option]) == "⌥⇧→", "keystroke modifiers and arrow")
         check(KeystrokeFormat.label(keyCode: 0, characters: "a", flags: []) == "a" && KeystrokeFormat.label(keyCode: 49, characters: " ", flags: []) == "Space", "keystroke plain keys")
 
+        // Links in recognised text.
+        check(OCR.links(in: "see https://example.com/a and www.example.org, mail me@x.io, https://example.com/a").map(\.absoluteString) == ["https://example.com/a", "https://www.example.org"], "OCR links")
+
         // Export formats.
         let enc = Exporter.data(for: strip, as: .pdf, scale: 2)
         check(enc.map { $0.starts(with: Data("%PDF".utf8)) } == true, "PDF export")

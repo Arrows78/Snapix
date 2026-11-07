@@ -59,6 +59,15 @@ enum OCR {
         return (try? req.supportedRecognitionLanguages()) ?? []
     }
 
+    /// Web links (http, https, www) found in `text`, in order and without duplicates.
+    static func links(in text: String) -> [URL] {
+        guard let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue) else { return [] }
+        var seen = Set<URL>()
+        return detector.matches(in: text, range: NSRange(text.startIndex..., in: text)).compactMap { $0.url }
+            .filter { $0.scheme == "http" || $0.scheme == "https" }
+            .filter { seen.insert($0).inserted }
+    }
+
     @MainActor
     static func recognizeAndCopy(_ image: CGImage) {
         Toast.show(L("Recognizing…"), duration: 1)
@@ -66,7 +75,16 @@ enum OCR {
             guard !result.isEmpty else { Toast.show(L("No text or QR code found"), symbol: "exclamationmark.triangle.fill"); return }
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(result.clipboardText, forType: .string)
-            Toast.show(result.qrPayloads.isEmpty ? LF("Text copied (%d characters)", result.text.count) : L("QR code copied"))
+            Toast.show(result.qrPayloads.isEmpty ? LF("Text copied (%d characters)", result.text.count) : L("QR code copied"), symbol: "checkmark.circle.fill")
+            if Pref.bool("ocrDetectLinks"), let link = links(in: result.clipboardText).first {
+                let alert = NSAlert()
+                alert.messageText = L("Link detected")
+                alert.informativeText = link.absoluteString
+                alert.addButton(withTitle: L("Open Link"))
+                alert.addButton(withTitle: L("Not Now"))
+                NSApp.activate(ignoringOtherApps: true)
+                if alert.runModal() == .alertFirstButtonReturn { NSWorkspace.shared.open(link) }
+            }
         }
     }
 }

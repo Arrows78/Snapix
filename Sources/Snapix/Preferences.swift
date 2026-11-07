@@ -201,6 +201,9 @@ struct PreferencesView: View {
     @AppStorage("afterPin") private var afterPin = false
     @AppStorage("previewCorner") private var previewCorner = "bottomRight"
     @AppStorage("previewSize") private var previewSize = "medium"
+    @AppStorage("previewAnimation") private var previewAnimation = "slide"
+    @AppStorage("previewSwipe") private var previewSwipe = true
+    @AppStorage("ocrDetectLinks") private var ocrDetectLinks = false
     @AppStorage("saveFolder") private var saveFolder = ""
     @AppStorage("filenameTemplate") private var template = ""
     @AppStorage("format") private var format = "auto"
@@ -329,8 +332,13 @@ struct PreferencesView: View {
                     Picker("", selection: $previewCorner) {
                         Text("Bottom right").tag("bottomRight"); Text("Bottom left").tag("bottomLeft")
                         Text("Top right").tag("topRight"); Text("Top left").tag("topLeft")
+                        Text("Center top").tag("centerTop"); Text("Center bottom").tag("centerBottom")
                     }.labelsHidden().frame(width: 160)
                 }
+                Row(title: "Animation") {
+                    Picker("", selection: $previewAnimation) { Text("Slide").tag("slide"); Text("Fade").tag("fade") }.labelsHidden().frame(width: 160)
+                }
+                ToggleRow("Swipe to dismiss", "Swipe horizontally with two fingers on a preview to close it.", isOn: $previewSwipe)
                 Row(title: "Size", last: true) {
                     Picker("", selection: $previewSize) {
                         Text("Small").tag("small"); Text("Medium").tag("medium"); Text("Large").tag("large")
@@ -430,6 +438,7 @@ struct PreferencesView: View {
             }
             Card(title: "Text recognition") {
                 ToggleRow("Remove line breaks from recognized text", isOn: $removeBreaks)
+                ToggleRow("Offer to open links found in the text", isOn: $ocrDetectLinks)
                 Row(title: "Recognition language", last: true) {
                     Picker("", selection: $ocrLanguage) {
                         Text("Automatic").tag("auto")

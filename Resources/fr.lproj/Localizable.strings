@@ -426,3 +426,14 @@
 "Pause recording" = "Mettre en pause";
 "Resume recording" = "Reprendre l'enregistrement";
 "Save as GIF" = "Enregistrer en GIF";
+"Center top" = "En haut au centre";
+"Center bottom" = "En bas au centre";
+"Animation" = "Animation";
+"Slide" = "Glisser";
+"Fade" = "Fondu";
+"Swipe to dismiss" = "Balayer pour fermer";
+"Swipe horizontally with two fingers on a preview to close it." = "Balayez horizontalement avec deux doigts sur un aperçu pour le fermer.";
+"Offer to open links found in the text" = "Proposer d'ouvrir les liens trouvés dans le texte";
+"Link detected" = "Lien détecté";
+"Open Link" = "Ouvrir le lien";
+"Not Now" = "Pas maintenant";
