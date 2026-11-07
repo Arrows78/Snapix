@@ -227,6 +227,14 @@ struct PreferencesView: View {
     @AppStorage("hideDesktopIcons") private var hideDesktopIcons = false
     @AppStorage("recordAudio") private var recordAudio = false
     @AppStorage("recordCursor") private var recordCursor = true
+    @AppStorage("recordingTemplate") private var recordingTemplate = ""
+    @AppStorage("recordFPS") private var recordFPS = 30
+    @AppStorage("recordQuality") private var recordQuality = "medium"
+    @AppStorage("recordMaxSize") private var recordMaxSize = "native"
+    @AppStorage("screenshotCursor") private var screenshotCursor = false
+    @AppStorage("windowShadow") private var windowShadow = false
+    @AppStorage("defaultTool") private var defaultTool = "arrow"
+    @AppStorage("rememberTool") private var rememberTool = false
     @AppStorage("recordMicrophone") private var recordMicrophone = false
     @AppStorage("recordReveal") private var recordReveal = false
     @AppStorage("recordCountdown") private var recordCountdown = 3
@@ -340,6 +348,8 @@ struct PreferencesView: View {
         Page(pane: .capture) {
             Card(title: "Screenshots") {
                 ToggleRow("Play a sound when a screenshot is taken", isOn: $captureSound)
+                ToggleRow("Include the mouse pointer in screenshots", isOn: $screenshotCursor)
+                ToggleRow("Include the window shadow when capturing a window", isOn: $windowShadow)
                 ToggleRow("Hide desktop icons", "Files on the desktop stay out of screenshots and recordings.", isOn: $hideDesktopIcons)
                 Row(title: "Delayed screenshot timer", last: true) {
                     Picker("", selection: $captureDelay) { ForEach([3, 5, 10, 15], id: \.self) { Text("\($0) s").tag($0) } }.labelsHidden().frame(width: 100)
@@ -371,6 +381,15 @@ struct PreferencesView: View {
                         Text("None").tag(0); Text("3 s").tag(3); Text("5 s").tag(5)
                     }.labelsHidden().frame(width: 100)
                 }
+                Row(title: "Frame rate") {
+                    Picker("", selection: $recordFPS) { Text("15").tag(15); Text("30").tag(30); Text("60").tag(60) }.labelsHidden().frame(width: 100)
+                }
+                Row(title: "Quality", subtitle: "Higher quality means a larger file.") {
+                    Picker("", selection: $recordQuality) { Text("Low").tag("low"); Text("Medium").tag("medium"); Text("High").tag("high") }.labelsHidden().frame(width: 100)
+                }
+                Row(title: "Maximum resolution") {
+                    Picker("", selection: $recordMaxSize) { Text("Native").tag("native"); Text("1080p").tag("1080"); Text("720p").tag("720") }.labelsHidden().frame(width: 100)
+                }
                 ToggleRow("Record the mouse cursor", isOn: $recordCursor)
                 ToggleRow("Record system audio (MP4 only)", isOn: $recordAudio)
                 ToggleRow("Record the microphone (macOS 15 or later)", "The voice is a separate audio track; players that show a track picker let you choose it.", isOn: $recordMicrophone)
@@ -388,6 +407,11 @@ struct PreferencesView: View {
                 Row(title: "Color format") {
                     Picker("", selection: $colorFormat) { ForEach(ColorFormat.allCases, id: \.rawValue) { Text($0.title).tag($0.rawValue) } }.labelsHidden().frame(width: 140)
                 }
+                Row(title: "Default tool") {
+                    Picker("", selection: $defaultTool) { ForEach(Tool.allCases.filter { $0 != .overlay && $0 != .crop }, id: \.rawValue) { Text($0.title).tag($0.rawValue) } }
+                        .labelsHidden().frame(width: 180)
+                }
+                ToggleRow("Remember the last tool", "Open the editor with the tool you used last instead of the default one.", isOn: $rememberTool)
                 ToggleRow("Snap shapes to edges in the screenshot (hold ⌥ to disable)", isOn: $snapEdges)
                 ToggleRow("Mouse wheel zooms the image (trackpad scrolls, ⌥ or ⌘ swaps)", isOn: $wheelZoom)
                 ToggleRow("Open the editor in a larger window", isOn: $largerWindow)
@@ -439,14 +463,20 @@ struct PreferencesView: View {
                         }
                     }
                 }
-                Row(title: "File name", subtitle: "Placeholders: {date} {time} {timestamp} {app}", last: true) {
+                Row(title: "File name", subtitle: "Placeholders: {date} {time} {timestamp} {app}") {
                     TextField("", text: $template).textFieldStyle(.roundedBorder).frame(width: 220)
+                }
+                Row(title: "Recording file name") {
+                    TextField("", text: $recordingTemplate).textFieldStyle(.roundedBorder).frame(width: 220)
+                }
+                Row(title: "Reset file names", last: true) {
+                    Button("Reset Names") { template = "Snapix {date} at {time}"; recordingTemplate = "Snapix Recording {date} at {time}" }
                 }
             }
             Card(title: "Format") {
                 Row(title: "Format") {
                     Picker("", selection: $format) {
-                        Text("Automatic (PNG or JPEG by content)").tag("auto"); Text("PNG").tag("png"); Text("JPEG").tag("jpeg")
+                        Text("Automatic (PNG or JPEG by content)").tag("auto"); Text("PNG").tag("png"); Text("JPEG").tag("jpeg"); Text("HEIC").tag("heic")
                     }.labelsHidden().frame(width: 240)
                 }
                 if format != "png" {

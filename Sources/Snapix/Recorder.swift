@@ -13,12 +13,12 @@ private final class FrameWriter: NSObject, SCStreamOutput, SCStreamDelegate, @un
     private var sessionStarted = false
     var onError: ((Error) -> Void)?
 
-    init(url: URL, width: Int, height: Int, audio withAudio: Bool, microphone withMic: Bool) throws {
+    init(url: URL, width: Int, height: Int, fps: Int, bitsPerPixel: Int, audio withAudio: Bool, microphone withMic: Bool) throws {
         writer = try AVAssetWriter(outputURL: url, fileType: .mp4)
         video = AVAssetWriterInput(mediaType: .video, outputSettings: [
             AVVideoCodecKey: AVVideoCodecType.h264,
             AVVideoWidthKey: width, AVVideoHeightKey: height,
-            AVVideoCompressionPropertiesKey: [AVVideoAverageBitRateKey: width * height * 4, AVVideoExpectedSourceFrameRateKey: 30],
+            AVVideoCompressionPropertiesKey: [AVVideoAverageBitRateKey: width * height * bitsPerPixel * fps / 30, AVVideoExpectedSourceFrameRateKey: fps],
         ])
         video.expectsMediaDataInRealTime = true
         writer.add(video)
@@ -113,7 +113,9 @@ final class Recorder {
 
         let scale = screen.backingScaleFactor
         // H.264 needs even dimensions.
-        let w = Int((rect.width * scale).rounded()) & ~1, h = Int((rect.height * scale).rounded()) & ~1
+        var w = Int((rect.width * scale).rounded()), h = Int((rect.height * scale).rounded())
+        let (cw, ch) = Self.capped(width: w, height: h, limit: Pref.string("recordMaxSize"))
+        w = cw & ~1; h = ch & ~1
         guard w >= 16, h >= 16 else { throw CaptureError.notFound }
 
         let withAudio = format == .video && Pref.bool("recordAudio")
@@ -123,7 +125,9 @@ final class Recorder {
             if !withMic { Toast.show(L("Microphone access denied: recording without it"), duration: 3, symbol: "exclamationmark.triangle.fill") }
         }
         let url = Self.temporaryURL(for: format)
-        let writer = try FrameWriter(url: url, width: w, height: h, audio: withAudio, microphone: withMic)
+        let fps = format == .gif ? 15 : max(10, min(60, UserDefaults.standard.integer(forKey: "recordFPS")))
+        let bpp = ["low": 2, "high": 8][Pref.string("recordQuality")] ?? 4
+        let writer = try FrameWriter(url: url, width: w, height: h, fps: fps, bitsPerPixel: bpp, audio: withAudio, microphone: withMic)
         writer.onError = { [weak self] _ in Task { @MainActor in await self?.stop() } }
 
         let cfg = SCStreamConfiguration()
@@ -131,7 +135,7 @@ final class Recorder {
         cfg.width = w
         cfg.height = h
         cfg.showsCursor = Pref.bool("recordCursor")
-        cfg.minimumFrameInterval = CMTime(value: 1, timescale: format == .gif ? 15 : 30)
+        cfg.minimumFrameInterval = CMTime(value: 1, timescale: CMTimeScale(fps))
         cfg.queueDepth = 6
         if withAudio { cfg.capturesAudio = true; cfg.excludesCurrentProcessAudio = true }
         if #available(macOS 15.0, *), withMic { cfg.captureMicrophone = true }
@@ -173,6 +177,13 @@ final class Recorder {
         }
     }
 
+    /// Shrinks a size so its short side fits `limit` ("1080", "720" or "native" for no limit), keeping the aspect ratio.
+    static func capped(width: Int, height: Int, limit: String) -> (Int, Int) {
+        guard let side = Int(limit), side > 0, min(width, height) > side else { return (width, height) }
+        let k = Double(side) / Double(min(width, height))
+        return (Int((Double(width) * k).rounded()), Int((Double(height) * k).rounded()))
+    }
+
     private static func microphoneAllowed() async -> Bool {
         switch AVCaptureDevice.authorizationStatus(for: .audio) {
         case .authorized: return true
@@ -199,7 +210,7 @@ final class Recorder {
         let ext = file.pathExtension
         do {
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-            let dest = Exporter.uniqueURL(in: folder, name: Exporter.filename(ext: ext, suffix: " " + L("recording")))
+            let dest = Exporter.uniqueURL(in: folder, name: Exporter.filename(ext: ext, template: "recordingTemplate"))
             try FileManager.default.moveItem(at: file, to: dest)
             NSPasteboard.general.clearContents()
             NSPasteboard.general.writeObjects([dest as NSURL])

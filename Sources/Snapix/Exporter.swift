@@ -60,6 +60,9 @@ enum Exporter {
         switch Pref.string("format") {
         case "png": useJPEG = false
         case "jpeg": useJPEG = true
+        case "heic":
+            if !forceLossless, let d = data(for: image, as: .heic, scale: 1) { return (d, "heic") }
+            useJPEG = false
         default: useJPEG = looksLikePhoto(image)
         }
         if forceLossless { useJPEG = false }
@@ -82,11 +85,11 @@ enum Exporter {
         if !quiet { Toast.show(L("Copied to the clipboard"), symbol: "checkmark.circle.fill") }
     }
 
-    static func filename(ext: String, suffix: String = "") -> String {
+    static func filename(ext: String, suffix: String = "", template key: String = "filenameTemplate") -> String {
         let now = Date()
         let d = DateFormatter(); d.dateFormat = "yyyy-MM-dd"
         let t = DateFormatter(); t.dateFormat = "HH.mm.ss"
-        let name = Pref.string("filenameTemplate")
+        let name = Pref.string(key)
             .replacingOccurrences(of: "{date}", with: d.string(from: now))
             .replacingOccurrences(of: "{time}", with: t.string(from: now))
             .replacingOccurrences(of: "{timestamp}", with: String(Int(now.timeIntervalSince1970)))

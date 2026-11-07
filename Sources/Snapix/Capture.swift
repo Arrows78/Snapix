@@ -95,7 +95,7 @@ enum Capture {
         cfg.sourceRect = CGRect(x: rect.minX - screen.frame.minX, y: screen.frame.maxY - rect.maxY, width: rect.width, height: rect.height)
         cfg.width = Int((rect.width * scale).rounded())
         cfg.height = Int((rect.height * scale).rounded())
-        cfg.showsCursor = false
+        cfg.showsCursor = Pref.bool("screenshotCursor")
         return try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: cfg)
     }
 
@@ -107,8 +107,8 @@ enum Capture {
         let cfg = SCStreamConfiguration()
         cfg.width = Int((w.frame.width * scale).rounded())
         cfg.height = Int((w.frame.height * scale).rounded())
-        cfg.showsCursor = false
-        cfg.ignoreShadowsSingleWindow = true
+        cfg.showsCursor = Pref.bool("screenshotCursor")
+        cfg.ignoreShadowsSingleWindow = !Pref.bool("windowShadow")
         let img = try await SCScreenshotManager.captureImage(contentFilter: SCContentFilter(desktopIndependentWindow: w), configuration: cfg)
         return Shot(image: img, scale: scale, screenRect: rect)
     }

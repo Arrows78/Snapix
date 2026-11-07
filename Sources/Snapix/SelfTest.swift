@@ -118,6 +118,13 @@ enum SelfTest {
         flatCtx.setFillColor(CGColor(srgbRed: 0, green: 0, blue: 0, alpha: 1)); flatCtx.fill(CGRect(x: 0, y: 0, width: 10, height: 10))
         check(PixelBuffer(flatCtx.makeImage()!)?.contentBounds() == nil, "flat image has no content bounds")
 
+        // Recording size cap.
+        check(Recorder.capped(width: 3840, height: 2160, limit: "1080") == (1920, 1080) && Recorder.capped(width: 1280, height: 720, limit: "1080") == (1280, 720)
+              && Recorder.capped(width: 3000, height: 2000, limit: "native") == (3000, 2000), "recording size cap")
+        UserDefaults.standard.set("heic", forKey: "format")
+        check(Exporter.encode(strip)?.ext == "heic", "HEIC encoding")
+        UserDefaults.standard.removeObject(forKey: "format")
+
         // Export formats.
         let enc = Exporter.data(for: strip, as: .pdf, scale: 2)
         check(enc.map { $0.starts(with: Data("%PDF".utf8)) } == true, "PDF export")

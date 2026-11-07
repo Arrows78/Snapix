@@ -36,10 +36,12 @@ Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 - **Scrolling capture**: automatic down or up (synthetic scroll and frame stitching), or manual (scroll either way, press Done).
 - **Adjustable selection** (optional): handles, move by dragging or holding Space, arrow-key nudge, Return or double-click to capture.
 - **Screen recording**: select an area and record it to **MP4** (optional system audio, cursor on or off) or an animated **GIF**. A red frame and a small timer pill show what is recorded; press the shortcut again or click Stop. The file lands in your screenshots folder and on the clipboard.
+- **Capture options**: include the mouse pointer and the window shadow, separate file name templates for screenshots and recordings, HEIC output, and recording frame rate (15/30/60), quality and maximum resolution.
 - **Open an image** from the clipboard or a file.
 
 ### ✏️ Editor
 
+- **Default tool**: pick the tool the editor opens with, or let it remember the last one.
 - **Tools**, one key each: select `V`, arrow `A` (3 styles, curvable), rectangle `R` (outline, filled or dashed), oval `O`, line `L` (solid or dashed), freehand `P`, text `T` (optional background), highlighter `H`, blur / erase `B` (pixelate, gaussian, erase), spotlight `S`, counter `C`, ruler `M`, magnifier `G`, image overlay `I`, crop `X`.
 - **Editing**: select, move and resize shapes, Delete, arrow-key nudge, Shift to constrain, unlimited undo / redo, zoom and pinch, colour under the cursor.
 - **Style presets** (More menu): four built-in looks plus your own, saved by name; applying one restyles the selected shape too.

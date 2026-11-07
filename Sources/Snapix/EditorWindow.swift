@@ -110,7 +110,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         canvas.onCopyColor = { [weak self] in self?.copyCursorColor() }
         canvas.color = NSColor(hex: 0xFF3B30)
         buildUI(in: w, size: shot)
-        selectTool(.arrow)
+        selectTool(Pref.bool("rememberTool") ? Tool(rawValue: Pref.string("lastTool")) ?? .arrow : Tool(rawValue: Pref.string("defaultTool")) ?? .arrow)
         refreshTitle()
     }
 
@@ -427,6 +427,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
             return
         }
         canvas.tool = t
+        if t != .overlay { UserDefaults.standard.set(t.rawValue, forKey: "lastTool") }
         highlightTool(t)
         refreshOptions(for: t)
         if t == .overlay { options.setSlider(Double((doc.state.overlay?.opacity ?? 0.5) * 30)) }
