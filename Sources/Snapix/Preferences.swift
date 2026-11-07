@@ -288,6 +288,8 @@ struct PreferencesView: View {
     @AppStorage("defaultTool") private var defaultTool = "arrow"
     @AppStorage("rememberTool") private var rememberTool = false
     @AppStorage("snapHighlight") private var snapHighlight = true
+    @AppStorage("windowBackground") private var windowBackground = "transparent"
+    @AppStorage("windowBackgroundColor") private var windowBackgroundColor = 0x1B1B1E
     @AppStorage("quickActions") private var quickActions = "edit,copy,save,ocr,pin"
     @AppStorage("quickAccessStyle") private var quickAccessStyle = "stack"
     @AppStorage("ocrEngine") private var ocrEngine = "builtin"
@@ -466,6 +468,16 @@ struct PreferencesView: View {
                 ToggleRow("Play a sound when a screenshot is taken", isOn: $captureSound)
                 ToggleRow("Include the mouse pointer in screenshots", isOn: $screenshotCursor)
                 ToggleRow("Include the window shadow when capturing a window", isOn: $windowShadow)
+                Row(title: "Window screenshot background", subtitle: "What sits behind a captured window.", last: false) {
+                    Picker("", selection: $windowBackground) { Text("Transparent").tag("transparent"); Text("Desktop picture").tag("wallpaper"); Text("Solid color").tag("solid") }
+                        .labelsHidden().frame(width: 160)
+                }
+                if windowBackground != "transparent" {
+                    Row(title: "Background color", subtitle: "Used for the solid color, and behind a transparent desktop picture.") {
+                        ColorPicker("", selection: Binding(get: { Color(nsColor: NSColor(hex: UInt32(truncatingIfNeeded: windowBackgroundColor))) },
+                                                           set: { windowBackgroundColor = Int(NSColor($0).hexValue) })).labelsHidden()
+                    }
+                }
                 ToggleRow("Hide desktop icons", "Files on the desktop stay out of screenshots and recordings.", isOn: $hideDesktopIcons)
                 Row(title: "Delayed screenshot timer", last: true) {
                     Picker("", selection: $captureDelay) { ForEach([3, 5, 10, 15], id: \.self) { Text("\($0) s").tag($0) } }.labelsHidden().frame(width: 100)

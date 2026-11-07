@@ -32,6 +32,7 @@ Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 
 - **Area**: frozen screen, pixel loupe, live W×H.
 - **Application**: click a window and every window of that app is captured together on a transparent background.
+- **Window background**: a captured window can sit on the desktop picture or a plain colour instead of transparent corners.
 - **Interface element**: hover a button, toolbar or panel and click to capture exactly its bounds (↑ / ↓ move to the parent or child element; needs the Accessibility permission).
 - **Fullscreen**, **any window** (hover to pick), **active window**, **delayed (3–15 s)**, **repeat last area**.
 - **Scrolling capture**: automatic down or up (synthetic scroll and frame stitching), or manual (scroll either way, press Done), with a live preview of the stitched result and an adjustable maximum height.

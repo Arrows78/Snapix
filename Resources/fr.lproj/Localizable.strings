@@ -577,3 +577,9 @@
 "Switch between pixels and points" = "Basculer entre pixels et points";
 "Folder…" = "Dossier…";
 "Pick a folder of pictures to use as backgrounds." = "Choisissez un dossier d'images à utiliser comme fonds.";
+"Window screenshot background" = "Fond des captures de fenêtre";
+"What sits behind a captured window." = "Ce qui se trouve derrière une fenêtre capturée.";
+"Desktop picture" = "Image du bureau";
+"Solid color" = "Couleur unie";
+"Background color" = "Couleur de fond";
+"Used for the solid color, and behind a transparent desktop picture." = "Utilisée pour la couleur unie, et derrière une image de bureau transparente.";

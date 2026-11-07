@@ -13,6 +13,8 @@ enum Pref {
         "previewCorner": "bottomRight",
         "previewSize": "medium",
         "snapHighlight": true,
+        "windowBackground": "transparent",
+        "windowBackgroundColor": 0x1B1B1E,
         "sizeInPoints": false,
         "quickActions": "edit,copy,save,ocr,pin",
         "quickAccessStyle": "stack",

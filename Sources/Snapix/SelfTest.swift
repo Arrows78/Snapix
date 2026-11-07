@@ -364,6 +364,14 @@ enum SelfTest {
         var counterNote = Annotation(tool: .counter, p1: .zero, p2: .zero, color: .red, width: 3); counterNote.number = 4
         check(SidebarModel.summary(for: textNote).count == 28 && SidebarModel.summary(for: counterNote) == "\(Tool.counter.title) 4", "sidebar row summaries")
 
+        // Window screenshot background.
+        let win = page(rows: 0..<50)
+        let m = WindowBackground.margin(for: CGSize(width: 400, height: 50))
+        check(m == 24, "window background minimum margin")
+        if let c = WindowBackground.compose(window: win, picture: nil, color: CGColor(srgbRed: 1, green: 0, blue: 0, alpha: 1), margin: m), let px = PixelBuffer(c) {
+            check(c.width == 448 && c.height == 98 && px.color(x: 2, y: 2)?.hexValue == 0xFF0000 && px.color(x: m + 5, y: m + 3)?.hexValue == PixelBuffer(win)?.color(x: 5, y: 3)?.hexValue, "window background adds a margin around the window")
+        } else { check(false, "window background compose") }
+
         // Export formats.
         let enc = Exporter.data(for: strip, as: .pdf, scale: 2)
         check(enc.map { $0.starts(with: Data("%PDF".utf8)) } == true, "PDF export")

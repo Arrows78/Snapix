@@ -110,7 +110,7 @@ enum Capture {
         cfg.showsCursor = Pref.bool("screenshotCursor")
         cfg.ignoreShadowsSingleWindow = !Pref.bool("windowShadow")
         let img = try await SCScreenshotManager.captureImage(contentFilter: SCContentFilter(desktopIndependentWindow: w), configuration: cfg)
-        return Shot(image: img, scale: scale, screenRect: rect)
+        return Shot(image: WindowBackground.apply(to: img, on: screen(containing: rect)), scale: scale, screenRect: rect)
     }
 
     // MARK: Windows
