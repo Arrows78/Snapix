@@ -1,10 +1,16 @@
-# Builds a universal Snapix.app and publishes it as a GitHub release on every v* tag.
+# Builds a universal Snapix.app and publishes it as a GitHub release on every v* tag (pushed, or released by the Prepare release workflow).
 name: Release
 
 on:
   push:
     tags:
       - "v*"
+  workflow_call:
+    inputs:
+      tag:
+        description: "Tag to release (set by the Prepare release workflow)"
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -12,10 +18,13 @@ permissions:
 jobs:
   release:
     runs-on: macos-15
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ inputs.tag || github.ref }}
 
       - uses: maxim-lobanov/setup-xcode@v1
         with:
@@ -24,8 +33,8 @@ jobs:
       - name: Check tag matches app version
         run: |
           version=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" Resources/Info.plist)
-          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
-            echo "::error::Tag $GITHUB_REF_NAME does not match CFBundleShortVersionString $version in Resources/Info.plist"
+          if [ "v$version" != "$TAG" ]; then
+            echo "::error::Tag $TAG does not match CFBundleShortVersionString $version in Resources/Info.plist"
             exit 1
           fi
           echo "VERSION=$version" >> "$GITHUB_ENV"
@@ -91,7 +100,7 @@ jobs:
           EOT
           # The heredoc above keeps the step's indentation: strip it.
           sed -i.bak 's/^          //' release-notes.md && rm -f release-notes.md.bak
-          gh release create "$GITHUB_REF_NAME" "Snapix-$VERSION.zip" "Snapix-$VERSION.zip.sha256" \
+          gh release create "$TAG" "Snapix-$VERSION.zip" "Snapix-$VERSION.zip.sha256" \
             --title "Snapix $VERSION" $prerelease --notes-file release-notes.md
 
       # Needs a fine-grained token with "Contents: read and write" on Arrows78/homebrew-snapix, stored as the

@@ -35,6 +35,13 @@ git tag v1.1.0 && git push origin main v1.1.0
 - The release notes are `docs/releases/<version>.md` when that file exists (use it for hand-written text), the
   changelog section of the version otherwise.
 
+### One click, from GitHub
+
+**Actions › Prepare release › Run workflow** (on `main`) does all of the above on GitHub: it checks the commit messages, runs
+`release.py prepare` (the version comes from the commits, or from the *version* field to force one, e.g. a patch release),
+commits `chore(release): X.Y.Z`, tags, pushes, and runs the release workflow on that tag. It refuses to run when no commit since
+the last tag belongs in a release. Pushing a tag by hand still works the same as before.
+
 ## What CI guards
 
 `python3 scripts/release.py check` (run by `scripts/ci.sh`, so by CI and by the release workflow) fails when:
