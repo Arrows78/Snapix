@@ -57,10 +57,11 @@ final class RecordingReview: NSObject, NSWindowDelegate {
         trim.isEnabled = playerView.canBeginTrimming
         trimButton = trim
         let discard = button(L("Discard"), "trash", #selector(discardTapped))
+        let gif = button(L("Save as GIF"), "photo.stack", #selector(saveGIFTapped))
         let save = button(L("Save"), "square.and.arrow.down", #selector(saveTapped), primary: true)
         let spacer = NSView()
         spacer.setContentHuggingPriority(.init(1), for: .horizontal)
-        let bar = NSStackView(views: [trim, spacer, discard, save])
+        let bar = NSStackView(views: [trim, spacer, discard, gif, save])
         bar.edgeInsets = NSEdgeInsets(top: 10, left: 14, bottom: 12, right: 14)
 
         let stack = NSStackView(views: [playerView, bar])
@@ -89,6 +90,7 @@ final class RecordingReview: NSObject, NSWindowDelegate {
     }
 
     @objc private func saveTapped() { save() }
+    @objc private func saveGIFTapped() { save(asGIF: true) }
 
     private func close() {
         player.pause()
@@ -96,7 +98,7 @@ final class RecordingReview: NSObject, NSWindowDelegate {
     }
 
     /// Writes the trimmed range when the user trimmed, otherwise hands over the file as is.
-    private func save() {
+    private func save(asGIF: Bool = false) {
         guard !finished else { return }
         finished = true
         player.pause()
@@ -106,13 +108,24 @@ final class RecordingReview: NSObject, NSWindowDelegate {
         let trimmed = start.isNumeric && end.isNumeric && duration.isNumeric
             && (start.seconds > 0.05 || end.seconds < duration.seconds - 0.05) && end > start
         window.orderOut(nil)
-        guard trimmed else { onSave(url); finish(); return }
+        // Hands the final video over as is, or re-encoded as a GIF when asked.
+        let deliver: (URL) -> Void = { [weak self] file in
+            guard asGIF else { self?.onSave(file); self?.finish(); return }
+            Toast.show(L("Creating the GIF…"), duration: 30)
+            Task { @MainActor in
+                let gif = await Recorder.makeGIF(from: file)
+                if let gif { try? FileManager.default.removeItem(at: file) }
+                self?.onSave(gif ?? file)
+                self?.finish()
+            }
+        }
+        guard trimmed else { deliver(url); return }
 
         Toast.show(L("Trimming…"), duration: 30)
         let source = url
         let out = url.deletingLastPathComponent().appendingPathComponent(UUID().uuidString + ".mp4")
         guard let export = AVAssetExportSession(asset: AVURLAsset(url: source), presetName: AVAssetExportPresetPassthrough) else {
-            onSave(url); finish(); return
+            deliver(url); return
         }
         export.outputURL = out
         export.outputFileType = .mp4
@@ -124,11 +137,10 @@ final class RecordingReview: NSObject, NSWindowDelegate {
                     guard let self else { return }
                     if session.status == .completed {
                         try? FileManager.default.removeItem(at: source)
-                        self.onSave(out)
+                        deliver(out)
                     } else {
-                        self.onSave(source) // keep the untrimmed recording rather than lose it
+                        deliver(source) // keep the untrimmed recording rather than lose it
                     }
-                    self.finish()
                 }
             }
         }

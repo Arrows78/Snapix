@@ -4,6 +4,49 @@ import ImageIO
 import ScreenCaptureKit
 import UniformTypeIdentifiers
 
+/// Keeps a recording continuous across pauses: frames are dropped while paused and later timestamps are shifted back by the gap.
+struct PauseClock {
+    private(set) var paused = false
+    private(set) var offset = CMTime.zero
+    private var lastVideo: CMTime?
+    private var resumePending = false
+    var frameGap = CMTime(value: 1, timescale: 30)
+
+    mutating func pause() { paused = true }
+    mutating func resume() { if paused { paused = false; resumePending = true } }
+
+    /// The timestamp a video frame is written with.
+    mutating func map(video pts: CMTime) -> CMTime {
+        if resumePending, let last = lastVideo {
+            offset = CMTimeAdd(offset, CMTimeSubtract(CMTimeSubtract(pts, last), frameGap))
+        }
+        resumePending = false
+        lastVideo = pts
+        return CMTimeSubtract(pts, offset)
+    }
+
+    /// Audio follows the offset but never defines it; it is dropped until the first frame after a resume.
+    func map(audio pts: CMTime) -> CMTime? { paused || resumePending ? nil : CMTimeSubtract(pts, offset) }
+}
+
+private extension CMSampleBuffer {
+    func retimed(to pts: CMTime) -> CMSampleBuffer? {
+        var count = 0
+        CMSampleBufferGetSampleTimingInfoArray(self, entryCount: 0, arrayToFill: nil, entriesNeededOut: &count)
+        guard count > 0 else { return nil }
+        var info = [CMSampleTimingInfo](repeating: CMSampleTimingInfo(), count: count)
+        CMSampleBufferGetSampleTimingInfoArray(self, entryCount: count, arrayToFill: &info, entriesNeededOut: &count)
+        let shift = CMTimeSubtract(presentationTimeStamp, pts)
+        for i in info.indices {
+            info[i].presentationTimeStamp = CMTimeSubtract(info[i].presentationTimeStamp, shift)
+            if info[i].decodeTimeStamp.isValid { info[i].decodeTimeStamp = CMTimeSubtract(info[i].decodeTimeStamp, shift) }
+        }
+        var out: CMSampleBuffer?
+        CMSampleBufferCreateCopyWithNewTiming(allocator: nil, sampleBuffer: self, sampleTimingEntryCount: count, sampleTimingArray: &info, sampleBufferOut: &out)
+        return out
+    }
+}
+
 /// Receives ScreenCaptureKit frames and writes them to an MP4 file.
 private final class FrameWriter: NSObject, SCStreamOutput, SCStreamDelegate, @unchecked Sendable {
     private let writer: AVAssetWriter
@@ -11,6 +54,8 @@ private final class FrameWriter: NSObject, SCStreamOutput, SCStreamDelegate, @un
     private let audio: AVAssetWriterInput?
     private let mic: AVAssetWriterInput?
     private var sessionStarted = false
+    private var clock = PauseClock()
+    private let clockLock = NSLock()
     var onError: ((Error) -> Void)?
 
     init(url: URL, width: Int, height: Int, fps: Int, bitsPerPixel: Int, audio withAudio: Bool, microphone withMic: Bool) throws {
@@ -52,18 +97,36 @@ private final class FrameWriter: NSObject, SCStreamOutput, SCStreamDelegate, @un
             // Only complete frames carry pixels; idle/blank ones must be skipped.
             guard let info = (CMSampleBufferGetSampleAttachmentsArray(sb, createIfNecessary: false) as? [[SCStreamFrameInfo: Any]])?.first,
                   let raw = info[.status] as? Int, SCFrameStatus(rawValue: raw) == .complete else { return }
+            clockLock.lock()
+            if clock.paused { clockLock.unlock(); return }
+            let mapped = clock.map(video: sb.presentationTimeStamp)
+            let shifted = clock.offset != .zero
+            clockLock.unlock()
             if !sessionStarted {
                 guard writer.startWriting() else { return }
-                writer.startSession(atSourceTime: sb.presentationTimeStamp)
+                writer.startSession(atSourceTime: mapped)
                 sessionStarted = true
             }
-            if video.isReadyForMoreMediaData { video.append(sb) }
+            if video.isReadyForMoreMediaData, let out = shifted ? sb.retimed(to: mapped) : sb { video.append(out) }
         case .audio:
-            if sessionStarted, let audio, audio.isReadyForMoreMediaData { audio.append(sb) }
+            if sessionStarted, let audio, audio.isReadyForMoreMediaData, let out = retimedAudio(sb) { audio.append(out) }
         default:
             // `.microphone` only exists on macOS 15; compare the raw value so the file still builds for macOS 14.
-            if type.rawValue == 2, sessionStarted, let mic, mic.isReadyForMoreMediaData { mic.append(sb) }
+            if type.rawValue == 2, sessionStarted, let mic, mic.isReadyForMoreMediaData, let out = retimedAudio(sb) { mic.append(out) }
         }
+    }
+
+    private func retimedAudio(_ sb: CMSampleBuffer) -> CMSampleBuffer? {
+        clockLock.lock()
+        defer { clockLock.unlock() }
+        guard let t = clock.map(audio: sb.presentationTimeStamp) else { return nil }
+        return clock.offset == .zero ? sb : sb.retimed(to: t)
+    }
+
+    func setPaused(_ on: Bool) {
+        clockLock.lock()
+        if on { clock.pause() } else { clock.resume() }
+        clockLock.unlock()
     }
 
     func stream(_ stream: SCStream, didStopWithError error: Error) { onError?(error) }
@@ -92,6 +155,8 @@ final class Recorder {
     private var format = Format.video
     private var hud: RecordingHUD?
     private var border: NSWindow?
+    private var overlays: RecordingOverlays?
+    private(set) var isPaused = false
 
     var isRecording: Bool { stream != nil }
 
@@ -106,6 +171,12 @@ final class Recorder {
         }
         // The indicators go up first so the content list below includes their windows and can leave them out of the video.
         showIndicators(rect: rect, screen: screen)
+        if format == .video || Pref.bool("recordClicks") {
+            let clicks = Pref.bool("recordClicks"), keys = format == .video && Pref.bool("recordKeystrokes")
+            if clicks || keys { overlays = RecordingOverlays(rect: rect, screen: screen, clicks: clicks, keys: keys) }
+        }
+        // Give the windows a moment to reach the window server so the filter below sees them.
+        try? await Task.sleep(nanoseconds: 150_000_000)
         var started = false
         defer { if !started { hideIndicators() } }
         let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
@@ -140,7 +211,7 @@ final class Recorder {
         if withAudio { cfg.capturesAudio = true; cfg.excludesCurrentProcessAudio = true }
         if #available(macOS 15.0, *), withMic { cfg.captureMicrophone = true }
 
-        let filter = Capture.filter(display: display, content: content, excludingSelf: true)
+        let filter = Capture.filter(display: display, content: content, excludingSelf: true, keeping: overlays?.windowIDs ?? [])
         let s = SCStream(filter: filter, configuration: cfg, delegate: writer)
         let queue = DispatchQueue(label: "snapix.recorder")
         try s.addStreamOutput(writer, type: .screen, sampleHandlerQueue: queue)
@@ -222,7 +293,7 @@ final class Recorder {
     }
 
     /// Re-encodes an MP4 as a looping GIF (at most 720 px wide, 12 images per second).
-    private static func makeGIF(from url: URL) async -> URL? {
+    static func makeGIF(from url: URL) async -> URL? {
         let asset = AVURLAsset(url: url)
         guard let duration = try? await asset.load(.duration).seconds, duration > 0 else { return nil }
         let fps = 12.0
@@ -266,10 +337,19 @@ final class Recorder {
         b.contentView = v
         b.orderFrontRegardless()
         border = b
-        hud = RecordingHUD(near: rect, on: screen) { [weak self] in Task { await self?.stop() } }
+        hud = RecordingHUD(near: rect, on: screen, onStop: { [weak self] in Task { await self?.stop() } }, onPause: { [weak self] in self?.togglePause() })
+    }
+
+    func togglePause() {
+        guard isRecording else { return }
+        isPaused.toggle()
+        frames?.setPaused(isPaused)
+        hud?.setPaused(isPaused)
     }
 
     private func hideIndicators() {
+        overlays?.stop(); overlays = nil
+        isPaused = false
         border?.orderOut(nil); border = nil
         hud?.close(); hud = nil
     }
@@ -282,12 +362,17 @@ private final class RecordingHUD {
     private let label = NSTextField(labelWithString: "0:00")
     private let dot = NSView()
     private var timer: Timer?
-    private let started = Date()
     private let onStop: () -> Void
+    private let onPause: () -> Void
+    private let pauseButton = NSButton()
+    private var accumulated: TimeInterval = 0
+    private var segmentStart = Date()
+    private var paused = false
 
-    init(near rect: CGRect, on screen: NSScreen, onStop: @escaping () -> Void) {
+    init(near rect: CGRect, on screen: NSScreen, onStop: @escaping () -> Void, onPause: @escaping () -> Void) {
         self.onStop = onStop
-        let box = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: 150, height: 36))
+        self.onPause = onPause
+        let box = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: 184, height: 36))
         box.material = .hudWindow
         box.blendingMode = .behindWindow
         box.state = .active
@@ -304,8 +389,14 @@ private final class RecordingHUD {
         let stop = NSButton(title: L("Stop"), target: nil, action: nil)
         stop.bezelStyle = .rounded
         stop.controlSize = .small
-        stop.frame = NSRect(x: 84, y: 6, width: 58, height: 24)
-        [dot, label, stop].forEach(box.addSubview)
+        stop.frame = NSRect(x: 118, y: 6, width: 58, height: 24)
+        pauseButton.bezelStyle = .regularSquare
+        pauseButton.isBordered = false
+        pauseButton.image = NSImage(systemSymbolName: "pause.fill", accessibilityDescription: L("Pause recording"))
+        pauseButton.contentTintColor = .white
+        pauseButton.toolTip = L("Pause recording")
+        pauseButton.frame = NSRect(x: 84, y: 6, width: 28, height: 24)
+        [dot, label, pauseButton, stop].forEach(box.addSubview)
 
         panel = NSPanel(contentRect: box.frame, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         panel.isOpaque = false
@@ -318,23 +409,35 @@ private final class RecordingHUD {
         panel.contentView = box
         // Below the region when there is room, otherwise above it.
         let below = rect.minY - 46 >= screen.visibleFrame.minY
-        panel.setFrameOrigin(NSPoint(x: max(screen.frame.minX + 8, min(rect.midX - 75, screen.frame.maxX - 158)),
+        panel.setFrameOrigin(NSPoint(x: max(screen.frame.minX + 8, min(rect.midX - 92, screen.frame.maxX - 192)),
                                      y: below ? rect.minY - 46 : min(rect.maxY + 10, screen.visibleFrame.maxY - 40)))
         panel.orderFrontRegardless()
 
         stop.target = self
         stop.action = #selector(stopTapped)
+        pauseButton.target = self
+        pauseButton.action = #selector(pauseTapped)
         timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.tick() }
         }
     }
 
     @objc private func stopTapped() { onStop() }
+    @objc private func pauseTapped() { onPause() }
+
+    func setPaused(_ on: Bool) {
+        if on { accumulated += Date().timeIntervalSince(segmentStart) } else { segmentStart = Date() }
+        paused = on
+        pauseButton.image = NSImage(systemSymbolName: on ? "play.fill" : "pause.fill", accessibilityDescription: nil)
+        pauseButton.toolTip = on ? L("Resume recording") : L("Pause recording")
+        dot.layer?.backgroundColor = (on ? NSColor.systemOrange : NSColor.systemRed).cgColor
+        dot.alphaValue = 1
+    }
 
     private func tick() {
-        let s = Int(Date().timeIntervalSince(started))
+        let s = Int(accumulated + (paused ? 0 : Date().timeIntervalSince(segmentStart)))
         label.stringValue = String(format: "%d:%02d", s / 60, s % 60)
-        dot.alphaValue = dot.alphaValue < 1 ? 1 : 0.25
+        if !paused { dot.alphaValue = dot.alphaValue < 1 ? 1 : 0.25 }
     }
 
     func close() {

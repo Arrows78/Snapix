@@ -227,6 +227,8 @@ struct PreferencesView: View {
     @AppStorage("hideDesktopIcons") private var hideDesktopIcons = false
     @AppStorage("recordAudio") private var recordAudio = false
     @AppStorage("recordCursor") private var recordCursor = true
+    @AppStorage("recordClicks") private var recordClicks = false
+    @AppStorage("recordKeystrokes") private var recordKeystrokes = false
     @AppStorage("recordingTemplate") private var recordingTemplate = ""
     @AppStorage("recordFPS") private var recordFPS = 30
     @AppStorage("recordQuality") private var recordQuality = "medium"
@@ -397,6 +399,8 @@ struct PreferencesView: View {
                     Picker("", selection: $recordMaxSize) { Text("Native").tag("native"); Text("1080p").tag("1080"); Text("720p").tag("720") }.labelsHidden().frame(width: 100)
                 }
                 ToggleRow("Record the mouse cursor", isOn: $recordCursor)
+                ToggleRow("Highlight mouse clicks", "A ring appears at each click.", isOn: $recordClicks)
+                ToggleRow("Show keystrokes", "Typed keys and shortcuts appear in a pill. Needs the Accessibility permission.", isOn: $recordKeystrokes)
                 ToggleRow("Record system audio (MP4 only)", isOn: $recordAudio)
                 ToggleRow("Record the microphone (macOS 15 or later)", "The voice is a separate audio track; players that show a track picker let you choose it.", isOn: $recordMicrophone)
                 ToggleRow("Review and trim before saving", "Opens the recording in a player where you can cut the start and the end.", isOn: $recordReview)

@@ -1,4 +1,5 @@
 import AppKit
+import CoreMedia
 
 /// `Snapix --selftest <outdir>` exercises the non-interactive pieces (render, stitching, contrast) and exits.
 @MainActor
@@ -150,6 +151,24 @@ enum SelfTest {
 
         // Backdrop pattern decoding.
         check((try? JSONDecoder().decode(BackdropConfig.self, from: old))?.pattern == nil, "old backdrop settings have no pattern")
+
+        // Recording pauses.
+        var clock = PauseClock()
+        let t0 = clock.map(video: CMTime(seconds: 10, preferredTimescale: 600))
+        let t1 = clock.map(video: CMTime(seconds: 10.033, preferredTimescale: 600))
+        clock.pause()
+        check(clock.map(audio: CMTime(seconds: 12, preferredTimescale: 600)) == nil, "audio dropped while paused")
+        clock.resume()
+        check(clock.map(audio: CMTime(seconds: 20, preferredTimescale: 600)) == nil, "audio dropped until the first frame after resume")
+        let t2 = clock.map(video: CMTime(seconds: 20, preferredTimescale: 600))
+        check(abs(t0.seconds - 10) < 0.002 && abs(t1.seconds - 10.033) < 0.002, "frames before a pause keep their time (\(t0.seconds), \(t1.seconds))")
+        check(abs(t2.seconds - 10.066) < 0.002, "first frame after a pause follows the last one (\(t2.seconds))")
+        check(abs((clock.map(audio: CMTime(seconds: 20.5, preferredTimescale: 600))?.seconds ?? 0) - 10.566) < 0.002, "audio shifted by the same gap")
+
+        // Keystroke labels.
+        check(KeystrokeFormat.label(keyCode: 8, characters: "c", flags: [.command]) == "⌘C", "keystroke ⌘C")
+        check(KeystrokeFormat.label(keyCode: 124, characters: nil, flags: [.shift, .option]) == "⌥⇧→", "keystroke modifiers and arrow")
+        check(KeystrokeFormat.label(keyCode: 0, characters: "a", flags: []) == "a" && KeystrokeFormat.label(keyCode: 49, characters: " ", flags: []) == "Space", "keystroke plain keys")
 
         // Export formats.
         let enc = Exporter.data(for: strip, as: .pdf, scale: 2)

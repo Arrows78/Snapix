@@ -419,3 +419,10 @@
 "Save changes before closing?" = "Enregistrer les modifications avant de fermer ?";
 "Your edits will be lost if you don't save them." = "Vos modifications seront perdues si vous ne les enregistrez pas.";
 "Don't Save" = "Ne pas enregistrer";
+"Highlight mouse clicks" = "Mettre en évidence les clics";
+"A ring appears at each click." = "Un anneau apparaît à chaque clic.";
+"Show keystrokes" = "Afficher les touches tapées";
+"Typed keys and shortcuts appear in a pill. Needs the Accessibility permission." = "Les touches et raccourcis s'affichent dans une pastille. Nécessite la permission Accessibilité.";
+"Pause recording" = "Mettre en pause";
+"Resume recording" = "Reprendre l'enregistrement";
+"Save as GIF" = "Enregistrer en GIF";

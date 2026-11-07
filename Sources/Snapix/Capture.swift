@@ -73,15 +73,15 @@ enum Capture {
     }
 
     /// The filter used for every capture: optionally without the desktop icons and without our own windows.
-    static func filter(display: SCDisplay, content: SCShareableContent, excludingSelf: Bool) -> SCContentFilter {
-        guard Pref.bool("hideDesktopIcons") else {
+    static func filter(display: SCDisplay, content: SCShareableContent, excludingSelf: Bool, keeping: Set<CGWindowID> = []) -> SCContentFilter {
+        guard Pref.bool("hideDesktopIcons") || !keeping.isEmpty else {
             let apps = excludingSelf ? content.applications.filter { $0.processID == getpid() } : []
             return SCContentFilter(display: display, excludingApplications: apps, exceptingWindows: [])
         }
         let iconLevel = Int(CGWindowLevelForKey(.desktopIconWindow))
         let hidden = content.windows.filter { w in
             (w.owningApplication?.bundleIdentifier == "com.apple.finder" && w.windowLayer == iconLevel)
-                || (excludingSelf && w.owningApplication?.processID == getpid())
+                || (excludingSelf && w.owningApplication?.processID == getpid() && !keeping.contains(w.windowID))
         }
         return SCContentFilter(display: display, excludingWindows: hidden)
     }

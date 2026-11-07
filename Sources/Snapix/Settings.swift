@@ -41,6 +41,8 @@ enum Pref {
         "redact.secret": true, "redact.phone": true, "redact.ipAddress": true,
         "recordAudio": false,
         "recordCursor": true,
+        "recordClicks": false,
+        "recordKeystrokes": false,
         "recordingTemplate": "Snapix Recording {date} at {time}",
         "recordFPS": 30,
         "recordQuality": "medium",
