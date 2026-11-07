@@ -10,6 +10,8 @@ final class CanvasView: NSView, NSTextFieldDelegate {
     var arrowStyle = 0 { didSet { applyToSelection { $0.style = arrowStyle } } }
     var blurMode: BlurMode = .pixelate { didSet { applyToSelection { $0.blur = blurMode } } }
     var filled = false { didSet { applyToSelection { $0.filled = filled } } }
+    /// Width / height the crop box is held to (nil = free).
+    var cropRatio: CGFloat? { didSet { if let r = cropRect { cropRect = CropGeometry.refit(r, ratio: cropRatio, bounds: imageBounds); needsDisplay = true } } }
     var dashed = false { didSet { applyToSelection { $0.dashed = dashed } } }
     var fontSize: CGFloat = 28
 
@@ -134,6 +136,15 @@ final class CanvasView: NSView, NSTextFieldDelegate {
         ctx.setStrokeColor(NSColor.white.cgColor)
         ctx.setLineWidth(1.5 * k)
         ctx.stroke(r)
+        // Rule-of-thirds guides.
+        ctx.setStrokeColor(NSColor.white.withAlphaComponent(0.35).cgColor)
+        ctx.setLineWidth(1 * k)
+        for i in 1...2 {
+            let f = CGFloat(i) / 3
+            ctx.move(to: CGPoint(x: r.minX + r.width * f, y: r.minY)); ctx.addLine(to: CGPoint(x: r.minX + r.width * f, y: r.maxY))
+            ctx.move(to: CGPoint(x: r.minX, y: r.minY + r.height * f)); ctx.addLine(to: CGPoint(x: r.maxX, y: r.minY + r.height * f))
+        }
+        ctx.strokePath()
 
         let label = NSAttributedString(string: "\(Int(r.width)) × \(Int(r.height))  ↩ to crop", attributes: [
             .font: NSFont.monospacedDigitSystemFont(ofSize: 12 * k, weight: .medium), .foregroundColor: NSColor.white,
@@ -291,8 +302,7 @@ final class CanvasView: NSView, NSTextFieldDelegate {
 
         case let .crop(start):
             let end = snapped(raw, for: .crop)
-            let r = CGRect(x: min(start.x, end.x), y: min(start.y, end.y), width: abs(end.x - start.x), height: abs(end.y - start.y))
-            cropRect = r.intersection(imageBounds)
+            cropRect = CropGeometry.rect(from: start, to: end, ratio: cropRatio, bounds: imageBounds)
         }
         needsDisplay = true
     }

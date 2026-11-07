@@ -462,6 +462,9 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         case .line:
             opts = [OptionsPanel.Option(image: symbol("minus"), tip: L("Solid")), OptionsPanel.Option(image: symbol("ellipsis"), tip: L("Dashed"))]
             selected = (a?.dashed ?? canvas.dashed) ? 1 : 0
+        case .crop:
+            opts = CropGeometry.ratios.map { OptionsPanel.Option(image: CropGeometry.glyph(ratio: $0.value), tip: $0.label == "Free" ? L("Free") : $0.label) }
+            selected = CropGeometry.ratios.firstIndex { $0.value == canvas.cropRatio } ?? 0
         case .text:
             opts = [OptionsPanel.Option(image: symbol("textformat"), tip: L("Plain text")),
                     OptionsPanel.Option(image: symbol("t.square.fill"), tip: L("Text with background"))]
@@ -493,6 +496,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         case .blur: canvas.blurMode = BlurMode(rawValue: i) ?? .pixelate
         case .rect, .oval: canvas.dashed = i == 2; canvas.filled = i == 1
         case .line: canvas.dashed = i == 1
+        case .crop: canvas.cropRatio = CropGeometry.ratios[i].value
         case .text: canvas.filled = i == 1
         default: break
         }

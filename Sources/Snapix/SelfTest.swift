@@ -178,6 +178,16 @@ enum SelfTest {
         UserDefaults.standard.set(50, forKey: "historyLimit"); check(History.limit == 50, "history: custom limit")
         UserDefaults.standard.removeObject(forKey: "historyLimit"); check(History.limit == 200, "history: default limit")
 
+        // Crop ratio.
+        let bnds = CGRect(x: 0, y: 0, width: 400, height: 300)
+        check(CropGeometry.rect(from: CGPoint(x: 10, y: 10), to: CGPoint(x: 210, y: 200), ratio: nil, bounds: bnds) == CGRect(x: 10, y: 10, width: 200, height: 190), "crop free")
+        check(CropGeometry.rect(from: CGPoint(x: 10, y: 10), to: CGPoint(x: 210, y: 200), ratio: 1, bounds: bnds) == CGRect(x: 10, y: 10, width: 190, height: 190), "crop 1:1")
+        check(CropGeometry.rect(from: CGPoint(x: 100, y: 100), to: CGPoint(x: 20, y: 20), ratio: 2, bounds: bnds) == CGRect(x: 20, y: 60, width: 80, height: 40), "crop 2:1 dragged up-left")
+        let clamped = CropGeometry.rect(from: CGPoint(x: 350, y: 250), to: CGPoint(x: 900, y: 900), ratio: 16.0 / 9, bounds: bnds)
+        check(bnds.contains(clamped) && abs(clamped.width / clamped.height - 16.0 / 9) < 0.01, "crop stays inside the image at the ratio")
+        let refit = CropGeometry.refit(CGRect(x: 50, y: 50, width: 200, height: 100), ratio: 1, bounds: bnds)
+        check(refit.width == refit.height && bnds.contains(refit) && abs(refit.midX - 150) < 1, "crop refit keeps the centre")
+
         // Export formats.
         let enc = Exporter.data(for: strip, as: .pdf, scale: 2)
         check(enc.map { $0.starts(with: Data("%PDF".utf8)) } == true, "PDF export")
