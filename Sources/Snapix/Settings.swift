@@ -111,6 +111,7 @@ enum Pref {
     static func register() { UserDefaults.standard.register(defaults: defaults) }
     static func bool(_ k: String) -> Bool { UserDefaults.standard.bool(forKey: k) }
     static func string(_ k: String) -> String { UserDefaults.standard.string(forKey: k) ?? "" }
+    static func integer(_ k: String) -> Int { UserDefaults.standard.integer(forKey: k) }
     static func double(_ k: String) -> Double { UserDefaults.standard.double(forKey: k) }
 
     /// Seconds of the countdown before a delayed capture.

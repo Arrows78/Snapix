@@ -321,6 +321,9 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         menu.items.last?.state = doc.state.shadows ? .on : .off
         add(L("Copy as File"), #selector(copyAsFile(_:)), symbol: "doc.badge.arrow.up")
         menu.addItem(.separator())
+        add(L("Add Capture Below…"), #selector(addCaptureBelow(_:)), symbol: "rectangle.bottomhalf.inset.filled")
+        add(L("Add Capture to the Right…"), #selector(addCaptureRight(_:)), symbol: "rectangle.righthalf.inset.filled")
+        add(L("Save Two-Frame GIF"), #selector(saveTwoFrameGIF(_:)), symbol: "photo.stack")
         add(L("Share…"), #selector(shareAction(_:)), symbol: "square.and.arrow.up")
         add(L("Upload"), #selector(uploadImage(_:)), symbol: "icloud.and.arrow.up")
         add(L("Print…"), #selector(printDocument(_:)), symbol: "printer")
@@ -898,6 +901,51 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
     @objc func toggleOnTop(_ sender: Any?) {
         guard let w = window else { return }
         w.level = w.level == .floating ? .normal : .floating
+    }
+
+    // MARK: Add a capture, two-frame GIF
+
+    @objc func addCaptureBelow(_ sender: Any?) { addCapture(horizontal: false) }
+    @objc func addCaptureRight(_ sender: Any?) { addCapture(horizontal: true) }
+
+    /// Takes another area capture and joins it to the current picture (annotations are merged first).
+    private func addCapture(horizontal: Bool) {
+        guard Capture.ensurePermission() else { Capture.showPermissionAlert(); return }
+        var base = doc.state
+        base.backdrop.enabled = false
+        guard let current = Renderer.render(base), let w = window else { return }
+        w.orderOut(nil)
+        Task { @MainActor in
+            defer { w.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true) }
+            guard let shot = try? await Capture.area(remember: false) else { return }
+            guard let joined = Combine.images([current, shot.image], horizontal: horizontal, spacing: Pref.integer("combineGap")) else {
+                Toast.show(L("The image would be too large"), symbol: "exclamationmark.triangle.fill"); return
+            }
+            doc.mutate { $0.image = joined; $0.annotations = []; $0.overlay = nil; $0.uncrop = nil }
+            fitToWindow()
+            Toast.show(L("Capture added"), symbol: "checkmark.circle.fill")
+        }
+    }
+
+    /// The screenshot, then the screenshot with the overlay image fully opaque: a quick before / after.
+    @objc func saveTwoFrameGIF(_ sender: Any?) {
+        guard var second = Optional(doc.state), second.overlay != nil else {
+            Toast.show(L("Add an image overlay first (clipboard image), then save the GIF"), duration: 3.5, symbol: "exclamationmark.triangle.fill"); return
+        }
+        var first = second
+        first.overlay = nil
+        second.overlay?.opacity = 1
+        guard let a = Renderer.render(first), let b = Renderer.render(second), let data = GIFMaker.data(frames: [a, b], delay: 1.2) else { return }
+        let folder = URL(fileURLWithPath: Pref.string("saveFolder"), isDirectory: true)
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let url = Exporter.uniqueURL(in: folder, name: Exporter.filename(ext: "gif"))
+        do {
+            try data.write(to: url)
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.writeObjects([url as NSURL])
+            Toast.show(LF("Saved %@", url.lastPathComponent), symbol: "checkmark.circle.fill")
+            RecordingLog.add(url)
+        } catch { Toast.show(LF("Could not save: %@", error.localizedDescription), symbol: "exclamationmark.triangle.fill") }
     }
 
     @objc func trimAction(_ sender: Any?) {

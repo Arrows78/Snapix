@@ -630,3 +630,8 @@
 "Bucket or path not found" = "Bucket ou chemin introuvable";
 "Conflict with the bucket state" = "Conflit avec l'état du bucket";
 "Too many requests, try again later" = "Trop de requêtes, réessayez plus tard";
+"Add Capture Below…" = "Ajouter une capture en dessous…";
+"Add Capture to the Right…" = "Ajouter une capture à droite…";
+"Save Two-Frame GIF" = "Enregistrer un GIF à deux images";
+"Capture added" = "Capture ajoutée";
+"Add an image overlay first (clipboard image), then save the GIF" = "Ajoutez d'abord une image en superposition (image du presse-papiers), puis enregistrez le GIF";

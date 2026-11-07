@@ -410,6 +410,12 @@ enum SelfTest {
         check(UploadLog.all(from: ulog).map(\.key) == ["a", "b"] && UploadLog.all(from: ulog).first?.link == "u2", "upload log newest first, one per key")
         try? FileManager.default.removeItem(at: ulog)
 
+        // Two-frame GIF.
+        if let g = GIFMaker.data(frames: [page(rows: 0..<60), page(rows: 100..<160)], delay: 1) {
+            check(g.starts(with: Data("GIF8".utf8)) && GIFMaker.frameCount(of: g) == 2, "two-frame GIF has two frames")
+        } else { check(false, "GIF data") }
+        check(GIFMaker.data(frames: [], delay: 1) == nil, "GIF needs at least one frame")
+
         // Export formats.
         let enc = Exporter.data(for: strip, as: .pdf, scale: 2)
         check(enc.map { $0.starts(with: Data("%PDF".utf8)) } == true, "PDF export")

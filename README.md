@@ -56,7 +56,8 @@ Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 - **Sidebar and units**: a layers sidebar (More menu › Toggle Sidebar) lists every annotation with select, reorder and delete; click the size read-out to switch between pixels and points; point the backdrop at a folder of your own pictures.
 - **Smart helpers**: highlights snap to the text line they cover, *Auto-balance* picks a well-proportioned backdrop, one of your saved backdrop styles can be applied to every new screenshot, and any editor window can be kept on top.
 - **Watermark**: an optional text stamp (position, size, opacity) added to everything that leaves the app.
-- **Image overlay**: lay a clipboard image over the screenshot, drag to align, a slider sets the opacity.
+- **Image overlay**: lay a clipboard image over the screenshot, drag to align, a slider sets the opacity; *Save Two-Frame GIF* turns the before / after into a looping GIF.
+- **Add Capture**: take another area capture and join it below or to the right of the open image.
 - **Hide sensitive data** (More menu): finds emails, card numbers, IBANs, phone numbers, API tokens and IP addresses with on-device OCR and pixelates each one.
 - **Remove background**: isolates the main subject on a transparent background (on-device), in the editor or straight from a capture; combine it with the backdrop.
 - **Library**: screenshots *and* recordings (MP4, GIF) in one window with All / Screenshots / Videos / GIFs filters and a default filter; recordings open, copy as a file, reveal or go to the Trash from the context menu.
