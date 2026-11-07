@@ -6,7 +6,7 @@ enum Toast {
     private static var panel: NSPanel?
     private static var hideWork: DispatchWorkItem?
 
-    static func show(_ text: String, duration: TimeInterval = 1.6) {
+    static func show(_ text: String, duration: TimeInterval = 1.6, symbol: String? = nil) {
         hideWork?.cancel()
         panel?.orderOut(nil)
 
@@ -18,13 +18,23 @@ enum Toast {
         label.preferredMaxLayoutWidth = 520
         let size = label.fittingSize
 
-        let box = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: size.width + 40, height: size.height + 24))
+        let iconWidth: CGFloat = symbol == nil ? 0 : 26
+        let box = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: size.width + 40 + iconWidth, height: size.height + 24))
         box.material = .hudWindow
         box.blendingMode = .behindWindow
         box.state = .active
         box.wantsLayer = true
-        box.layer?.cornerRadius = 12
-        label.frame.origin = NSPoint(x: 20, y: 12)
+        box.layer?.cornerRadius = min(14, box.frame.height / 2)
+        box.layer?.borderWidth = 0.5
+        box.layer?.borderColor = NSColor(white: 1, alpha: 0.18).cgColor
+        if let symbol, let img = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)?
+            .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: 15, weight: .semibold)) {
+            let icon = NSImageView(image: img)
+            icon.contentTintColor = symbol.contains("exclamation") ? NSColor.systemOrange : NSColor.systemGreen
+            icon.frame = NSRect(x: 16, y: (box.frame.height - 18) / 2, width: 18, height: 18)
+            box.addSubview(icon)
+        }
+        label.frame.origin = NSPoint(x: 20 + iconWidth, y: 12)
         box.addSubview(label)
 
         let p = NSPanel(contentRect: box.frame, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
@@ -35,12 +45,18 @@ enum Toast {
         p.ignoresMouseEvents = true
         p.collectionBehavior = [.canJoinAllSpaces, .transient, .fullScreenAuxiliary]
         p.contentView = box
-        if let screen = NSScreen.main {
-            p.setFrameOrigin(NSPoint(x: screen.frame.midX - box.frame.width / 2, y: screen.frame.minY + 90))
-        }
+        let restY = (NSScreen.main?.frame.minY ?? 0) + 90
+        let x = (NSScreen.main?.frame.midX ?? 0) - box.frame.width / 2
+        // Slides up a few points while fading in.
+        p.setFrameOrigin(NSPoint(x: x, y: restY - 12))
         p.alphaValue = 0
         p.orderFrontRegardless()
-        NSAnimationContext.runAnimationGroup { $0.duration = 0.15; p.animator().alphaValue = 1 }
+        NSAnimationContext.runAnimationGroup {
+            $0.duration = 0.2
+            $0.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            p.animator().alphaValue = 1
+            p.animator().setFrameOrigin(NSPoint(x: x, y: restY))
+        }
         panel = p
 
         let work = DispatchWorkItem {

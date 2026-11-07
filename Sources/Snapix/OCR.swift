@@ -63,7 +63,7 @@ enum OCR {
     static func recognizeAndCopy(_ image: CGImage) {
         Toast.show(L("Recognizing…"), duration: 1)
         recognize(image, removeBreaks: Pref.bool("ocrRemoveBreaks")) { result in
-            guard !result.isEmpty else { Toast.show(L("No text or QR code found")); return }
+            guard !result.isEmpty else { Toast.show(L("No text or QR code found"), symbol: "exclamationmark.triangle.fill"); return }
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(result.clipboardText, forType: .string)
             Toast.show(result.qrPayloads.isEmpty ? LF("Text copied (%d characters)", result.text.count) : L("QR code copied"))

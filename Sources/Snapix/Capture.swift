@@ -179,7 +179,7 @@ enum Capture {
     static func element() async throws -> Shot? {
         guard ElementPicker.isTrusted else {
             ElementPicker.requestAccess()
-            Toast.show(L("Allow Snapix in Privacy & Security › Accessibility, then try again"), duration: 4)
+            Toast.show(L("Allow Snapix in Privacy & Security › Accessibility, then try again"), duration: 4, symbol: "exclamationmark.triangle.fill")
             return nil
         }
         let frozen = try await freeze()

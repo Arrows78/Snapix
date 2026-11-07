@@ -563,7 +563,7 @@ final class CanvasView: NSView, NSTextFieldDelegate {
         let text = ColorFormat.current.string(for: c)
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text, forType: .string)
-        Toast.show(LF("Copied %@", text))
+        Toast.show(LF("Copied %@", text), symbol: "checkmark.circle.fill")
     }
 
     @objc private func deleteContextAnnotation(_ sender: NSMenuItem) {

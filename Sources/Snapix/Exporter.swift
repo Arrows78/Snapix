@@ -77,7 +77,7 @@ enum Exporter {
         let pb = NSPasteboard.general
         pb.clearContents()
         pb.writeObjects([nsImage])
-        if !quiet { Toast.show(L("Copied to the clipboard")) }
+        if !quiet { Toast.show(L("Copied to the clipboard"), symbol: "checkmark.circle.fill") }
     }
 
     static func filename(ext: String, suffix: String = "") -> String {
@@ -111,10 +111,10 @@ enum Exporter {
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
             let url = uniqueURL(in: folder, name: filename(ext: ext))
             try data.write(to: url)
-            if !quiet { Toast.show(LF("Saved %@", url.lastPathComponent)) }
+            if !quiet { Toast.show(LF("Saved %@", url.lastPathComponent), symbol: "checkmark.circle.fill") }
             return url
         } catch {
-            Toast.show(LF("Could not save: %@", error.localizedDescription), duration: 3)
+            Toast.show(LF("Could not save: %@", error.localizedDescription), duration: 3, symbol: "exclamationmark.triangle.fill")
             return nil
         }
     }
@@ -128,8 +128,8 @@ enum Exporter {
         panel.directoryURL = URL(fileURLWithPath: Pref.string("saveFolder"))
         let finish: (NSApplication.ModalResponse) -> Void = { resp in
             guard resp == .OK, let url = panel.url else { return }
-            do { try data.write(to: url); Toast.show(LF("Saved %@", url.lastPathComponent)) }
-            catch { Toast.show(LF("Could not save: %@", error.localizedDescription), duration: 3) }
+            do { try data.write(to: url); Toast.show(LF("Saved %@", url.lastPathComponent), symbol: "checkmark.circle.fill") }
+            catch { Toast.show(LF("Could not save: %@", error.localizedDescription), duration: 3, symbol: "exclamationmark.triangle.fill") }
         }
         if let window { panel.beginSheetModal(for: window, completionHandler: finish) } else { finish(panel.runModal()) }
     }
@@ -164,7 +164,7 @@ enum Exporter {
             DispatchQueue.main.async {
                 let status = (resp as? HTTPURLResponse)?.statusCode ?? 0
                 guard error == nil, (200..<300).contains(status), let data else {
-                    Toast.show(LF("Upload failed (%@)", error?.localizedDescription ?? "HTTP \(status)"), duration: 3)
+                    Toast.show(LF("Upload failed (%@)", error?.localizedDescription ?? "HTTP \(status)"), duration: 3, symbol: "exclamationmark.triangle.fill")
                     return
                 }
                 var link = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""

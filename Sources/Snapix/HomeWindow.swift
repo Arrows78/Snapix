@@ -53,13 +53,18 @@ private struct CaptureCard: View {
                     Text(action.title).font(.system(size: 13, weight: .semibold)).foregroundStyle(.white.opacity(0.92))
                         .lineLimit(2).minimumScaleFactor(0.85)
                     Text(action.combo?.display ?? L("No shortcut"))
-                        .font(.system(size: 11, design: .monospaced)).foregroundStyle(.white.opacity(0.45))
+                        .font(.system(size: 10.5, weight: .medium, design: .monospaced)).foregroundStyle(.white.opacity(0.55))
+                        .padding(.horizontal, 5).padding(.vertical, 1)
+                        .background(RoundedRectangle(cornerRadius: 4).fill(Color.white.opacity(0.07)))
                 }
                 Spacer(minLength: 0)
             }
             .padding(10)
             .frame(maxWidth: .infinity, minHeight: 66, maxHeight: 66, alignment: .leading)
             .background(RoundedRectangle(cornerRadius: 12).fill(Color.white.opacity(hover ? 0.10 : 0.05)))
+            .scaleEffect(hover ? 1.015 : 1)
+            .shadow(color: action.tint.opacity(hover ? 0.28 : 0), radius: 10, y: 3)
+            .animation(.easeOut(duration: 0.14), value: hover)
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.white.opacity(hover ? 0.18 : 0.08)))
         }
         .buttonStyle(.plain)
@@ -154,7 +159,7 @@ final class HomeWindow: NSObject, NSWindowDelegate {
             w.appearance = NSAppearance(named: .darkAqua)
             w.backgroundColor = Theme.window
             w.isMovableByWindowBackground = true
-            w.setContentSize(NSSize(width: 780, height: 560))
+            w.setContentSize(NSSize(width: 780, height: 700))
             w.isReleasedWhenClosed = false
             w.delegate = self
             w.center()

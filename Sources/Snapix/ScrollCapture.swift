@@ -162,7 +162,7 @@ enum ScrollCapture {
 
     static func run(auto: Bool, up: Bool = false) async throws -> Shot? {
         if auto && !ensureAccessibility() {
-            Toast.show(L("Allow Snapix in Privacy & Security › Accessibility to scroll automatically, then try again"), duration: 4)
+            Toast.show(L("Allow Snapix in Privacy & Security › Accessibility to scroll automatically, then try again"), duration: 4, symbol: "exclamationmark.triangle.fill")
             return nil
         }
         guard let (rect, screen) = try await Capture.selectRegion() else { return nil }

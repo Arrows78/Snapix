@@ -55,7 +55,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
 
     static func openFromClipboard() {
         guard let img = NSImage(pasteboard: .general), let shot = Self.shot(from: img) else {
-            Toast.show(L("No image in the clipboard"))
+            Toast.show(L("No image in the clipboard"), symbol: "exclamationmark.triangle.fill")
             return
         }
         open(shot)
@@ -327,7 +327,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         options.setColor(p.color)
         options.setSlider(Double(p.width))
         refreshOptions(for: canvas.selectedAnnotation?.tool ?? canvas.tool, from: canvas.selectedAnnotation)
-        Toast.show(LF("Style “%@” applied", sender.title))
+        Toast.show(LF("Style “%@” applied", sender.title), symbol: "checkmark.circle.fill")
     }
 
     @objc private func savePreset(_ sender: Any?) {
@@ -345,7 +345,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         guard !name.isEmpty else { return }
         StylePreset.save(StylePreset(name: name, colorHex: canvas.color.hexValue, width: canvas.lineWidth, arrowStyle: canvas.arrowStyle,
                                      filled: canvas.filled, blur: canvas.blurMode.rawValue))
-        Toast.show(LF("Style “%@” saved", name))
+        Toast.show(LF("Style “%@” saved", name), symbol: "checkmark.circle.fill")
     }
 
     @objc private func deletePreset(_ sender: NSMenuItem) { StylePreset.delete(named: sender.title) }
@@ -396,7 +396,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         let text = ColorFormat.current.string(for: c)
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text, forType: .string)
-        Toast.show(LF("Copied %@", text))
+        Toast.show(LF("Copied %@", text), symbol: "checkmark.circle.fill")
     }
 
     private func updateStatus() {
@@ -535,7 +535,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
     @objc private func pinImage(_ sender: Any?) {
         guard let img = flattened() else { return }
         PinController.pin(Shot(image: img, scale: doc.scale, screenRect: nil))
-        Toast.show(L("Pinned"))
+        Toast.show(L("Pinned"), symbol: "checkmark.circle.fill")
     }
 
     @objc private func runOCR(_ sender: Any?) {
@@ -544,7 +544,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
 
     @objc func contrastAction(_ sender: Any?) {
         guard let img = croppedFocus(), let pair = ColorMath.dominantPair(in: img) else {
-            Toast.show(L("Select an area with text and a background (crop tool or a shape)"), duration: 3)
+            Toast.show(L("Select an area with text and a background (crop tool or a shape)"), duration: 3, symbol: "exclamationmark.triangle.fill")
             return
         }
         ColorTools.report(text: pair.text, background: pair.background)
@@ -605,7 +605,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
     @discardableResult
     private func loadOverlay() -> Bool {
         guard let img = NSImage(pasteboard: .general), let cg = img.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
-            Toast.show(L("Copy an image first, then choose Image Overlay"), duration: 3)
+            Toast.show(L("Copy an image first, then choose Image Overlay"), duration: 3, symbol: "exclamationmark.triangle.fill")
             return false
         }
         let imgScale = img.size.width > 0 ? max(1, CGFloat(cg.width) / img.size.width) : 1
@@ -628,7 +628,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         s.backdrop.enabled = false
         guard let img = Renderer.render(s) else { return }
         doc.mutate { $0.image = img; $0.annotations = []; $0.overlay = nil; $0.uncrop = nil }
-        Toast.show(L("Annotations merged into the image"))
+        Toast.show(L("Annotations merged into the image"), symbol: "checkmark.circle.fill")
     }
 
     @objc func printDocument(_ sender: Any?) {
@@ -652,7 +652,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         Toast.show(L("Recognizing…"), duration: 1)
         OCR.textBoxes(in: doc.state.image, region: canvas.focusRect) { [weak self] boxes in
             guard let self else { return }
-            guard !boxes.isEmpty else { Toast.show(L("No text or QR code found")); return }
+            guard !boxes.isEmpty else { Toast.show(L("No text or QR code found"), symbol: "exclamationmark.triangle.fill"); return }
             let color = self.canvas.color
             self.doc.mutate { s in
                 for b in boxes.map({ $0.insetBy(dx: -3, dy: -2) }) {
@@ -661,7 +661,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
                     s.annotations.append(a)
                 }
             }
-            Toast.show(LF("%d text regions erased", boxes.count))
+            Toast.show(LF("%d text regions erased", boxes.count), symbol: "checkmark.circle.fill")
         }
     }
 
@@ -670,13 +670,13 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         Toast.show(L("Recognizing…"), duration: 1)
         Redaction.findBoxes(in: doc.state.image) { [weak self] boxes in
             guard let self else { return }
-            guard !boxes.isEmpty else { Toast.show(L("No sensitive data found")); return }
+            guard !boxes.isEmpty else { Toast.show(L("No sensitive data found"), symbol: "exclamationmark.triangle.fill"); return }
             self.doc.mutate { s in
                 for b in boxes.map({ $0.insetBy(dx: -4, dy: -3) }) {
                     s.annotations.append(Annotation(tool: .blur, p1: CGPoint(x: b.minX, y: b.minY), p2: CGPoint(x: b.maxX, y: b.maxY), color: .black, width: 8))
                 }
             }
-            Toast.show(LF("%d sensitive regions hidden", boxes.count))
+            Toast.show(LF("%d sensitive regions hidden", boxes.count), symbol: "checkmark.circle.fill")
         }
     }
 
@@ -685,9 +685,9 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         Toast.show(L("Removing background…"), duration: 1.5)
         Cutout.subject(of: doc.state.image) { [weak self] cut in
             guard let self else { return }
-            guard let cut else { Toast.show(L("No subject found")); return }
+            guard let cut else { Toast.show(L("No subject found"), symbol: "exclamationmark.triangle.fill"); return }
             self.doc.mutate { $0.image = cut; $0.uncrop = nil }
-            Toast.show(L("Background removed"))
+            Toast.show(L("Background removed"), symbol: "checkmark.circle.fill")
         }
     }
 
@@ -713,7 +713,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         guard (try? data.write(to: url)) != nil else { return }
         NSPasteboard.general.clearContents()
         NSPasteboard.general.writeObjects([url as NSURL])
-        Toast.show(L("Copied as file"))
+        Toast.show(L("Copied as file"), symbol: "checkmark.circle.fill")
     }
 
     // MARK: Closing

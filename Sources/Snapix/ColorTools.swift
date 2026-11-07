@@ -210,7 +210,7 @@ enum ColorTools {
             let text = ColorFormat.current.string(for: color)
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(text, forType: .string)
-            Toast.show(LF("Copied %@", text))
+            Toast.show(LF("Copied %@", text), symbol: "checkmark.circle.fill")
         }
     }
 

@@ -131,12 +131,12 @@ final class Recorder {
         try? await s.stopCapture()
         let ok = await writer.finish()
         Feedback.recordingChime(start: false)
-        guard ok else { Toast.show(L("Nothing was recorded")); return }
+        guard ok else { Toast.show(L("Nothing was recorded"), symbol: "exclamationmark.triangle.fill"); return }
         if format == .gif {
             Toast.show(L("Creating the GIF…"), duration: 30)
             let gif = await Self.makeGIF(from: url)
             try? FileManager.default.removeItem(at: url)
-            guard let gif else { Toast.show(L("Could not create the GIF")); return }
+            guard let gif else { Toast.show(L("Could not create the GIF"), symbol: "exclamationmark.triangle.fill"); return }
             finalize(gif)
         } else {
             finalize(url)
@@ -165,10 +165,10 @@ final class Recorder {
             try FileManager.default.moveItem(at: file, to: dest)
             NSPasteboard.general.clearContents()
             NSPasteboard.general.writeObjects([dest as NSURL])
-            Toast.show(LF("Recording saved and copied: %@", dest.lastPathComponent), duration: 3)
+            Toast.show(LF("Recording saved and copied: %@", dest.lastPathComponent), duration: 3, symbol: "checkmark.circle.fill")
             if Pref.bool("recordReveal") { NSWorkspace.shared.activateFileViewerSelecting([dest]) }
         } catch {
-            Toast.show(LF("Capture failed: %@", error.localizedDescription), duration: 3)
+            Toast.show(LF("Capture failed: %@", error.localizedDescription), duration: 3, symbol: "exclamationmark.triangle.fill")
         }
     }
 

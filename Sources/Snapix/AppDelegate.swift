@@ -45,7 +45,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             guard !onScreen else { return }
             Self.forceDock = true
             NSApp.setActivationPolicy(.regular)
-            Toast.show(L("The menu bar icon is hidden by macOS — Snapix is available from the Dock instead"), duration: 6)
+            Toast.show(L("The menu bar icon is hidden by macOS — Snapix is available from the Dock instead"), duration: 6, symbol: "exclamationmark.triangle.fill")
         }
     }
 
@@ -211,7 +211,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                     if let s = try await Capture.area(remember: false) {
                         Toast.show(L("Removing background…"), duration: 1.5)
                         let cut: CGImage? = await withCheckedContinuation { c in Cutout.subject(of: s.image) { c.resume(returning: $0) } }
-                        guard let cut else { Toast.show(L("No subject found")); break }
+                        guard let cut else { Toast.show(L("No subject found"), symbol: "exclamationmark.triangle.fill"); break }
                         var shot = s
                         shot.image = cut
                         deliver(shot, override)
@@ -224,9 +224,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             } catch CaptureError.noPermission {
                 Capture.showPermissionAlert()
             } catch CaptureError.notFound {
-                Toast.show(L("Nothing to capture"), duration: 2)
+                Toast.show(L("Nothing to capture"), duration: 2, symbol: "exclamationmark.triangle.fill")
             } catch {
-                Toast.show(LF("Capture failed: %@", error.localizedDescription), duration: 3)
+                Toast.show(LF("Capture failed: %@", error.localizedDescription), duration: 3, symbol: "exclamationmark.triangle.fill")
             }
         }
     }

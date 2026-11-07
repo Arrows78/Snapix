@@ -233,9 +233,9 @@ struct PreferencesView: View {
         guard panel.runModal() == .OK, let url = panel.url, let data = Pref.backupData() else { return }
         do {
             try data.write(to: url)
-            Toast.show(L("Settings exported"))
+            Toast.show(L("Settings exported"), symbol: "checkmark.circle.fill")
         } catch {
-            Toast.show(LF("Capture failed: %@", error.localizedDescription), duration: 3)
+            Toast.show(LF("Capture failed: %@", error.localizedDescription), duration: 3, symbol: "exclamationmark.triangle.fill")
         }
     }
 
@@ -245,7 +245,7 @@ struct PreferencesView: View {
         guard panel.runModal() == .OK, let url = panel.url, let data = try? Data(contentsOf: url) else { return }
         guard Pref.restore(data) != nil else { Toast.show(L("This file is not a Snapix backup"), duration: 3); return }
         (NSApp.delegate as? AppDelegate)?.reloadHotkeys()
-        Toast.show(L("Settings imported — reopen Preferences to see them"), duration: 3)
+        Toast.show(L("Settings imported — reopen Preferences to see them"), duration: 3, symbol: "checkmark.circle.fill")
         PreferencesWindow.close()
     }
 
