@@ -93,6 +93,30 @@ enum ToolGlyph {
         }
     }
 
+    /// Glyphs for the editor's action buttons, keyed by the system symbol they replace.
+    static func action(_ symbol: String) -> NSImage? {
+        switch symbol {
+        case "doc.on.doc": return make {
+            path { $0.move(to: NSPoint(x: 6.5, y: 14)); $0.line(to: NSPoint(x: 6.5, y: 4.5)); $0.curve(to: NSPoint(x: 9, y: 2.5), controlPoint1: NSPoint(x: 6.5, y: 3.4), controlPoint2: NSPoint(x: 7.6, y: 2.5)); $0.line(to: NSPoint(x: 14, y: 2.5)) }.stroke()
+            path { $0.appendRoundedRect(NSRect(x: 8.5, y: 5.5, width: 9, height: 12), xRadius: 2, yRadius: 2) }.stroke() }
+        case "square.and.arrow.down": return make {
+            line(NSPoint(x: 10, y: 16.5), NSPoint(x: 10, y: 7.5))
+            path { $0.move(to: NSPoint(x: 6.5, y: 10.5)); $0.line(to: NSPoint(x: 10, y: 7)); $0.line(to: NSPoint(x: 13.5, y: 10.5)) }.stroke()
+            path { $0.move(to: NSPoint(x: 3.5, y: 11)); $0.line(to: NSPoint(x: 3.5, y: 4.5)); $0.line(to: NSPoint(x: 16.5, y: 4.5)); $0.line(to: NSPoint(x: 16.5, y: 11)) }.stroke() }
+        case "pin": return make {
+            path { p in
+                p.move(to: NSPoint(x: 7, y: 17)); p.line(to: NSPoint(x: 13, y: 17)); p.line(to: NSPoint(x: 12.2, y: 11.5)); p.line(to: NSPoint(x: 15, y: 8.5))
+                p.line(to: NSPoint(x: 5, y: 8.5)); p.line(to: NSPoint(x: 7.8, y: 11.5)); p.close()
+            }.stroke()
+            line(NSPoint(x: 10, y: 8.5), NSPoint(x: 10, y: 2.5)) }
+        case "hand.draw": return make { // drag out of a box
+            path { $0.move(to: NSPoint(x: 9, y: 16.5)); $0.line(to: NSPoint(x: 5, y: 16.5)); $0.curve(to: NSPoint(x: 3, y: 14.5), controlPoint1: NSPoint(x: 3.9, y: 16.5), controlPoint2: NSPoint(x: 3, y: 15.6)); $0.line(to: NSPoint(x: 3, y: 5)); $0.curve(to: NSPoint(x: 5, y: 3), controlPoint1: NSPoint(x: 3, y: 3.9), controlPoint2: NSPoint(x: 3.9, y: 3)); $0.line(to: NSPoint(x: 14.5, y: 3)); $0.curve(to: NSPoint(x: 16.5, y: 5), controlPoint1: NSPoint(x: 15.6, y: 3), controlPoint2: NSPoint(x: 16.5, y: 3.9)); $0.line(to: NSPoint(x: 16.5, y: 8)) }.stroke()
+            line(NSPoint(x: 9, y: 11), NSPoint(x: 17, y: 17))
+            path { $0.move(to: NSPoint(x: 12, y: 17.5)); $0.line(to: NSPoint(x: 17.3, y: 17.5)); $0.line(to: NSPoint(x: 17.3, y: 12.2)) }.stroke() }
+        default: return nil
+        }
+    }
+
     /// Backdrop (a framed picture on a coloured ground).
     static var backdrop: NSImage {
         make {

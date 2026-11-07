@@ -119,11 +119,14 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
     required init?(coder: NSCoder) { fatalError() }
 
     private func iconButton(_ symbol: String, _ tip: String, _ action: Selector) -> IconButton {
-        IconButton(symbol: symbol, tip: L(tip), target: self, action: action)
+        let b = IconButton(symbol: symbol, tip: L(tip), target: self, action: action)
+        if let g = ToolGlyph.action(symbol) { b.image = g }
+        return b
     }
 
     private func dragButton() -> IconButton {
         let b = ImageDragButton(symbol: "hand.draw", tip: L("Drag the edited image into another app"), target: nil, action: nil)
+        if let g = ToolGlyph.action("hand.draw") { b.image = g }
         b.imageProvider = { [weak self] in
             guard let self, let img = self.flattened() else { return nil }
             return (img, self.doc.scale)
