@@ -66,6 +66,10 @@ enum SelfTest {
         check(Pref.restore(Data("nope".utf8)) == nil, "backup rejects garbage")
         suite.removePersistentDomain(forName: "snapix.selftest")
 
+        // Version comparison for the update check.
+        check(UpdateCheck.isNewer("v1.2.0", than: "1.1.9") && UpdateCheck.isNewer("1.10", than: "1.9.5") && UpdateCheck.isNewer("2", than: "1.9"), "update: newer versions")
+        check(!UpdateCheck.isNewer("v1.0.0", than: "1.0.0") && !UpdateCheck.isNewer("1.0", than: "1.0.1") && !UpdateCheck.isNewer("v1.0.0-beta", than: "1.0.0"), "update: same or older versions")
+
         // Rotation and mirroring.
         let strip = page(rows: 0..<100) // 400 wide, 100 tall
         if let cw = ImageTransform.rotated(strip, clockwise: true) {

@@ -15,10 +15,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         buildMainMenu()
         buildStatusItem()
         checkStatusItemVisibility()
-        if !Pref.bool("hideHome") { HomeWindow.show() }
+        if Onboarding.needed { Onboarding.show() } else if !Pref.bool("hideHome") { HomeWindow.show() }
         reloadHotkeys()
         History.pruneNow()
-        if !CGPreflightScreenCaptureAccess() { CGRequestScreenCaptureAccess() }
+        if !Onboarding.needed, !CGPreflightScreenCaptureAccess() { CGRequestScreenCaptureAccess() }
     }
 
     func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
@@ -126,6 +126,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let home = NSMenuItem(title: L("Show Snapix Window"), action: #selector(showHome), keyEquivalent: "")
         home.target = self
         menu.addItem(home)
+        let update = NSMenuItem(title: L("Check for Updates…"), action: #selector(checkUpdates), keyEquivalent: "")
+        update.target = self
+        menu.addItem(update)
         let prefs = NSMenuItem(title: L("Preferences…"), action: #selector(showPreferences), keyEquivalent: ",")
         prefs.target = self
         menu.addItem(prefs)
@@ -183,6 +186,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { self.perform(a) }
     }
 
+    @objc private func checkUpdates() { UpdateCheck.run() }
     @objc private func openFile() { EditorWindowController.openFile() }
     @objc func showPreferences() { PreferencesWindow.show() }
     @objc private func showHome() { HomeWindow.show() }

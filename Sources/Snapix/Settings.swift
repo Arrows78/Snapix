@@ -32,6 +32,7 @@ enum Pref {
         "hideDesktopIcons": false,
         "recordCountdown": 3,
         "recordReview": true,
+        "onboarded": false,
         "largerWindow": false,
         "editorOnTop": false,
         "redact.email": true, "redact.card": true, "redact.iban": true,

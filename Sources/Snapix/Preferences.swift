@@ -500,6 +500,12 @@ struct PreferencesView: View {
                         Button("Releases") { NSWorkspace.shared.open(URL(string: "https://github.com/Arrows78/Snapix/releases")!) }
                     }
                 }
+                Row(title: "Updates", subtitle: "Asks GitHub for the latest release when you click. Snapix never checks on its own.") {
+                    HStack {
+                        Button("Check for Updates…") { UpdateCheck.run() }
+                        Button("Welcome Tour") { Onboarding.show() }
+                    }
+                }
                 Row(title: "Diagnostics", subtitle: "Copies the version, macOS version and permissions, to paste into a bug report. It contains no personal data.", last: true) {
                     Button("Copy") {
                         NSPasteboard.general.clearContents()

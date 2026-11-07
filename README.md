@@ -22,7 +22,7 @@
 **Snapix** captures your screen, lets you annotate and polish the result, and reads the text out of it. It lives in the menu bar and answers to global hotkeys: area, window, fullscreen and scrolling captures, an editor with arrows, blur, spotlight, counters and a backdrop, OCR and QR codes, a colour picker and a contrast checker, pinned screenshots and a library of everything you captured.
 
 > [!NOTE]
-> Snapix runs entirely on your Mac: no account, no analytics. The only network call is the optional upload to an HTTP endpoint **you** configure.
+> Snapix runs entirely on your Mac: no account, no analytics. The only network calls are the optional upload to an HTTP endpoint **you** configure and the *Check for Updates* button, which asks GitHub for the latest release when you click it.
 
 ## ✨ Features
 
@@ -64,6 +64,7 @@ Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 - **Menu bar**: a *Recent Captures* submenu with thumbnails (open, copy, pin, reveal).
 - **Capture options**: optionally hide desktop icons from screenshots and recordings.
 - **After-capture actions**, Esc to copy or save, launch at login, optional shutter sound.
+- **First-run welcome tour** (permissions and shortcuts) and a manual *Check for Updates*.
 - **Shortcuts cheat sheet** and **settings backup**: list every shortcut in one floating sheet; export or import preferences (never the upload credential) from **Preferences › Backup**.
 - **Languages**: English and French, following macOS.
 
@@ -177,7 +178,7 @@ Snapix/
 │   ├── Model, StylePreset, Renderer, Exporter, ImageDrag, ImageTransform # Annotations, drawing, output
 │   ├── OCR, Redaction, Cutout, ColorTools      # Vision, sensitive data, background removal, colour
 │   ├── History, Combine, PinWindow, HomeWindow # Library, stitching images, pins, home
-│   ├── Toast, Feedback, ShortcutSheet          # Feedback, shutter sound, cheat sheet
+│   ├── Toast, Feedback, ShortcutSheet, Onboarding, UpdateCheck          # Feedback, shutter sound, cheat sheet
 │   ├── Settings, Preferences, HotKey, L10n     # Preferences, shortcuts, localisation
 │   └── SelfTest.swift                          # Behind --selftest
 ├── scripts/               # CI, release tool and its tests
