@@ -37,6 +37,11 @@ enum SelfTest {
             check(PixelBuffer(img)?.color(x: 5, y: 1234)?.hexValue == PixelBuffer(expected)?.color(x: 5, y: 1234)?.hexValue, "stitched pixels identical")
         }
 
+        // Preview of the stitched result: the tail of a downward scroll, the head of an upward one.
+        if let tail = stitcher.preview(rows: 50, fromTop: false), let whole = stitcher.result() {
+            check(tail.height == 50 && tail.width == whole.width && PixelBuffer(tail)?.color(x: 5, y: 49)?.hexValue == PixelBuffer(whole)?.color(x: 5, y: whole.height - 1)?.hexValue, "scroll preview shows the latest rows")
+        } else { check(false, "scroll preview") }
+
         // Scrolling upwards: start at the bottom of the page and move towards the top.
         let upStitcher = Stitcher(first: page(rows: 1000..<(1000 + frameH)))!
         var top = 1000

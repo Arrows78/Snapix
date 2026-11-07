@@ -95,6 +95,17 @@ final class Stitcher {
         return .noMatch
     }
 
+    /// A small picture of the stitched result so far: the latest rows (the first rows when scrolling up, where new content is added).
+    func preview(rows: Int, fromTop: Bool) -> CGImage? {
+        let n = min(rows, height)
+        guard n > 0 else { return nil }
+        let bytes = fromTop ? Array(accumulated.prefix(width * 4 * n)) : Array(accumulated.suffix(width * 4 * n))
+        guard let provider = CGDataProvider(data: Data(bytes) as CFData) else { return nil }
+        return CGImage(width: width, height: n, bitsPerComponent: 8, bitsPerPixel: 32, bytesPerRow: width * 4,
+                       space: Renderer.sRGB, bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue),
+                       provider: provider, decode: nil, shouldInterpolate: true, intent: .defaultIntent)
+    }
+
     func result() -> CGImage? {
         guard let provider = CGDataProvider(data: Data(accumulated) as CFData) else { return nil }
         return CGImage(width: width, height: height, bitsPerComponent: 8, bitsPerPixel: 32, bytesPerRow: width * 4,
@@ -108,6 +119,8 @@ final class Stitcher {
 private final class ScrollHUD: NSObject {
     private(set) var stopped = false
     private let panel: NSPanel
+    private let previewView = NSImageView()
+    private let summary = NSTextField(labelWithString: "")
 
     init(text: String, avoiding region: CGRect, on screen: NSScreen) {
         let label = NSTextField(labelWithString: L(text))
@@ -123,13 +136,28 @@ private final class ScrollHUD: NSObject {
         box.state = .active
         box.wantsLayer = true
         box.layer?.cornerRadius = 12
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        box.addSubview(stack)
+        previewView.imageScaling = .scaleProportionallyUpOrDown
+        previewView.wantsLayer = true
+        previewView.layer?.cornerRadius = 6
+        previewView.layer?.masksToBounds = true
+        previewView.layer?.backgroundColor = NSColor(white: 1, alpha: 0.08).cgColor
+        previewView.translatesAutoresizingMaskIntoConstraints = false
+        previewView.widthAnchor.constraint(equalToConstant: 260).isActive = true
+        previewView.heightAnchor.constraint(equalToConstant: 84).isActive = true
+        summary.textColor = NSColor(white: 1, alpha: 0.6)
+        summary.font = .systemFont(ofSize: 11)
+        let outer = NSStackView(views: [previewView, summary, stack])
+        outer.orientation = .vertical
+        outer.alignment = .centerX
+        outer.spacing = 6
+        outer.edgeInsets = NSEdgeInsets(top: 10, left: 12, bottom: 4, right: 12)
+        outer.translatesAutoresizingMaskIntoConstraints = false
+        box.addSubview(outer)
         NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: box.leadingAnchor), stack.trailingAnchor.constraint(equalTo: box.trailingAnchor),
-            stack.topAnchor.constraint(equalTo: box.topAnchor), stack.bottomAnchor.constraint(equalTo: box.bottomAnchor),
+            outer.leadingAnchor.constraint(equalTo: box.leadingAnchor), outer.trailingAnchor.constraint(equalTo: box.trailingAnchor),
+            outer.topAnchor.constraint(equalTo: box.topAnchor), outer.bottomAnchor.constraint(equalTo: box.bottomAnchor),
         ])
-        let size = stack.fittingSize
+        let size = outer.fittingSize
         panel = NSPanel(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         panel.isOpaque = false
         panel.backgroundColor = .clear
@@ -144,6 +172,12 @@ private final class ScrollHUD: NSObject {
         if CGRect(origin: origin, size: size).intersects(region) { origin.x = screen.frame.minX + 20 }
         panel.setFrameOrigin(origin)
         panel.orderFrontRegardless()
+    }
+
+    /// Shows the latest stitched rows and how much has been captured so far.
+    func update(preview: CGImage?, frames: Int, height: Int) {
+        if let preview { previewView.image = NSImage(cgImage: preview, size: NSSize(width: preview.width, height: preview.height)) }
+        summary.stringValue = LF("%d frames · %d px", frames, height)
     }
 
     @objc private func stop() { stopped = true }
@@ -182,6 +216,8 @@ enum ScrollCapture {
         let centerCG = CGPoint(x: rect.midX, y: Capture.primaryHeight - rect.midY)
         var step = Int(rect.height * 0.35)
         var failures = 0
+        var frames = 1
+        hud.update(preview: first, frames: 1, height: first.height)
 
         for _ in 0..<80 {
             if hud.stopped { break }
@@ -193,6 +229,10 @@ enum ScrollCapture {
             switch outcome {
             case let .appended(offset):
                 failures = 0
+                frames += 1
+                if frames % 2 == 0 || frames < 4 {
+                    hud.update(preview: stitcher.preview(rows: Int(Double(first.width) * 84 / 260 * 1.0) * 2, fromTop: up), frames: frames, height: stitcher.height)
+                }
                 if auto { // aim for ~45% of the frame per scroll step
                     let ratio = (Double(first.height) * 0.45) / Double(offset)
                     step = max(10, min(Int(rect.height * 0.7), Int(Double(step) * ratio)))

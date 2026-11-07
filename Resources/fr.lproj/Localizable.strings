@@ -561,3 +561,4 @@
 "Could not prepare the image" = "Impossible de préparer l'image";
 "The server answered HTTP %d" = "Le serveur a répondu HTTP %d";
 "The server's answer was not understood" = "La réponse du serveur n'a pas été comprise";
+"%d frames · %d px" = "%d images · %d px";
