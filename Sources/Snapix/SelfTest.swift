@@ -185,7 +185,9 @@ enum SelfTest {
         check(KeystrokeFormat.label(keyCode: 0, characters: "a", flags: []) == "a" && KeystrokeFormat.label(keyCode: 49, characters: " ", flags: []) == "Space", "keystroke plain keys")
 
         // Links in recognised text.
-        check(OCR.links(in: "see https://example.com/a and www.example.org, mail me@x.io, https://example.com/a").map(\.absoluteString) == ["https://example.com/a", "https://www.example.org"], "OCR links")
+        // macOS versions differ on whether a bare "www." link becomes http or https, so only the hosts are compared.
+        let foundLinks = OCR.links(in: "see https://example.com/a and www.example.org, mail me@x.io, https://example.com/a")
+        check(foundLinks.compactMap(\.host) == ["example.com", "www.example.org"] && foundLinks.allSatisfy { $0.scheme == "http" || $0.scheme == "https" }, "OCR links")
 
         // Library limit preference.
         UserDefaults.standard.set(-1, forKey: "historyLimit"); check(History.limit == Int.max, "history: no limit")
