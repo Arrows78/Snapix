@@ -469,6 +469,11 @@ enum SelfTest {
         let reportURL = ProblemReport.url(diagnostics: "Snapix 1.0", log: String(repeating: "line\n", count: 2000))
         check((reportURL?.absoluteString.hasPrefix("https://github.com/Arrows78/Snapix/issues/new?") ?? false) && (reportURL?.absoluteString.count ?? 0) < 12_000, "problem report link is bounded")
 
+        // Magnifier zoom and clipboard offer.
+        check(Overlay.loupeCells(for: "high") == 9 && Overlay.loupeCells(for: "low") == 21 && Overlay.loupeCells(for: nil) == 15 && [9, 15, 21].allSatisfy { $0 % 2 == 1 }, "magnifier cells are odd and zoom-ordered")
+        check(HomeWindow.clipboardAction(setting: "ask", hasImage: true) == "ask" && HomeWindow.clipboardAction(setting: "load", hasImage: true) == "load"
+              && HomeWindow.clipboardAction(setting: "load", hasImage: false) == "none" && HomeWindow.clipboardAction(setting: "never", hasImage: true) == "none" && HomeWindow.clipboardAction(setting: "x", hasImage: true) == "none", "clipboard image offer rules")
+
         // Export formats.
         let enc = Exporter.data(for: strip, as: .pdf, scale: 2)
         check(enc.map { $0.starts(with: Data("%PDF".utf8)) } == true, "PDF export")

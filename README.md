@@ -86,6 +86,7 @@ Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 - **Preferences**: app language (English or French, independent of macOS), optional menu bar icon, Library size limit and storage tools, and a switch for `snapix://` links.
 - **Overlay and ring tuning**: how dark the area outside a selection is, the pixel magnifier (on/off, size) and the click ring colour, size and duration.
 - **Diagnostics and updates**: confirmations as an on-screen bubble, a system notification or both; one small local log file per day (kept 3, 7 or 30 days) and a *Report a problem* button that opens a prefilled GitHub issue; stable or beta update channel with an optional once-a-day check at launch.
+- **Behaviours**: magnifier zoom (low, medium, high), close the editor after dragging the image out, hide a Quick Access card while its editor is open, and choose what happens to a picture found in the clipboard when the home window opens (ignore, ask or open).
 - **Shortcuts cheat sheet** and **settings backup**: list every shortcut in one floating sheet; export or import preferences (never the upload credential) from **Preferences › Backup**.
 - **Languages**: English and French, following macOS.
 

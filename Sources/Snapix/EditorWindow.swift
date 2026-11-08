@@ -24,6 +24,13 @@ private final class ImageDragButton: IconButton, NSDraggingSource {
     }
 
     func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation { .copy }
+
+    /// Called once the image was dropped somewhere that accepted it.
+    var onDropped: (() -> Void)?
+
+    func draggingSession(_ session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
+        if !operation.isEmpty { DispatchQueue.main.async { [weak self] in self?.onDropped?() } }
+    }
 }
 
 @MainActor
@@ -50,13 +57,19 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
 
     // MARK: Entry points
 
-    static func open(_ shot: Shot) {
+    /// Called when the editor window closes (used to bring a hidden Quick Access card back).
+    var onClose: (() -> Void)?
+
+    @discardableResult
+    static func open(_ shot: Shot, onClose: (() -> Void)? = nil) -> EditorWindowController {
         let c = EditorWindowController(shot: shot)
+        c.onClose = onClose
         open.append(c)
         NSApp.setActivationPolicy(.regular)
         c.showWindow(nil)
         NSApp.activate(ignoringOtherApps: true)
         c.applyDefaultZoom()
+        return c
     }
 
     static func openFromClipboard() {
@@ -134,6 +147,9 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
     private func dragButton() -> IconButton {
         let b = ImageDragButton(symbol: "hand.draw", tip: L("Drag the edited image into another app"), target: nil, action: nil)
         if let g = ToolGlyph.action("hand.draw") { b.image = g }
+        b.onDropped = { [weak self] in
+            if Pref.bool("closeAfterDrag") { self?.window?.close() }
+        }
         b.imageProvider = { [weak self] in
             guard let self, let img = self.flattened() else { return nil }
             return (img, self.doc.scale)
@@ -1046,6 +1062,8 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
         canvas.commitText()
         EditorWindowController.open.removeAll { $0 === self }
+        onClose?()
+        onClose = nil
         if EditorWindowController.open.isEmpty { NSApp.setActivationPolicy(AppDelegate.restingPolicy) }
     }
 }

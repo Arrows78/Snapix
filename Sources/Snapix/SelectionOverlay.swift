@@ -10,6 +10,13 @@ enum Overlay {
     /// How dark the area outside the selection is, 0...0.8.
     static var dim: CGFloat { CGFloat(max(0, min(0.8, UserDefaults.standard.object(forKey: "overlayDim") as? Double ?? 0.4))) }
     static var showLoupe: Bool { UserDefaults.standard.object(forKey: "showLoupe") as? Bool ?? true }
+    /// Pixels shown across the magnifier: fewer pixels means a stronger zoom (odd, so one pixel sits at the centre).
+    static func loupeCells(for setting: String?) -> Int {
+        switch setting { case "high": return 9; case "low": return 21; default: return 15 }
+    }
+
+    static var loupeCells: Int { loupeCells(for: UserDefaults.standard.string(forKey: "loupeZoom")) }
+
     static var loupeSize: CGFloat {
         switch UserDefaults.standard.string(forKey: "loupeSize") { case "small": return 90; case "large": return 160; default: return 120 }
     }
@@ -221,7 +228,7 @@ private final class OverlayView: NSView {
 
     /// Pixel magnifier next to the cursor, with coordinates.
     private func drawLoupe(at m: CGPoint, in ctx: CGContext) {
-        let cells = 15, size = Overlay.loupeSize
+        let cells = Overlay.loupeCells, size = Overlay.loupeSize
         let px = Int(m.x * pixelScale), py = Int(m.y * pixelScale)
         let src = CGRect(x: px - cells / 2, y: py - cells / 2, width: cells, height: cells)
         guard CGRect(x: 0, y: 0, width: frozen.image.width, height: frozen.image.height).contains(src),

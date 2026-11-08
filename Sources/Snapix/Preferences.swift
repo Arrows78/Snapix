@@ -288,6 +288,10 @@ struct PreferencesView: View {
     @AppStorage("defaultTool") private var defaultTool = "arrow"
     @AppStorage("rememberTool") private var rememberTool = false
     @AppStorage("snapHighlight") private var snapHighlight = true
+    @AppStorage("loupeZoom") private var loupeZoom = "medium"
+    @AppStorage("closeAfterDrag") private var closeAfterDrag = false
+    @AppStorage("quickAccessHideOpened") private var quickAccessHideOpened = false
+    @AppStorage("clipboardImage") private var clipboardImage = "never"
     @AppStorage("confirmationStyle") private var confirmationStyle = "bubble"
     @AppStorage("diagnosticLogs") private var diagnosticLogs = true
     @AppStorage("logDays") private var logDays = 7
@@ -433,6 +437,7 @@ struct PreferencesView: View {
                 Row(title: "Recall shortcut shows", subtitle: "The stack keeps your last captures on screen; the strip is a scrollable row of recent screenshots and recordings.") {
                     Picker("", selection: $quickAccessStyle) { Text("A stack").tag("stack"); Text("A strip").tag("strip") }.labelsHidden().frame(width: 160)
                 }
+                ToggleRow("Hide a card while its editor is open", "The card comes back when you close the editor.", isOn: $quickAccessHideOpened)
                 Row(title: "Size", last: true) {
                     Picker("", selection: $previewSize) {
                         Text("Small").tag("small"); Text("Medium").tag("medium"); Text("Large").tag("large")
@@ -535,6 +540,9 @@ struct PreferencesView: View {
                 Row(title: "Dim outside the selection") { Slider(value: $overlayDim, in: 0...0.8).frame(width: 180) }
                 ToggleRow("Show the pixel magnifier", isOn: $showLoupe, last: !showLoupe)
                 if showLoupe {
+                    Row(title: "Magnifier zoom") {
+                        Picker("", selection: $loupeZoom) { Text("Low").tag("low"); Text("Medium").tag("medium"); Text("High").tag("high") }.labelsHidden().frame(width: 140)
+                    }
                     Row(title: "Magnifier size", last: true) {
                         Picker("", selection: $loupeSize) { Text("Small").tag("small"); Text("Medium").tag("medium"); Text("Large").tag("large") }.labelsHidden().frame(width: 140)
                     }
@@ -677,7 +685,11 @@ struct PreferencesView: View {
                 ToggleRow("Snap shapes to edges in the screenshot (hold ⌥ to disable)", isOn: $snapEdges)
                 ToggleRow("Mouse wheel zooms the image (trackpad scrolls, ⌥ or ⌘ swaps)", isOn: $wheelZoom)
                 ToggleRow("Open the editor in a larger window", isOn: $largerWindow)
-                ToggleRow("Keep the editor above other windows", isOn: $editorOnTop, last: true)
+                ToggleRow("Keep the editor above other windows", isOn: $editorOnTop)
+                ToggleRow("Close the editor after dragging the image out", "Once another app accepted the dropped image.", isOn: $closeAfterDrag)
+                Row(title: "Image in the clipboard", subtitle: "What to do with a picture in the clipboard when the home window opens.", last: true) {
+                    Picker("", selection: $clipboardImage) { Text("Ignore").tag("never"); Text("Ask").tag("ask"); Text("Open it").tag("load") }.labelsHidden().frame(width: 120)
+                }
             }
             Card(title: "Text recognition") {
                 ToggleRow("Remove line breaks from recognized text", isOn: $removeBreaks)

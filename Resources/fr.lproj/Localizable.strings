@@ -686,3 +686,15 @@
 "Report a problem" = "Signaler un problème";
 "Opens a prefilled GitHub issue with the version, macOS and the last log lines. Review it before sending." = "Ouvre un ticket GitHub prérempli avec la version, macOS et les dernières lignes du journal. Relisez-le avant l'envoi.";
 "Report…" = "Signaler…";
+"Magnifier zoom" = "Zoom de la loupe";
+"Close the editor after dragging the image out" = "Fermer l'éditeur après avoir glissé l'image dehors";
+"Once another app accepted the dropped image." = "Une fois que l'autre app a accepté l'image déposée.";
+"Image in the clipboard" = "Image dans le presse-papiers";
+"What to do with a picture in the clipboard when the home window opens." = "Que faire d'une image du presse-papiers à l'ouverture de la fenêtre d'accueil.";
+"Ignore" = "Ignorer";
+"Ask" = "Demander";
+"Open it" = "L'ouvrir";
+"Hide a card while its editor is open" = "Masquer une carte pendant que son éditeur est ouvert";
+"The card comes back when you close the editor." = "La carte revient quand vous fermez l'éditeur.";
+"Open the image in your clipboard?" = "Ouvrir l'image de votre presse-papiers ?";
+"Snapix found a picture in the clipboard. Do you want to annotate it?" = "Snapix a trouvé une image dans le presse-papiers. Voulez-vous l'annoter ?";

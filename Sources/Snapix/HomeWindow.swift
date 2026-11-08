@@ -151,7 +151,34 @@ final class HomeWindow: NSObject, NSWindowDelegate {
     static let shared = HomeWindow()
     private var window: NSWindow?
 
-    static func show() { shared.present() }
+    static func show() {
+        shared.present()
+        offerClipboardImage()
+    }
+
+    /// When the clipboard holds a picture, the "clipboardImage" preference decides: ignore it, ask, or open it straight away.
+    nonisolated static func clipboardAction(setting: String, hasImage: Bool) -> String {
+        guard hasImage else { return "none" }
+        return ["ask", "load"].contains(setting) ? setting : "none"
+    }
+
+    private static func offerClipboardImage() {
+        let hasImage = NSPasteboard.general.canReadObject(forClasses: [NSImage.self], options: nil)
+        switch clipboardAction(setting: Pref.string("clipboardImage"), hasImage: hasImage) {
+        case "load": DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { EditorWindowController.openFromClipboard() }
+        case "ask":
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                let alert = NSAlert()
+                alert.messageText = L("Open the image in your clipboard?")
+                alert.informativeText = L("Snapix found a picture in the clipboard. Do you want to annotate it?")
+                alert.addButton(withTitle: L("Open"))
+                alert.addButton(withTitle: L("Not Now"))
+                NSApp.activate(ignoringOtherApps: true)
+                if alert.runModal() == .alertFirstButtonReturn { EditorWindowController.openFromClipboard() }
+            }
+        default: break
+        }
+    }
     static func hide() { shared.window?.orderOut(nil) }
 
     private func present() {

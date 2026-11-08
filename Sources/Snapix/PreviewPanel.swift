@@ -129,6 +129,8 @@ final class PreviewController: NSObject {
     private let anchorPoint: CGPoint?
     private let height: CGFloat
     private var closeWork: DispatchWorkItem?
+    /// True while the card's editor is open and the card is tucked away.
+    private var hidden = false
     /// Extra horizontal travel when a swipe dismissed the card, so it leaves in the swipe direction.
     private var swipeShift: CGFloat = 0
 
@@ -312,7 +314,7 @@ final class PreviewController: NSObject {
     private static func layoutAll() {
         var offsets: [ObjectIdentifier: CGFloat] = [:]
         let corner = Corner()
-        for c in open.reversed() {
+        for c in open.reversed() where !c.hidden {
             let key = ObjectIdentifier(c.screen)
             let y = offsets[key] ?? 0
             let vf = c.screen.visibleFrame
@@ -373,8 +375,20 @@ final class PreviewController: NSObject {
     }
 
     private func edit() {
-        if let file = shot.fileURL { NSWorkspace.shared.open(file) } else { EditorWindowController.open(shot) }
-        dismiss()
+        if let file = shot.fileURL { NSWorkspace.shared.open(file); dismiss(); return }
+        guard Pref.bool("quickAccessHideOpened") else { EditorWindowController.open(shot); dismiss(); return }
+        // Keep the card out of the way while its editor is open, and bring it back when the editor closes.
+        hidden = true
+        closeWork?.cancel()
+        panel.orderOut(nil)
+        Self.layoutAll()
+        EditorWindowController.open(shot) { [weak self] in
+            guard let self, Self.open.contains(where: { $0 === self }) else { return }
+            self.hidden = false
+            self.panel.orderFrontRegardless()
+            Self.layoutAll()
+            self.scheduleClose()
+        }
     }
 
     /// Runs the action chosen in Preferences for a swipe to the right (dir > 0) or the left.
