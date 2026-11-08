@@ -98,7 +98,9 @@ enum Exporter {
             .replacingOccurrences(of: "{timestamp}", with: String(Int(now.timeIntervalSince1970)))
             .replacingOccurrences(of: "{app}", with: NSWorkspace.shared.frontmostApplication?.localizedName ?? "Snapix")
             .replacingOccurrences(of: "/", with: "-")
-        return "\(name)\(suffix).\(ext)"
+        // A cleared template would otherwise produce a hidden ".png" file.
+        let stem = name.trimmingCharacters(in: .whitespaces).isEmpty ? "Snapix" : name
+        return "\(stem)\(suffix).\(ext)"
     }
 
     /// Same as `uniqueURL`, callable off the main actor (it only touches the file system).
@@ -124,7 +126,7 @@ enum Exporter {
     static func save(_ image: CGImage, scale: CGFloat, quiet: Bool = false) -> URL? {
         let (img, _) = prepared(image, scale: scale)
         guard let (data, ext) = encode(img, forceLossless: hasTransparency(img)) else { return nil }
-        let folder = URL(fileURLWithPath: Pref.string("saveFolder"), isDirectory: true)
+        let folder = Pref.saveFolderURL
         do {
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
             let url = uniqueURL(in: folder, name: filename(ext: ext))
@@ -165,7 +167,7 @@ enum Exporter {
         let panel = NSSavePanel()
         panel.allowedContentTypes = [defaultType]
         panel.nameFieldStringValue = filename(ext: defaultType.preferredFilenameExtension ?? "png")
-        panel.directoryURL = URL(fileURLWithPath: Pref.string("saveFolder"))
+        panel.directoryURL = Pref.saveFolderURL
         let popup = NSPopUpButton(frame: NSRect(x: 0, y: 0, width: 160, height: 26), pullsDown: false)
         popup.addItems(withTitles: ["PNG", "JPEG", "HEIC", "PDF"])
         popup.selectItem(at: formats.firstIndex(of: defaultType) ?? 0)
@@ -213,7 +215,7 @@ enum Exporter {
         let boundary = "snapix-\(UUID().uuidString)"
         var body = Data()
         body.append("--\(boundary)\r\nContent-Disposition: form-data; name=\"\(field)\"; filename=\"\(filename(ext: ext))\"\r\n".data(using: .utf8)!)
-        body.append("Content-Type: \(ext == "png" ? "image/png" : "image/jpeg")\r\n\r\n".data(using: .utf8)!)
+        body.append("Content-Type: \(["png": "image/png", "heic": "image/heic"][ext] ?? "image/jpeg")\r\n\r\n".data(using: .utf8)!)
         body.append(data)
         body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
 

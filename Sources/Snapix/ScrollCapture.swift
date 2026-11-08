@@ -82,6 +82,8 @@ final class Stitcher {
         }
 
         if matches(0) { return .noChange }
+        // Very short regions leave no room to search (and an empty reversed range would trap).
+        guard h - 2 * margin - 12 > 1 else { return .noMatch }
         for d in 1..<(h - 2 * margin - 12) where matches(d) {
             if up {
                 accumulated.insert(contentsOf: f.px[0..<(d * width * 4)], at: 0)

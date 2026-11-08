@@ -313,7 +313,7 @@ final class Recorder {
 
     /// Moves the finished file into the save folder and puts it on the clipboard as a file.
     private func finalize(_ file: URL) {
-        let folder = URL(fileURLWithPath: Pref.string("saveFolder"), isDirectory: true)
+        let folder = Pref.saveFolderURL
         let ext = file.pathExtension
         do {
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)

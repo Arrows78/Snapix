@@ -810,8 +810,10 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
 
     /// The system share sheet (Messages, Mail, AirDrop, Notes…).
     @objc func shareAction(_ sender: Any?) {
-        guard let img = flattened(), let view = window?.contentView else { return }
-        let size = NSSize(width: CGFloat(img.width) / doc.scale, height: CGFloat(img.height) / doc.scale)
+        guard let flat = flattened(), let view = window?.contentView else { return }
+        // Same watermark and Retina handling as copy, save and upload.
+        let (img, sc) = Exporter.prepared(flat, scale: doc.scale)
+        let size = NSSize(width: CGFloat(img.width) / sc, height: CGFloat(img.height) / sc)
         let picker = NSSharingServicePicker(items: [NSImage(cgImage: img, size: size)])
         picker.show(relativeTo: NSRect(x: view.bounds.maxX - 60, y: view.bounds.maxY - 46, width: 1, height: 1), of: view, preferredEdge: .minY)
     }
@@ -978,7 +980,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         first.overlay = nil
         second.overlay?.opacity = 1
         guard let a = Renderer.render(first), let b = Renderer.render(second), let data = GIFMaker.data(frames: [a, b], delay: 1.2) else { return }
-        let folder = URL(fileURLWithPath: Pref.string("saveFolder"), isDirectory: true)
+        let folder = Pref.saveFolderURL
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let url = Exporter.uniqueURL(in: folder, name: Exporter.filename(ext: "gif"))
         do {

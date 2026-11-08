@@ -118,7 +118,7 @@ enum LibraryItems {
         var all = shots + recs
         if Pref.bool("libraryIndexFolder") {
             let known = Set(all.map(\.url.path))
-            all += folderItems(in: URL(fileURLWithPath: Pref.string("saveFolder"), isDirectory: true)).filter { !known.contains($0.url.path) }
+            all += folderItems(in: Pref.saveFolderURL).filter { !known.contains($0.url.path) }
         }
         return all.sorted { $0.date > $1.date }
     }

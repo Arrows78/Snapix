@@ -463,8 +463,9 @@ final class PreviewController: NSObject {
             NSSharingServicePicker(items: [file]).show(relativeTo: sender.bounds, of: sender, preferredEdge: .minY)
             return
         }
-        let size = NSSize(width: CGFloat(shot.image.width) / shot.scale, height: CGFloat(shot.image.height) / shot.scale)
-        NSSharingServicePicker(items: [NSImage(cgImage: shot.image, size: size)]).show(relativeTo: sender.bounds, of: sender, preferredEdge: .minY)
+        let (img, sc) = Exporter.prepared(shot.image, scale: shot.scale)
+        let size = NSSize(width: CGFloat(img.width) / sc, height: CGFloat(img.height) / sc)
+        NSSharingServicePicker(items: [NSImage(cgImage: img, size: size)]).show(relativeTo: sender.bounds, of: sender, preferredEdge: .minY)
     }
     @objc private func revealTapped() { if let f = shot.fileURL { NSWorkspace.shared.activateFileViewerSelecting([f]) } }
 
