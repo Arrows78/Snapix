@@ -14,6 +14,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         NSApp.setActivationPolicy(Self.restingPolicy)
         buildMainMenu()
         buildStatusItem()
+        Recorder.onTick = { [weak self] text in self?.showRecordingTime(text) }
         applyMenuBarVisibility()
         if Pref.bool("showMenuBarIcon") { checkStatusItemVisibility() }
         if Onboarding.needed { Onboarding.show() } else if !Pref.bool("hideHome") { HomeWindow.show() }
@@ -30,6 +31,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         if !flag { HomeWindow.show() }
         return true
+    }
+
+    /// Puts the elapsed recording time (or nothing) next to the menu bar icon, when the preference is on.
+    private func showRecordingTime(_ text: String?) {
+        guard let button = statusItem?.button else { return }
+        if let text, Pref.bool("menuBarTimer") {
+            button.title = " " + text
+            button.imagePosition = .imageLeft
+            statusItem.length = NSStatusItem.variableLength
+        } else {
+            button.title = ""
+            button.imagePosition = .imageOnly
+            statusItem.length = NSStatusItem.squareLength
+        }
     }
 
     /// Shows or hides the menu bar icon; without it the Dock icon becomes the way in.

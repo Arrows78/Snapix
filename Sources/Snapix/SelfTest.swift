@@ -447,6 +447,11 @@ enum SelfTest {
         check(ClickStyle.current.rings == 4 && ClickStyle.current.opacity == 0.2 && KeyPillStyle.current.fontSize == 12 && KeyPillStyle.current.position == "bottom", "ring and keystroke preferences are clamped")
         ["clickRings", "clickOpacity", "keyPillSize", "keyPillPosition"].forEach { UserDefaults.standard.removeObject(forKey: $0) }
 
+        // Recording clock and device choice.
+        check(Recorder.clockText(seconds: 5) == "0:05" && Recorder.clockText(seconds: 65) == "1:05" && Recorder.clockText(seconds: 3723) == "1:02:03", "recording clock text")
+        let devs = [InputDevices.Device(id: "a", name: "A"), InputDevices.Device(id: "b", name: "B")]
+        check(InputDevices.resolve("b", in: devs)?.name == "B" && InputDevices.resolve("", in: devs) == nil && InputDevices.resolve("gone", in: devs) == nil, "input device choice falls back to the default")
+
         // Export formats.
         let enc = Exporter.data(for: strip, as: .pdf, scale: 2)
         check(enc.map { $0.starts(with: Data("%PDF".utf8)) } == true, "PDF export")

@@ -660,3 +660,6 @@
 "Keystroke text size" = "Taille du texte des touches";
 "Keystroke position" = "Position des touches";
 "Keystroke display time" = "Durée d'affichage des touches";
+"Microphone" = "Micro";
+"Show the elapsed time in the menu bar" = "Afficher le temps écoulé dans la barre des menus";
+"The timer sits next to the Snapix icon while you record." = "Le chronomètre apparaît à côté de l'icône Snapix pendant l'enregistrement.";

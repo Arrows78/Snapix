@@ -146,6 +146,14 @@ private final class FrameWriter: NSObject, SCStreamOutput, SCStreamDelegate, @un
 @MainActor
 final class Recorder {
     static let shared = Recorder()
+    /// Receives the elapsed time every half second while recording, and nil when recording ends (drives the menu bar timer).
+    static var onTick: ((String?) -> Void)?
+
+    /// "1:05", or "1:02:03" past an hour.
+    nonisolated static func clockText(seconds s: Int) -> String {
+        s >= 3600 ? String(format: "%d:%02d:%02d", s / 3600, (s % 3600) / 60, s % 60) : String(format: "%d:%02d", s / 60, s % 60)
+    }
+
 
     enum Format { case video, gif }
 
@@ -224,7 +232,10 @@ final class Recorder {
         cfg.minimumFrameInterval = CMTime(value: 1, timescale: CMTimeScale(fps))
         cfg.queueDepth = 6
         if withAudio { cfg.capturesAudio = true; cfg.excludesCurrentProcessAudio = true }
-        if #available(macOS 15.0, *), withMic { cfg.captureMicrophone = true }
+        if #available(macOS 15.0, *), withMic {
+            cfg.captureMicrophone = true
+            if let mic = InputDevices.resolve(Pref.string("micDeviceID"), in: InputDevices.microphones()) { cfg.microphoneCaptureDeviceID = mic.id }
+        }
 
         let filter = Capture.filter(display: display, content: content, excludingSelf: true, keeping: overlays?.windowIDs ?? [])
         let s = SCStream(filter: filter, configuration: cfg, delegate: writer)
@@ -370,6 +381,7 @@ final class Recorder {
     }
 
     private func hideIndicators() {
+        Recorder.onTick?(nil)
         overlays?.stop(); overlays = nil
         isPaused = false
         border?.orderOut(nil); border = nil
@@ -458,7 +470,8 @@ private final class RecordingHUD {
 
     private func tick() {
         let s = Int(accumulated + (paused ? 0 : Date().timeIntervalSince(segmentStart)))
-        label.stringValue = String(format: "%d:%02d", s / 60, s % 60)
+        label.stringValue = Recorder.clockText(seconds: s)
+        Recorder.onTick?(Recorder.clockText(seconds: s))
         if !paused { dot.alphaValue = dot.alphaValue < 1 ? 1 : 0.25 }
     }
 

@@ -288,6 +288,9 @@ struct PreferencesView: View {
     @AppStorage("defaultTool") private var defaultTool = "arrow"
     @AppStorage("rememberTool") private var rememberTool = false
     @AppStorage("snapHighlight") private var snapHighlight = true
+    @AppStorage("menuBarTimer") private var menuBarTimer = true
+    @AppStorage("micDeviceID") private var micDeviceID = ""
+    @AppStorage("cameraDeviceID") private var cameraDeviceID = ""
     @AppStorage("clickRings") private var clickRings = 1
     @AppStorage("clickOpacity") private var clickOpacity = 1.0
     @AppStorage("keyPillSize") private var keyPillSize = 20.0
@@ -604,13 +607,28 @@ struct PreferencesView: View {
                     Row(title: "Keystroke display time", last: false) { Slider(value: $keyPillSeconds, in: 0.5...5).frame(width: 180) }
                 }
                 ToggleRow("Record system audio (MP4 only)", isOn: $recordAudio)
-                ToggleRow("Record the microphone (macOS 15 or later)", "The voice is a separate audio track; players that show a track picker let you choose it.", isOn: $recordMicrophone)
+                ToggleRow("Record the microphone (macOS 15 or later)", "The voice is a separate audio track; players that show a track picker let you choose it.", isOn: $recordMicrophone, last: !recordMicrophone)
+                if recordMicrophone {
+                    Row(title: "Microphone") {
+                        Picker("", selection: $micDeviceID) {
+                            Text("System default").tag("")
+                            ForEach(InputDevices.microphones(), id: \.id) { Text($0.name).tag($0.id) }
+                        }.labelsHidden().frame(width: 220)
+                    }
+                }
+                ToggleRow("Show the elapsed time in the menu bar", "The timer sits next to the Snapix icon while you record.", isOn: $menuBarTimer)
                 ToggleRow("Review and trim before saving", "Opens the recording in a player where you can cut the start and the end.", isOn: $recordReview)
                 ToggleRow("Show the file in Finder when done", isOn: $recordReveal, last: true)
             }
             Card(title: "Camera") {
                 ToggleRow("Show the camera in the recording", "A floating bubble you can drag while recording.", isOn: $recordCamera, last: !recordCamera)
                 if recordCamera {
+                    Row(title: "Camera") {
+                        Picker("", selection: $cameraDeviceID) {
+                            Text("System default").tag("")
+                            ForEach(InputDevices.cameras(), id: \.id) { Text($0.name).tag($0.id) }
+                        }.labelsHidden().frame(width: 220)
+                    }
                     Row(title: "Shape") { Picker("", selection: $cameraShape) { Text("Circle").tag("circle"); Text("Square").tag("square") }.labelsHidden().frame(width: 140) }
                     Row(title: "Size") { Picker("", selection: $cameraSize) { Text("Small").tag("small"); Text("Medium").tag("medium"); Text("Large").tag("large") }.labelsHidden().frame(width: 140) }
                     Row(title: "Position") {

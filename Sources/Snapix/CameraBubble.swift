@@ -32,7 +32,7 @@ final class CameraBubble {
 
     /// nil when there is no camera or access was refused.
     static func make(in rect: CGRect) async -> CameraBubble? {
-        guard await authorized(), let device = AVCaptureDevice.default(for: .video), let input = try? AVCaptureDeviceInput(device: device) else { return nil }
+        guard await authorized(), let device = AVCaptureDevice(uniqueID: InputDevices.resolve(Pref.string("cameraDeviceID"), in: InputDevices.cameras())?.id ?? "") ?? AVCaptureDevice.default(for: .video), let input = try? AVCaptureDeviceInput(device: device) else { return nil }
         return CameraBubble(input: input, in: rect)
     }
 
