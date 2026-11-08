@@ -4,10 +4,78 @@ All notable changes to Snapix are listed here, newest first. The file is generat
 from the commit messages (Conventional Commits) and the `v*` tags: do not edit it by hand. See
 `docs/RELEASING.md`. Versions follow [Semantic Versioning](https://semver.org).
 
+## [1.1.0] - 2026-11-08
+
+### Added
+
+- **editor**: Hide sensitive data automatically
+- **editor**: Remove the background of an image
+- **capture**: Add a shutter sound and a configurable timer
+- **prefs**: Export and import settings
+- **library**: Select, combine and delete screenshots, with retention
+- **app**: Add a shortcuts cheat sheet
+- **capture**: Capture a subject without its background
+- **capture**: Record the screen to MP4 or GIF
+- **editor**: Save and apply annotation style presets
+- **capture**: Capture an interface element
+- **prefs**: Redesign the settings window
+- **capture**: Hide desktop icons and count down before recording
+- **capture**: Review and trim recordings, list recent captures
+- **editor**: Rotate, flip, share, more formats and backdrop ratios
+- **app**: Add a welcome tour and a manual update check
+- **quick-access**: Corner, size, more actions, keys and a recall shortcut
+- **recording**: Record the microphone
+- **editor**: Dashed strokes, window frame and border trimming
+- **capture**: More capture, recording and editor options
+- **editor**: Hex blur, empty space, watermark, patterns, close prompt
+- **recording**: Pause, click highlights, keystrokes and save as GIF
+- **quick-access**: Centred positions, swipe, animation, link detection
+- **prefs**: Language, menu bar icon, Library limits, URL switch, gap
+- **editor**: Crop aspect ratios and rule-of-thirds guides
+- **editor**: Save named backdrop styles
+- **recording**: Record the whole screen or a window
+- **prefs**: Tune the selection overlay, magnifier and click rings
+- **recording**: Add a camera bubble
+- **editor**: Dotted strokes
+- **recording**: Change speed and mute in the review window
+- **library**: Search screenshots by the text they contain
+- **editor**: One icon family and a pencil tool
+- **editor**: Draw the top bar actions in the same icon family
+- **editor**: Snap highlights to text, auto-balance, default style, on top
+- **library**: List recordings with filters, add video cards and swipe actions
+- **editor**: Add a glow backdrop
+- **editor**: Remember each tool's style
+- **editor**: Adhesive tape and built-in wallpapers
+- **capture**: Colour panel, Android and UIKit formats, scroll height
+- **capture**: Capture a whole application
+- **capture**: Optional live selection instead of a frozen screen
+- **capture**: Optional custom OCR server
+- **capture**: Live preview during a scrolling capture
+- **quick-access**: A recent strip and configurable card buttons
+- **editor**: Layers sidebar, px/pt toggle and a folder of backdrops
+- **capture**: Choose what sits behind a captured window
+- **editor**: Colour statistics of a selection
+- **upload**: S3-compatible storage with links and upload history
+- **editor**: Add a capture to the open image and save a two-frame GIF
+- **library**: List the screenshots folder and open in the default app
+- **app**: Download an update from the update check
+- **prefs**: Default editor zoom and scrolling capture speed
+- **recording**: Tune the keystroke pill and click rings
+- **recording**: Choose the microphone and camera, timer in the menu bar
+- **app**: Notifications, diagnostic logs, problem report, update channel
+- **prefs**: Magnifier zoom, drag-out, hidden cards and clipboard offer
+- **prefs**: A readable config.toml
+- **ui**: Light, dark or system theme and clearer shortcuts
+
+### Fixed
+
+- **ui**: Scrollable home window, readable switches, preferences and home URLs
+
 ## [1.0.0] - 2026-11-07
 
 ### Added
 
 - Initial release.
 
+[1.1.0]: https://github.com/Arrows78/Snapix/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Arrows78/Snapix/releases/tag/v1.0.0
