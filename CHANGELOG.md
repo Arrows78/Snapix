@@ -4,6 +4,17 @@ All notable changes to Snapix are listed here, newest first. The file is generat
 from the commit messages (Conventional Commits) and the `v*` tags: do not edit it by hand. See
 `docs/RELEASING.md`. Versions follow [Semantic Versioning](https://semver.org).
 
+## [1.2.0] - 2026-11-08
+
+### Added
+
+- **prefs**: Reorder panes, restore the log settings on About, apply imported appearance at once
+
+### Fixed
+
+- **build**: Keep macOS privacy permissions across updates
+- Apply watermark on share, HEIC upload type, empty name and folder fallbacks, scroll capture guard
+
 ## [1.1.0] - 2026-11-08
 
 ### Added
@@ -77,5 +88,6 @@ from the commit messages (Conventional Commits) and the `v*` tags: do not edit i
 
 - Initial release.
 
+[1.2.0]: https://github.com/Arrows78/Snapix/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/Arrows78/Snapix/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Arrows78/Snapix/releases/tag/v1.0.0
