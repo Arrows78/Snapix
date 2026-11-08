@@ -20,6 +20,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if Onboarding.needed { Onboarding.show() } else if !Pref.bool("hideHome") { HomeWindow.show() }
         reloadHotkeys()
         History.pruneNow()
+        DiagnosticLog.pruneNow()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 6) { UpdateCheck.checkAtLaunch() }
+        DiagnosticLog.write("Snapix \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?") started", category: "app")
         if !Onboarding.needed, !CGPreflightScreenCaptureAccess() { CGRequestScreenCaptureAccess() }
     }
 

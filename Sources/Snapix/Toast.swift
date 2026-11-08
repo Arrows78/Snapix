@@ -7,6 +7,11 @@ enum Toast {
     private static var hideWork: DispatchWorkItem?
 
     static func show(_ text: String, duration: TimeInterval = 1.6, symbol: String? = nil) {
+        // Problems are worth a line in the diagnostic log, whatever the confirmation style.
+        if symbol?.contains("exclamation") == true { DiagnosticLog.write(text, category: "warning") }
+        // Short-lived progress messages ("Recognizing…") stay on screen only.
+        if duration >= 1.5 || symbol != nil { Notifier.post(text) }
+        guard Notifier.showsBubble else { return }
         hideWork?.cancel()
         panel?.orderOut(nil)
 

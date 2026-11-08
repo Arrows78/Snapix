@@ -452,6 +452,23 @@ enum SelfTest {
         let devs = [InputDevices.Device(id: "a", name: "A"), InputDevices.Device(id: "b", name: "B")]
         check(InputDevices.resolve("b", in: devs)?.name == "B" && InputDevices.resolve("", in: devs) == nil && InputDevices.resolve("gone", in: devs) == nil, "input device choice falls back to the default")
 
+        // Diagnostic logs, notifications, update channel, problem report.
+        let logDir = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("snapix-logs-\(UUID().uuidString)")
+        try? FileManager.default.createDirectory(at: logDir, withIntermediateDirectories: true)
+        let nowDate = Date(), oldDate = Calendar.current.date(byAdding: .day, value: -10, to: nowDate)!, recentDate = Calendar.current.date(byAdding: .day, value: -2, to: nowDate)!
+        for d in [nowDate, oldDate, recentDate] { FileManager.default.createFile(atPath: logDir.appendingPathComponent(DiagnosticLog.fileName(for: d)).path, contents: Data([0x41])) }
+        FileManager.default.createFile(atPath: logDir.appendingPathComponent("notes.txt").path, contents: Data([0x41]))
+        check(DiagnosticLog.prune(in: logDir, keepingDays: 7, now: nowDate) == 1 && !FileManager.default.fileExists(atPath: logDir.appendingPathComponent(DiagnosticLog.fileName(for: oldDate)).path)
+              && FileManager.default.fileExists(atPath: logDir.appendingPathComponent(DiagnosticLog.fileName(for: recentDate)).path) && FileManager.default.fileExists(atPath: logDir.appendingPathComponent("notes.txt").path), "log pruning keeps recent files and other files")
+        try? FileManager.default.removeItem(at: logDir)
+        check(DiagnosticLog.line("a\nb", category: "x", at: Date(timeIntervalSince1970: 0)).hasSuffix("[x] a b\n") && DiagnosticLog.fileName(for: Date(timeIntervalSince1970: 86_400 * 365)).hasSuffix(".log"), "log line format")
+        UserDefaults.standard.set("junk", forKey: "confirmationStyle"); check(Notifier.mode() == "bubble", "confirmation style falls back to the bubble")
+        UserDefaults.standard.removeObject(forKey: "confirmationStyle")
+        let rels: [[String: Any]] = [["tag_name": "v2.0.0-beta", "prerelease": true], ["tag_name": "v1.9", "draft": true], ["tag_name": "v1.8.0"]]
+        check(UpdateCheck.pick(from: rels, includePrereleases: true)?["tag_name"] as? String == "v2.0.0-beta" && UpdateCheck.pick(from: rels, includePrereleases: false)?["tag_name"] as? String == "v1.8.0", "update channel picks beta or stable")
+        let reportURL = ProblemReport.url(diagnostics: "Snapix 1.0", log: String(repeating: "line\n", count: 2000))
+        check((reportURL?.absoluteString.hasPrefix("https://github.com/Arrows78/Snapix/issues/new?") ?? false) && (reportURL?.absoluteString.count ?? 0) < 12_000, "problem report link is bounded")
+
         // Export formats.
         let enc = Exporter.data(for: strip, as: .pdf, scale: 2)
         check(enc.map { $0.starts(with: Data("%PDF".utf8)) } == true, "PDF export")

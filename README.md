@@ -85,6 +85,7 @@ Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 - **First-run welcome tour** (permissions and shortcuts) and a manual *Check for Updates* that can download the new release into your Downloads folder (installing stays manual).
 - **Preferences**: app language (English or French, independent of macOS), optional menu bar icon, Library size limit and storage tools, and a switch for `snapix://` links.
 - **Overlay and ring tuning**: how dark the area outside a selection is, the pixel magnifier (on/off, size) and the click ring colour, size and duration.
+- **Diagnostics and updates**: confirmations as an on-screen bubble, a system notification or both; one small local log file per day (kept 3, 7 or 30 days) and a *Report a problem* button that opens a prefilled GitHub issue; stable or beta update channel with an optional once-a-day check at launch.
 - **Shortcuts cheat sheet** and **settings backup**: list every shortcut in one floating sheet; export or import preferences (never the upload credential) from **Preferences › Backup**.
 - **Languages**: English and French, following macOS.
 

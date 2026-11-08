@@ -44,24 +44,41 @@ enum UpdateCheck {
         }.resume()
     }
 
+    /// The release to offer: the latest stable one, or, on the beta channel, the newest of all releases (pre-releases included).
+    static func pick(from releases: [[String: Any]], includePrereleases: Bool) -> [String: Any]? {
+        releases.first { ($0["draft"] as? Bool) != true && (includePrereleases || ($0["prerelease"] as? Bool) != true) }
+    }
+
+    /// Looks for an update once a day at launch when the preference is on; only speaks up when there is one.
     @MainActor
-    static func run() {
-        guard let url = URL(string: "https://api.github.com/repos/Arrows78/Snapix/releases/latest") else { return }
-        Toast.show(L("Checking for updates…"), duration: 10)
+    static func checkAtLaunch() {
+        guard Pref.bool("updateCheckAtLaunch") else { return }
+        let last = UserDefaults.standard.double(forKey: "lastUpdateCheck")
+        guard Date().timeIntervalSince1970 - last > 86_400 else { return }
+        UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: "lastUpdateCheck")
+        run(quiet: true)
+    }
+
+    @MainActor
+    static func run(quiet: Bool = false) {
+        let beta = Pref.string("updateChannel") == "beta"
+        guard let url = URL(string: beta ? "https://api.github.com/repos/Arrows78/Snapix/releases?per_page=10" : "https://api.github.com/repos/Arrows78/Snapix/releases/latest") else { return }
+        if !quiet { Toast.show(L("Checking for updates…"), duration: 10) }
         var req = URLRequest(url: url)
         req.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
         req.timeoutInterval = 10
         URLSession.shared.dataTask(with: req) { data, _, _ in
-            let json = data.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }
+            var json = data.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }
+            if beta, let list = data.flatMap({ try? JSONSerialization.jsonObject(with: $0) as? [[String: Any]] }) { json = pick(from: list, includePrereleases: true) }
             let tag = json?["tag_name"] as? String
             let page = (json?["html_url"] as? String).flatMap(URL.init(string:))
             let asset = json.flatMap { pickAsset(from: $0) }
             DispatchQueue.main.async {
                 MainActor.assumeIsolated {
-                    guard let tag else { Toast.show(L("Could not check for updates"), duration: 3, symbol: "exclamationmark.triangle.fill"); return }
+                    guard let tag else { if !quiet { Toast.show(L("Could not check for updates"), duration: 3, symbol: "exclamationmark.triangle.fill") }; return }
                     let current = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0"
                     guard isNewer(tag, than: current) else {
-                        Toast.show(LF("Snapix %@ is up to date", current), duration: 3, symbol: "checkmark.circle.fill")
+                        if !quiet { Toast.show(LF("Snapix %@ is up to date", current), duration: 3, symbol: "checkmark.circle.fill") }
                         return
                     }
                     let alert = NSAlert()

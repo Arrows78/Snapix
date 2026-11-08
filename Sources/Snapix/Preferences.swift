@@ -288,6 +288,11 @@ struct PreferencesView: View {
     @AppStorage("defaultTool") private var defaultTool = "arrow"
     @AppStorage("rememberTool") private var rememberTool = false
     @AppStorage("snapHighlight") private var snapHighlight = true
+    @AppStorage("confirmationStyle") private var confirmationStyle = "bubble"
+    @AppStorage("diagnosticLogs") private var diagnosticLogs = true
+    @AppStorage("logDays") private var logDays = 7
+    @AppStorage("updateChannel") private var updateChannel = "stable"
+    @AppStorage("updateCheckAtLaunch") private var updateCheckAtLaunch = false
     @AppStorage("menuBarTimer") private var menuBarTimer = true
     @AppStorage("micDeviceID") private var micDeviceID = ""
     @AppStorage("cameraDeviceID") private var cameraDeviceID = ""
@@ -458,6 +463,12 @@ struct PreferencesView: View {
                     .onChange(of: showMenuBarIcon) { _, _ in (NSApp.delegate as? AppDelegate)?.applyMenuBarVisibility() }
                 ToggleRow("Show Snapix in the Dock", isOn: $showDockIcon, last: true)
                     .onChange(of: showDockIcon) { _, _ in NSApp.setActivationPolicy(AppDelegate.restingPolicy) }
+            }
+            Card(title: "Confirmations") {
+                Row(title: "Confirmation style", subtitle: "How Snapix tells you a copy, a save or a problem.", last: true) {
+                    Picker("", selection: $confirmationStyle) { Text("On-screen bubble").tag("bubble"); Text("System notification").tag("system"); Text("Both").tag("both") }
+                        .labelsHidden().frame(width: 180)
+                }
             }
             Card(title: "Language and integration") {
                 Row(title: "Language", subtitle: "Applies after Snapix restarts.") {
@@ -890,18 +901,35 @@ struct PreferencesView: View {
                         Button("Releases") { NSWorkspace.shared.open(URL(string: "https://github.com/Arrows78/Snapix/releases")!) }
                     }
                 }
-                Row(title: "Updates", subtitle: "Asks GitHub for the latest release when you click. Snapix never checks on its own.") {
+                Row(title: "Update channel", subtitle: "Beta also offers pre-releases.") {
+                    Picker("", selection: $updateChannel) { Text("Stable").tag("stable"); Text("Beta").tag("beta") }.labelsHidden().frame(width: 120)
+                }
+                ToggleRow("Check for updates at launch", "Asks GitHub once a day. Off by default: Snapix never contacts anyone unless you ask.", isOn: $updateCheckAtLaunch)
+                Row(title: "Updates", subtitle: "Asks GitHub for the latest release when you click.") {
                     HStack {
                         Button("Check for Updates…") { UpdateCheck.run() }
                         Button("Welcome Tour") { Onboarding.show() }
                     }
                 }
-                Row(title: "Diagnostics", subtitle: "Copies the version, macOS version and permissions, to paste into a bug report. It contains no personal data.", last: true) {
+                Row(title: "Diagnostics", subtitle: "Copies the version, macOS version and permissions, to paste into a bug report. It contains no personal data.", last: false) {
                     Button("Copy") {
                         NSPasteboard.general.clearContents()
                         NSPasteboard.general.setString(Self.diagnostics, forType: .string)
                         Toast.show(L("Copied to the clipboard"), symbol: "checkmark.circle.fill")
+                ToggleRow("Keep diagnostic logs", "One small log file per day, stored only on this Mac.", isOn: $diagnosticLogs)
+                Row(title: "Keep logs for") {
+                    Picker("", selection: $logDays) { Text("3 days").tag(3); Text("7 days").tag(7); Text("30 days").tag(30) }.labelsHidden().frame(width: 120)
+                }
+                Row(title: "Logs", last: false) {
+                    HStack {
+                        Button("Open Folder") { try? FileManager.default.createDirectory(at: DiagnosticLog.folder, withIntermediateDirectories: true); NSWorkspace.shared.open(DiagnosticLog.folder) }
+                        Button("Clear", role: .destructive) { DiagnosticLog.clear() }
                     }
+                }
+                Row(title: "Report a problem", subtitle: "Opens a prefilled GitHub issue with the version, macOS and the last log lines. Review it before sending.", last: true) {
+                    Button("Report…") { ProblemReport.open() }
+                }
+            }
                 }
             }
         }
