@@ -17,7 +17,8 @@ for lp in Resources/*.lproj; do [ -d "$lp" ] && cp -R "$lp" "$APP/Contents/Resou
 # A stable signing identity keeps macOS privacy permissions (screen recording...) across rebuilds;
 # an ad-hoc signature changes on every build and makes macOS forget them.
 IDENTITY="${SNAPIX_SIGN_IDENTITY:-Snapix Local Signing}"
-if security find-identity -v -p codesigning | grep -q "\"$IDENTITY\""; then
+# On a CI runner the imported self-signed identity is not "trusted", so it is only listed without -v.
+if { security find-identity -v -p codesigning; [ -n "${CI:-}" ] && security find-identity -p codesigning; true; } | grep -qF "$IDENTITY"; then
   SIGN="$IDENTITY"
 else
   SIGN="-"
