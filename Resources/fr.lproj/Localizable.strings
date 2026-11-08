@@ -655,3 +655,8 @@
 "Normal" = "Normale";
 "Slow" = "Lente";
 "Very slow" = "Très lente";
+"Number of rings" = "Nombre d'anneaux";
+"Ring opacity" = "Opacité de l'anneau";
+"Keystroke text size" = "Taille du texte des touches";
+"Keystroke position" = "Position des touches";
+"Keystroke display time" = "Durée d'affichage des touches";

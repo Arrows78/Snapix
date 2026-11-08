@@ -288,6 +288,11 @@ struct PreferencesView: View {
     @AppStorage("defaultTool") private var defaultTool = "arrow"
     @AppStorage("rememberTool") private var rememberTool = false
     @AppStorage("snapHighlight") private var snapHighlight = true
+    @AppStorage("clickRings") private var clickRings = 1
+    @AppStorage("clickOpacity") private var clickOpacity = 1.0
+    @AppStorage("keyPillSize") private var keyPillSize = 20.0
+    @AppStorage("keyPillPosition") private var keyPillPosition = "bottom"
+    @AppStorage("keyPillSeconds") private var keyPillSeconds = 1.6
     @AppStorage("defaultZoom") private var defaultZoom = "fit"
     @AppStorage("scrollSpeed") private var scrollSpeed = "normal"
     @AppStorage("libraryIndexFolder") private var libraryIndexFolder = true
@@ -589,8 +594,15 @@ struct PreferencesView: View {
                     }
                     Row(title: "Ring size") { Slider(value: $clickSize, in: 24...120).frame(width: 180) }
                     Row(title: "Ring duration") { Slider(value: $clickDuration, in: 0.2...1.5).frame(width: 180) }
+                    Row(title: "Number of rings") { Picker("", selection: $clickRings) { ForEach(1...4, id: \.self) { Text("\($0)").tag($0) } }.labelsHidden().frame(width: 80) }
+                    Row(title: "Ring opacity") { Slider(value: $clickOpacity, in: 0.2...1).frame(width: 180) }
                 }
-                ToggleRow("Show keystrokes", "Typed keys and shortcuts appear in a pill. Needs the Accessibility permission.", isOn: $recordKeystrokes)
+                ToggleRow("Show keystrokes", "Typed keys and shortcuts appear in a pill. Needs the Accessibility permission.", isOn: $recordKeystrokes, last: !recordKeystrokes)
+                if recordKeystrokes {
+                    Row(title: "Keystroke text size") { Slider(value: $keyPillSize, in: 12...40).frame(width: 180) }
+                    Row(title: "Keystroke position") { Picker("", selection: $keyPillPosition) { Text("Top").tag("top"); Text("Center").tag("center"); Text("Bottom").tag("bottom") }.labelsHidden().frame(width: 120) }
+                    Row(title: "Keystroke display time", last: false) { Slider(value: $keyPillSeconds, in: 0.5...5).frame(width: 180) }
+                }
                 ToggleRow("Record system audio (MP4 only)", isOn: $recordAudio)
                 ToggleRow("Record the microphone (macOS 15 or later)", "The voice is a separate audio track; players that show a track picker let you choose it.", isOn: $recordMicrophone)
                 ToggleRow("Review and trim before saving", "Opens the recording in a player where you can cut the start and the end.", isOn: $recordReview)

@@ -438,6 +438,15 @@ enum SelfTest {
         check(ScrollCapture.settleDelay(for: "fast") < ScrollCapture.settleDelay(for: "normal") && ScrollCapture.settleDelay(for: "normal") < ScrollCapture.settleDelay(for: "slow")
               && ScrollCapture.settleDelay(for: "slow") < ScrollCapture.settleDelay(for: "verySlow") && ScrollCapture.settleDelay(for: "?") == 500_000_000, "scroll speed delays are ordered")
 
+        // Keystroke pill and ring settings.
+        let areaRect = CGRect(x: 100, y: 200, width: 800, height: 600), pillSize = CGSize(width: 100, height: 44)
+        check(KeyPillStyle(fontSize: 20, position: "bottom", seconds: 1).frame(size: pillSize, in: areaRect) == CGRect(x: 450, y: 224, width: 100, height: 44)
+              && KeyPillStyle(fontSize: 20, position: "top", seconds: 1).frame(size: pillSize, in: areaRect).minY == 732
+              && KeyPillStyle(fontSize: 20, position: "center", seconds: 1).frame(size: pillSize, in: areaRect).midY == 500, "keystroke pill positions")
+        UserDefaults.standard.set(99, forKey: "clickRings"); UserDefaults.standard.set(0.0, forKey: "clickOpacity"); UserDefaults.standard.set(1.0, forKey: "keyPillSize"); UserDefaults.standard.set("nowhere", forKey: "keyPillPosition")
+        check(ClickStyle.current.rings == 4 && ClickStyle.current.opacity == 0.2 && KeyPillStyle.current.fontSize == 12 && KeyPillStyle.current.position == "bottom", "ring and keystroke preferences are clamped")
+        ["clickRings", "clickOpacity", "keyPillSize", "keyPillPosition"].forEach { UserDefaults.standard.removeObject(forKey: $0) }
+
         // Export formats.
         let enc = Exporter.data(for: strip, as: .pdf, scale: 2)
         check(enc.map { $0.starts(with: Data("%PDF".utf8)) } == true, "PDF export")
