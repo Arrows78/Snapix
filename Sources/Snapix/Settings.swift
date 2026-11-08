@@ -13,6 +13,7 @@ enum Pref {
         "previewCorner": "bottomRight",
         "previewSize": "medium",
         "snapHighlight": true,
+        "configAutoApply": false,
         "loupeZoom": "medium",
         "closeAfterDrag": false,
         "quickAccessHideOpened": false,
@@ -140,7 +141,7 @@ enum Pref {
     // MARK: Backup
 
     /// Keys that belong in a settings backup. The upload credential is left out so a shared backup never leaks it.
-    private static func isBackedUp(_ key: String) -> Bool {
+    static func isBackedUp(_ key: String) -> Bool {
         guard key != "uploadAuthHeader", key != "ocrAPIKey", key != "s3AccessKey" else { return false }
         return defaults[key] != nil || key.hasPrefix("hotkey.") || ["backdropConfig", "ocrLanguage"].contains(key)
     }

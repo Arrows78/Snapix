@@ -11,6 +11,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         Pref.register()
+        if UserDefaults.standard.bool(forKey: "configAutoApply") { Pref.applyConfigFile() }
         NSApp.setActivationPolicy(Self.restingPolicy)
         buildMainMenu()
         buildStatusItem()

@@ -474,6 +474,29 @@ enum SelfTest {
         check(HomeWindow.clipboardAction(setting: "ask", hasImage: true) == "ask" && HomeWindow.clipboardAction(setting: "load", hasImage: true) == "load"
               && HomeWindow.clipboardAction(setting: "load", hasImage: false) == "none" && HomeWindow.clipboardAction(setting: "never", hasImage: true) == "none" && HomeWindow.clipboardAction(setting: "x", hasImage: true) == "none", "clipboard image offer rules")
 
+        // config.toml round trip.
+        let tomlStore = UserDefaults(suiteName: "snapix.selftest8")!
+        tomlStore.removePersistentDomain(forName: "snapix.selftest8")
+        tomlStore.set("png", forKey: "format"); tomlStore.set(true, forKey: "captureSound"); tomlStore.set(48, forKey: "clickSize"); tomlStore.set(0.55, forKey: "clickDuration")
+        tomlStore.set(Data([1, 2, 250]), forKey: "hotkey.area"); tomlStore.set("secret", forKey: "uploadAuthHeader"); tomlStore.set("a \"quoted\" \\ name", forKey: "filenameTemplate")
+        let tomlText = TomlConfig.encode(Pref.configDictionary(from: tomlStore))
+        check(!tomlText.contains("uploadAuthHeader") && !tomlText.contains("secret") && tomlText.contains("\"captureSound\" = true") && tomlText.contains("\"clickSize\" = 48"), "toml writes values and skips secrets")
+        let tomlBack = TomlConfig.decode(tomlText)
+        check(tomlBack["format"] as? String == "png" && tomlBack["captureSound"] as? Bool == true && tomlBack["clickSize"] as? Int == 48 && tomlBack["clickDuration"] as? Double == 0.55
+              && tomlBack["hotkey.area"] as? Data == Data([1, 2, 250]) && tomlBack["filenameTemplate"] as? String == "a \"quoted\" \\ name", "toml round trip keeps types")
+        let tomlHand = TomlConfig.decode("# comment\n[other]\nformat = \"jpeg\"  # trailing note\n\ncaptureSound = false\n\"clickSize\" = 60\nbogus line\n")
+        check(tomlHand["format"] as? String == "jpeg" && tomlHand["captureSound"] as? Bool == false && tomlHand["clickSize"] as? Int == 60 && tomlHand.count == 3, "toml reads hand-written files")
+        let tomlFile = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("snapix-cfg-\(UUID().uuidString)/config.toml")
+        check(Pref.writeConfigFile(to: tomlFile, from: tomlStore), "config.toml is written")
+        let tomlTarget = UserDefaults(suiteName: "snapix.selftest9")!
+        tomlTarget.removePersistentDomain(forName: "snapix.selftest9")
+        tomlTarget.set("png", forKey: "format")
+        let changedCount = Pref.applyConfigFile(at: tomlFile, into: tomlTarget)
+        check(changedCount != nil && changedCount! >= 3 && tomlTarget.integer(forKey: "clickSize") == 48 && tomlTarget.string(forKey: "uploadAuthHeader") == nil && Pref.applyConfigFile(at: tomlFile, into: tomlTarget) == 0, "config.toml applies only changed settings")
+        check(Pref.applyConfigFile(at: tomlFile.deletingLastPathComponent().appendingPathComponent("missing.toml"), into: tomlTarget) == nil, "missing config.toml is reported")
+        try? FileManager.default.removeItem(at: tomlFile.deletingLastPathComponent())
+        tomlStore.removePersistentDomain(forName: "snapix.selftest8"); tomlTarget.removePersistentDomain(forName: "snapix.selftest9")
+
         // Export formats.
         let enc = Exporter.data(for: strip, as: .pdf, scale: 2)
         check(enc.map { $0.starts(with: Data("%PDF".utf8)) } == true, "PDF export")

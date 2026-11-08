@@ -288,6 +288,7 @@ struct PreferencesView: View {
     @AppStorage("defaultTool") private var defaultTool = "arrow"
     @AppStorage("rememberTool") private var rememberTool = false
     @AppStorage("snapHighlight") private var snapHighlight = true
+    @AppStorage("configAutoApply") private var configAutoApply = false
     @AppStorage("loupeZoom") private var loupeZoom = "medium"
     @AppStorage("closeAfterDrag") private var closeAfterDrag = false
     @AppStorage("quickAccessHideOpened") private var quickAccessHideOpened = false
@@ -873,6 +874,21 @@ struct PreferencesView: View {
                     Button("Export…", action: exportSettings)
                 }
                 Row(title: "Import Settings…", last: true) { Button("Import…", action: importSettings) }
+            }
+            Card(title: "config.toml") {
+                Row(title: "Settings file", subtitle: LocalizedStringKey(TomlConfig.defaultURL.path.replacingOccurrences(of: NSHomeDirectory(), with: "~"))) {
+                    HStack {
+                        Button("Write") { Toast.show(Pref.writeConfigFile() ? L("config.toml written") : L("Could not write config.toml"), symbol: "checkmark.circle.fill") }
+                        Button("Open") { Pref.writeConfigFile(); NSWorkspace.shared.open(TomlConfig.defaultURL) }
+                    }
+                }
+                Row(title: "Apply config.toml", subtitle: "Reads the file back. Restart Snapix or reopen Preferences to see every change.") {
+                    Button("Apply") {
+                        if let n = Pref.applyConfigFile() { (NSApp.delegate as? AppDelegate)?.reloadHotkeys(); Toast.show(LF("%d setting(s) changed", n), symbol: "checkmark.circle.fill"); PreferencesWindow.close() }
+                        else { Toast.show(L("No config.toml found, or nothing usable in it"), symbol: "exclamationmark.triangle.fill") }
+                    }
+                }
+                ToggleRow("Apply config.toml at launch", "Handy to keep several Macs in step with a synced dotfiles folder.", isOn: $configAutoApply, last: true)
             }
             Card(title: "Reset") {
                 Row(title: "Restore default settings", subtitle: "Preferences, shortcuts and the backdrop style go back to their defaults. Your screenshots are kept.", last: true) {

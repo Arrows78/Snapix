@@ -698,3 +698,15 @@
 "The card comes back when you close the editor." = "La carte revient quand vous fermez l'éditeur.";
 "Open the image in your clipboard?" = "Ouvrir l'image de votre presse-papiers ?";
 "Snapix found a picture in the clipboard. Do you want to annotate it?" = "Snapix a trouvé une image dans le presse-papiers. Voulez-vous l'annoter ?";
+"config.toml" = "config.toml";
+"Settings file" = "Fichier de réglages";
+"Write" = "Écrire";
+"Apply config.toml" = "Appliquer config.toml";
+"Reads the file back. Restart Snapix or reopen Preferences to see every change." = "Relit le fichier. Relancez Snapix ou rouvrez les Préférences pour voir tous les changements.";
+"Apply" = "Appliquer";
+"Apply config.toml at launch" = "Appliquer config.toml au lancement";
+"Handy to keep several Macs in step with a synced dotfiles folder." = "Pratique pour garder plusieurs Mac alignés avec un dossier de configuration synchronisé.";
+"config.toml written" = "config.toml écrit";
+"Could not write config.toml" = "Impossible d'écrire config.toml";
+"%d setting(s) changed" = "%d réglage(s) modifié(s)";
+"No config.toml found, or nothing usable in it" = "Aucun config.toml trouvé, ou rien d'utilisable dedans";

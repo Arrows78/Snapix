@@ -87,6 +87,7 @@ Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 - **Overlay and ring tuning**: how dark the area outside a selection is, the pixel magnifier (on/off, size) and the click ring colour, size and duration.
 - **Diagnostics and updates**: confirmations as an on-screen bubble, a system notification or both; one small local log file per day (kept 3, 7 or 30 days) and a *Report a problem* button that opens a prefilled GitHub issue; stable or beta update channel with an optional once-a-day check at launch.
 - **Behaviours**: magnifier zoom (low, medium, high), close the editor after dragging the image out, hide a Quick Access card while its editor is open, and choose what happens to a picture found in the clipboard when the home window opens (ignore, ask or open).
+- **config.toml**: your settings as a readable file at `~/.config/snapix/config.toml` (write, edit, apply, or apply at launch); secrets are never written to it.
 - **Shortcuts cheat sheet** and **settings backup**: list every shortcut in one floating sheet; export or import preferences (never the upload credential) from **Preferences › Backup**.
 - **Languages**: English and French, following macOS.
 
@@ -201,7 +202,7 @@ Snapix/
 │   ├── Model, StylePreset, BackdropPreset, CropGeometry, Watermark, Renderer, Exporter, ImageDrag, ImageTransform # Annotations, drawing, output
 │   ├── OCR, Redaction, Cutout, ColorTools      # Vision, sensitive data, background removal, colour
 │   ├── History, Library, Combine, PinWindow, HomeWindow # Library, stitching images, pins, home
-│   ├── S3, RecentStrip, QuickActions, ColorPanel, RemoteOCR,
+│   ├── S3, TomlConfig, DiagnosticLog, ProblemReport, RecentStrip, QuickActions, ColorPanel, RemoteOCR,
 │   ├── Toast, Feedback, ShortcutSheet, Onboarding, UpdateCheck          # Feedback, shutter sound, cheat sheet
 │   ├── Settings, Preferences, HotKey, L10n     # Preferences, shortcuts, localisation
 │   └── SelfTest.swift                          # Behind --selftest
