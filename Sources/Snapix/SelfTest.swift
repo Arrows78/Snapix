@@ -432,6 +432,12 @@ enum SelfTest {
         check(UpdateCheck.pickAsset(from: release([("Snapix.zip", "https://objects.githubusercontent.com/a/Snapix.zip")]))?.name == "Snapix.zip", "update falls back to the zip")
         check(UpdateCheck.pickAsset(from: release([("Snapix.dmg", "http://github.com/Snapix.dmg"), ("Snapix.zip", "https://evil.example.com/Snapix.zip")])) == nil && UpdateCheck.pickAsset(from: [:]) == nil, "update refuses non-GitHub or non-https downloads")
 
+        // Default zoom and scroll speed.
+        check(EditorWindowController.initialMagnification(setting: "fit", fit: 0.4, scale: 2) == 0.4 && EditorWindowController.initialMagnification(setting: "actual", fit: 0.4, scale: 2) == 0.5
+              && EditorWindowController.initialMagnification(setting: "200", fit: 0.4, scale: 2) == 1 && EditorWindowController.initialMagnification(setting: "junk", fit: 0.4, scale: 2) == 0.4, "default zoom settings")
+        check(ScrollCapture.settleDelay(for: "fast") < ScrollCapture.settleDelay(for: "normal") && ScrollCapture.settleDelay(for: "normal") < ScrollCapture.settleDelay(for: "slow")
+              && ScrollCapture.settleDelay(for: "slow") < ScrollCapture.settleDelay(for: "verySlow") && ScrollCapture.settleDelay(for: "?") == 500_000_000, "scroll speed delays are ordered")
+
         // Export formats.
         let enc = Exporter.data(for: strip, as: .pdf, scale: 2)
         check(enc.map { $0.starts(with: Data("%PDF".utf8)) } == true, "PDF export")

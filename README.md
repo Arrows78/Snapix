@@ -35,7 +35,7 @@ Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 - **Window background**: a captured window can sit on the desktop picture or a plain colour instead of transparent corners.
 - **Interface element**: hover a button, toolbar or panel and click to capture exactly its bounds (↑ / ↓ move to the parent or child element; needs the Accessibility permission).
 - **Fullscreen**, **any window** (hover to pick), **active window**, **delayed (3–15 s)**, **repeat last area**.
-- **Scrolling capture**: automatic down or up (synthetic scroll and frame stitching), or manual (scroll either way, press Done), with a live preview of the stitched result and an adjustable maximum height.
+- **Scrolling capture**: automatic down or up (synthetic scroll and frame stitching), or manual (scroll either way, press Done), with a live preview of the stitched result, an adjustable speed and maximum height.
 - **Live or frozen selection**: the screen is frozen while you select by default; turn that off to keep videos running under the overlay.
 - **Adjustable selection** (optional): handles, move by dragging or holding Space, arrow-key nudge, Return or double-click to capture.
 - **Screen recording**: select an area, a window or the whole screen and record it to **MP4** (system audio and microphone optional, cursor on or off, frame rate, quality and maximum resolution) or an animated **GIF**. A red frame and a small timer pill show what is recorded; pause and resume from the pill, press the shortcut again or click Stop. A draggable camera bubble (circle or square, size, corner, mirror) can be added, clicks can be highlighted with a ring and typed keys shown in a pill (both end up in the video). An optional countdown precedes the recording and a review window lets you trim it, change its speed (0.5× to 4×), mute it or save it as a GIF instead. The file lands in your screenshots folder and on the clipboard.
@@ -45,6 +45,7 @@ Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 ### ✏️ Editor
 
 - **Remember each tool's style**: colour, thickness and options come back the next time you pick a tool.
+- **Default zoom**: fit to the window, actual size or a fixed percentage when the editor opens.
 - **Default tool**: pick the tool the editor opens with, or let it remember the last one.
 - **Tools**, one key each: select `V`, arrow `A` (3 styles, curvable), rectangle `R` (outline, filled, dashed or dotted), oval `O`, line `L` (solid, dashed or dotted), freehand `P`, pencil `E`, text `T` (optional background), highlighter `H`, blur / erase `B` (pixelate, gaussian, hexagonal, erase), spotlight `S`, counter `C`, ruler `M`, magnifier `G`, image overlay `I`, crop `X`.
 - **Editing**: select, move and resize shapes, Delete, arrow-key nudge, Shift to constrain, unlimited undo / redo, zoom and pinch, colour under the cursor.

@@ -198,6 +198,13 @@ enum ScrollCapture {
         e?.post(tap: .cghidEventTap)
     }
 
+    /// Time to let the page settle after each automatic scroll step: slower means more reliable on heavy pages.
+    nonisolated static func settleDelay(for speed: String) -> UInt64 {
+        switch speed { case "fast": return 300_000_000; case "slow": return 900_000_000; case "verySlow": return 1_500_000_000; default: return 500_000_000 }
+    }
+
+    private static func settleDelay() -> UInt64 { settleDelay(for: Pref.string("scrollSpeed")) }
+
     static func run(auto: Bool, up: Bool = false) async throws -> Shot? {
         if auto && !ensureAccessibility() {
             Toast.show(L("Allow Snapix in Privacy & Security › Accessibility to scroll automatically, then try again"), duration: 4, symbol: "exclamationmark.triangle.fill")
@@ -222,7 +229,7 @@ enum ScrollCapture {
         for _ in 0..<80 {
             if hud.stopped { break }
             if auto { postScroll(atCG: centerCG, pixels: up ? -step : step) }
-            try? await Task.sleep(nanoseconds: auto ? 500_000_000 : 300_000_000)
+            try? await Task.sleep(nanoseconds: auto ? settleDelay() : 300_000_000)
             guard let frame = try? await Capture.captureRegion(rect, on: screen, excludingSelf: true) else { break }
             var outcome = stitcher.add(frame, up: up)
             if !auto, case .noMatch = outcome { outcome = stitcher.add(frame, up: true) } // manual: user may scroll either way

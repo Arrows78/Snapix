@@ -288,6 +288,8 @@ struct PreferencesView: View {
     @AppStorage("defaultTool") private var defaultTool = "arrow"
     @AppStorage("rememberTool") private var rememberTool = false
     @AppStorage("snapHighlight") private var snapHighlight = true
+    @AppStorage("defaultZoom") private var defaultZoom = "fit"
+    @AppStorage("scrollSpeed") private var scrollSpeed = "normal"
     @AppStorage("libraryIndexFolder") private var libraryIndexFolder = true
     @AppStorage("windowBackground") private var windowBackground = "transparent"
     @AppStorage("windowBackgroundColor") private var windowBackgroundColor = 0x1B1B1E
@@ -501,6 +503,10 @@ struct PreferencesView: View {
                 ToggleRow("Show the color panel", "A card lists the color in every format and keeps the recent ones.", isOn: $colorPanel, last: true)
             }
             Card(title: "Scrolling capture") {
+                Row(title: "Scrolling speed", subtitle: "Slower speeds wait longer after each step; use them for pages that load as you scroll.") {
+                    Picker("", selection: $scrollSpeed) { Text("Fast").tag("fast"); Text("Normal").tag("normal"); Text("Slow").tag("slow"); Text("Very slow").tag("verySlow") }
+                        .labelsHidden().frame(width: 140)
+                }
                 Row(title: "Maximum height", subtitle: "Taller pages stop at this height, in pixels.", last: true) {
                     Picker("", selection: $scrollMaxHeight) { Text("10 000").tag(10000); Text("20 000").tag(20000); Text("40 000").tag(40000); Text("60 000").tag(60000) }
                         .labelsHidden().frame(width: 120)
@@ -613,6 +619,11 @@ struct PreferencesView: View {
             Card(title: "Editing") {
                 Row(title: "Color format") {
                     Picker("", selection: $colorFormat) { ForEach(ColorFormat.allCases, id: \.rawValue) { Text($0.title).tag($0.rawValue) } }.labelsHidden().frame(width: 140)
+                }
+                Row(title: "Default zoom", subtitle: "How large the image is when the editor opens.") {
+                    Picker("", selection: $defaultZoom) {
+                        Text("Fit to window").tag("fit"); Text("Actual size").tag("actual"); Text("50 %").tag("50"); Text("200 %").tag("200"); Text("300 %").tag("300")
+                    }.labelsHidden().frame(width: 160)
                 }
                 Row(title: "Default tool") {
                     Picker("", selection: $defaultTool) { ForEach(Tool.allCases.filter { $0 != .overlay && $0 != .crop }, id: \.rawValue) { Text($0.title).tag($0.rawValue) } }

@@ -56,7 +56,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         NSApp.setActivationPolicy(.regular)
         c.showWindow(nil)
         NSApp.activate(ignoringOtherApps: true)
-        c.fitToWindow()
+        c.applyDefaultZoom()
     }
 
     static func openFromClipboard() {
@@ -401,6 +401,31 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
     @objc private func deletePreset(_ sender: NSMenuItem) { StylePreset.delete(named: sender.title) }
 
     // MARK: Zoom
+
+    /// Opens at the zoom chosen in Preferences: fit to the window, actual size, or a fixed percentage.
+    func applyDefaultZoom() {
+        let fit = Self.initialMagnification(setting: Pref.string("defaultZoom"), fit: fitMagnification(), scale: doc.scale)
+        scroll.magnification = max(scroll.minMagnification, min(scroll.maxMagnification, fit))
+        zoomChanged()
+    }
+
+    /// "fit", "actual" (one image pixel per point of screen), or a percentage of the pixel size such as "200".
+    nonisolated static func initialMagnification(setting: String, fit: CGFloat, scale: CGFloat) -> CGFloat {
+        switch setting {
+        case "", "fit": return fit
+        case "actual": return 1 / max(1, scale)
+        default:
+            guard let pct = Double(setting), pct > 0 else { return fit }
+            return CGFloat(pct / 100) / max(1, scale)
+        }
+    }
+
+    private func fitMagnification() -> CGFloat {
+        let natural = Renderer.canvasSize(doc.state)
+        let avail = scroll.contentSize
+        guard natural.width > 0, natural.height > 0, avail.width > 0 else { return 1 / doc.scale }
+        return min(1 / doc.scale, (avail.width - 16) / natural.width, (avail.height - 16) / natural.height)
+    }
 
     private func fitToWindow() {
         let natural = Renderer.canvasSize(doc.state)
