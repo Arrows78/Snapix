@@ -30,13 +30,13 @@ private struct ColorPanelView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 10) {
                 RoundedRectangle(cornerRadius: 8).fill(Color(nsColor: color)).frame(width: 44, height: 44)
-                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.white.opacity(0.25)))
+                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.primary.opacity(0.25)))
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(ColorFormat.hex.string(for: color)).font(.system(size: 16, weight: .semibold, design: .monospaced)).foregroundStyle(.white)
-                    Text("Click a value to copy it").font(.system(size: 11)).foregroundStyle(.white.opacity(0.5))
+                    Text(ColorFormat.hex.string(for: color)).font(.system(size: 16, weight: .semibold, design: .monospaced)).foregroundStyle(.primary)
+                    Text("Click a value to copy it").font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.5))
                 }
                 Spacer()
-                Button(action: onClose) { Image(systemName: "xmark").font(.system(size: 11, weight: .semibold)) }.buttonStyle(.plain).foregroundStyle(.white.opacity(0.6))
+                Button(action: onClose) { Image(systemName: "xmark").font(.system(size: 11, weight: .semibold)) }.buttonStyle(.plain).foregroundStyle(Color.primary.opacity(0.6))
             }
             VStack(spacing: 0) {
                 ForEach(ColorFormat.allCases, id: \.rawValue) { f in
@@ -46,8 +46,8 @@ private struct ColorPanelView: View {
                         copied = f
                     } label: {
                         HStack {
-                            Text(f.label).font(.system(size: 11)).foregroundStyle(.white.opacity(0.55)).frame(width: 64, alignment: .leading)
-                            Text(f.string(for: color)).font(.system(size: 11, design: .monospaced)).foregroundStyle(.white.opacity(0.92)).lineLimit(1)
+                            Text(f.label).font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.55)).frame(width: 64, alignment: .leading)
+                            Text(f.string(for: color)).font(.system(size: 11, design: .monospaced)).foregroundStyle(Color.primary.opacity(0.92)).lineLimit(1)
                             Spacer()
                             if copied == f { Image(systemName: "checkmark").font(.system(size: 10, weight: .bold)).foregroundStyle(.green) }
                         }
@@ -56,14 +56,14 @@ private struct ColorPanelView: View {
                     .buttonStyle(.plain)
                 }
             }
-            .background(RoundedRectangle(cornerRadius: 8).fill(Color.white.opacity(0.06)))
+            .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.06)))
             let recent = RecentColors.all()
             if recent.count > 1 {
                 HStack(spacing: 6) {
-                    Text("Recent").font(.system(size: 11)).foregroundStyle(.white.opacity(0.5))
+                    Text("Recent").font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.5))
                     ForEach(recent, id: \.self) { h in
                         Button { hex = h; copied = nil } label: {
-                            Circle().fill(Color(nsColor: NSColor(hex: h))).frame(width: 18, height: 18).overlay(Circle().stroke(Color.white.opacity(h == hex ? 0.9 : 0.25), lineWidth: 1))
+                            Circle().fill(Color(nsColor: NSColor(hex: h))).frame(width: 18, height: 18).overlay(Circle().stroke(Color.primary.opacity(h == hex ? 0.9 : 0.25), lineWidth: 1))
                         }.buttonStyle(.plain)
                     }
                 }
@@ -71,8 +71,7 @@ private struct ColorPanelView: View {
         }
         .padding(14)
         .frame(width: 320)
-        .background(Color(nsColor: Theme.window))
-        .preferredColorScheme(.dark)
+        .background(Color(nsColor: Theme.adaptiveWindow))
     }
 }
 

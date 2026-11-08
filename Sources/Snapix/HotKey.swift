@@ -6,14 +6,18 @@ struct KeyCombo: Codable, Equatable {
     var modifiers: UInt32 // Carbon modifier mask
     var label: String
 
-    var display: String {
-        var s = ""
-        if modifiers & UInt32(controlKey) != 0 { s += "⌃" }
-        if modifiers & UInt32(optionKey) != 0 { s += "⌥" }
-        if modifiers & UInt32(shiftKey) != 0 { s += "⇧" }
-        if modifiers & UInt32(cmdKey) != 0 { s += "⌘" }
-        return s + label
+    /// The keys in reading order: Control, Option, Command, Shift, then the key itself.
+    var keys: [String] {
+        var k: [String] = []
+        if modifiers & UInt32(controlKey) != 0 { k.append("⌃") }
+        if modifiers & UInt32(optionKey) != 0 { k.append("⌥") }
+        if modifiers & UInt32(cmdKey) != 0 { k.append("⌘") }
+        if modifiers & UInt32(shiftKey) != 0 { k.append("⇧") }
+        return k + [label]
     }
+
+    /// The same keys as text, separated by thin spaces so they stay readable at small sizes.
+    var display: String { keys.joined(separator: "\u{2009}") }
 
     static func carbonModifiers(_ f: NSEvent.ModifierFlags) -> UInt32 {
         var m: UInt32 = 0

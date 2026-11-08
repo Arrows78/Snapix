@@ -88,6 +88,7 @@ Menu-bar icon and global hotkeys, rebindable in **Preferences › Shortcuts**.
 - **Diagnostics and updates**: confirmations as an on-screen bubble, a system notification or both; one small local log file per day (kept 3, 7 or 30 days) and a *Report a problem* button that opens a prefilled GitHub issue; stable or beta update channel with an optional once-a-day check at launch.
 - **Behaviours**: magnifier zoom (low, medium, high), close the editor after dragging the image out, hide a Quick Access card while its editor is open, and choose what happens to a picture found in the clipboard when the home window opens (ignore, ask or open).
 - **config.toml**: your settings as a readable file at `~/.config/snapix/config.toml` (write, edit, apply, or apply at launch); secrets are never written to it.
+- **Appearance**: follow the system, or force a light or dark theme for the home window, Preferences and panels (the editor stays dark, like most image tools). Shortcuts read ⌘ before ⇧ and show each key on its own cap.
 - **Shortcuts cheat sheet** and **settings backup**: list every shortcut in one floating sheet; export or import preferences (never the upload credential) from **Preferences › Backup**.
 - **Languages**: English and French, following macOS.
 

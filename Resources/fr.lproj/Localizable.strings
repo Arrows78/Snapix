@@ -710,3 +710,9 @@
 "Could not write config.toml" = "Impossible d'écrire config.toml";
 "%d setting(s) changed" = "%d réglage(s) modifié(s)";
 "No config.toml found, or nothing usable in it" = "Aucun config.toml trouvé, ou rien d'utilisable dedans";
+"Appearance" = "Apparence";
+"Theme" = "Thème";
+"The editor window stays dark, like most image tools." = "La fenêtre de l'éditeur reste sombre, comme la plupart des outils d'image.";
+"System" = "Système";
+"Light" = "Clair";
+"Dark" = "Sombre";

@@ -54,22 +54,30 @@ private struct CaptureCard: View {
                     .frame(width: 36, height: 36)
                     .background(RoundedRectangle(cornerRadius: 9).fill(action.tint.gradient))
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(action.title).font(.system(size: 13, weight: .semibold)).foregroundStyle(.white.opacity(0.92))
+                    Text(action.title).font(.system(size: 13, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.92))
                         .lineLimit(2).minimumScaleFactor(0.85)
-                    Text(action.combo?.display ?? L("No shortcut"))
-                        .font(.system(size: 10.5, weight: .medium, design: .monospaced)).foregroundStyle(.white.opacity(0.55))
-                        .padding(.horizontal, 5).padding(.vertical, 1)
-                        .background(RoundedRectangle(cornerRadius: 4).fill(Color.white.opacity(0.07)))
+                    if let keys = action.combo?.keys {
+                        HStack(spacing: 4) {
+                            ForEach(Array(keys.enumerated()), id: \.offset) { _, k in
+                                Text(k).font(.system(size: 13, weight: .semibold, design: .rounded)).foregroundStyle(Color.primary.opacity(0.85))
+                                    .frame(minWidth: 22, minHeight: 22).padding(.horizontal, k.count > 1 ? 4 : 0)
+                                    .background(RoundedRectangle(cornerRadius: 6).fill(Color.primary.opacity(0.10)))
+                                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.primary.opacity(0.14)))
+                            }
+                        }
+                    } else {
+                        Text(L("No shortcut")).font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.4))
+                    }
                 }
                 Spacer(minLength: 0)
             }
             .padding(10)
-            .frame(maxWidth: .infinity, minHeight: 66, maxHeight: 66, alignment: .leading)
-            .background(RoundedRectangle(cornerRadius: 12).fill(Color.white.opacity(hover ? 0.10 : 0.05)))
+            .frame(maxWidth: .infinity, minHeight: 74, maxHeight: 74, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 12).fill(Color.primary.opacity(hover ? 0.10 : 0.05)))
             .scaleEffect(hover ? 1.015 : 1)
             .shadow(color: action.tint.opacity(hover ? 0.28 : 0), radius: 10, y: 3)
             .animation(.easeOut(duration: 0.14), value: hover)
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.white.opacity(hover ? 0.18 : 0.08)))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(hover ? 0.18 : 0.08)))
         }
         .buttonStyle(.plain)
         .focusEffectDisabled()
@@ -87,7 +95,7 @@ private struct HomeView: View {
 
     private func section(_ title: LocalizedStringKey, _ actions: [Action]) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title).font(.system(size: 11, weight: .semibold)).foregroundStyle(.white.opacity(0.45)).textCase(.uppercase)
+            Text(title).font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.45)).textCase(.uppercase)
             LazyVGrid(columns: columns, spacing: 10) {
                 ForEach(actions, id: \.self) { a in CaptureCard(action: a) { onAction(a) } }
             }
@@ -99,12 +107,12 @@ private struct HomeView: View {
             HStack(spacing: 12) {
                 Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 44, height: 44)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Snapix").font(.system(size: 22, weight: .bold)).foregroundStyle(.white)
-                    Text("Choose a capture type").font(.system(size: 12)).foregroundStyle(.white.opacity(0.5))
+                    Text("Snapix").font(.system(size: 22, weight: .bold)).foregroundStyle(.primary)
+                    Text("Choose a capture type").font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.5))
                 }
                 Spacer()
                 Button(action: onPreferences) { Image(systemName: "gearshape").font(.system(size: 14)) }
-                    .buttonStyle(.plain).focusEffectDisabled().foregroundStyle(.white.opacity(0.6)).help(L("Preferences…"))
+                    .buttonStyle(.plain).focusEffectDisabled().foregroundStyle(Color.primary.opacity(0.6)).help(L("Preferences…"))
             }
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 18) {
@@ -122,26 +130,25 @@ private struct HomeView: View {
                 pill("keyboard", L("Show Shortcuts")) { onAction(.shortcuts) }
                 Spacer()
                 Toggle("Show this window at launch", isOn: Binding(get: { !hideHome }, set: { hideHome = !$0 }))
-                    .toggleStyle(.checkbox).font(.system(size: 11)).foregroundStyle(.white.opacity(0.55))
+                    .toggleStyle(.checkbox).font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.55))
             }
         }
         .padding(.horizontal, 24)
         .padding(.top, 38)
         .padding(.bottom, 16)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(Color(nsColor: Theme.window))
-        .preferredColorScheme(.dark)
+        .background(Color(nsColor: Theme.adaptiveWindow))
     }
 
     private func pill(_ symbol: String, _ title: String, _ run: @escaping () -> Void) -> some View {
         Button(action: run) {
             Label(title, systemImage: symbol).font(.system(size: 12, weight: .medium)).lineLimit(1).fixedSize()
                 .padding(.horizontal, 10).padding(.vertical, 6)
-                .background(RoundedRectangle(cornerRadius: 8).fill(Color.white.opacity(0.08)))
+                .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.08)))
         }
         .buttonStyle(.plain)
         .focusEffectDisabled()
-        .foregroundStyle(.white.opacity(0.85))
+        .foregroundStyle(Color.primary.opacity(0.85))
     }
 }
 
@@ -191,8 +198,7 @@ final class HomeWindow: NSObject, NSWindowDelegate {
             w.styleMask = [.titled, .closable, .miniaturizable, .fullSizeContentView]
             w.titlebarAppearsTransparent = true
             w.titleVisibility = .hidden
-            w.appearance = NSAppearance(named: .darkAqua)
-            w.backgroundColor = Theme.window
+            w.backgroundColor = Theme.adaptiveWindow
             w.isMovableByWindowBackground = true
             w.setContentSize(NSSize(width: 780, height: 640))
             w.contentMinSize = NSSize(width: 640, height: 480)

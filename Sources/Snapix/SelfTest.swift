@@ -1,4 +1,5 @@
 import AppKit
+import Carbon.HIToolbox
 import CoreMedia
 
 /// `Snapix --selftest <outdir>` exercises the non-interactive pieces (render, stitching, contrast) and exits.
@@ -496,6 +497,11 @@ enum SelfTest {
         check(Pref.applyConfigFile(at: tomlFile.deletingLastPathComponent().appendingPathComponent("missing.toml"), into: tomlTarget) == nil, "missing config.toml is reported")
         try? FileManager.default.removeItem(at: tomlFile.deletingLastPathComponent())
         tomlStore.removePersistentDomain(forName: "snapix.selftest8"); tomlTarget.removePersistentDomain(forName: "snapix.selftest9")
+
+        // Shortcut display order: Command before Shift, keys spread out.
+        let shortcut = KeyCombo(keyCode: 0, modifiers: UInt32(cmdKey | shiftKey), label: "2")
+        check(shortcut.keys == ["⌘", "⇧", "2"] && shortcut.display == "⌘\u{2009}⇧\u{2009}2", "shortcut shows Command before Shift")
+        check(KeyCombo(keyCode: 0, modifiers: UInt32(controlKey | optionKey | cmdKey | shiftKey), label: "K").keys == ["⌃", "⌥", "⌘", "⇧", "K"], "shortcut modifier order")
 
         // Export formats.
         let enc = Exporter.data(for: strip, as: .pdf, scale: 2)

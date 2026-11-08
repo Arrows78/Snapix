@@ -3,6 +3,10 @@ import AppKit
 /// Colours shared by the editor chrome (always dark, like most image tools).
 enum Theme {
     static let window = NSColor(hex: 0x1B1B1E)
+    /// Window background that follows the appearance (dark like the editor, or light) for the app's SwiftUI windows.
+    static let adaptiveWindow = NSColor(name: nil) { appearance in
+        appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(hex: 0x1B1B1E) : NSColor(hex: 0xF5F5F7)
+    }
     static let bar = NSColor(hex: 0x252528)
     static let canvas = NSColor(hex: 0x141416)
     static let pill = NSColor(hex: 0x323236)

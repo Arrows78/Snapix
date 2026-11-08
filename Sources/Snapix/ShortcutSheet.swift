@@ -6,17 +6,17 @@ private struct ShortcutSheetView: View {
 
     private func row(_ title: String, _ keys: String) -> some View {
         HStack {
-            Text(title).font(.system(size: 12)).foregroundStyle(.white.opacity(0.85))
+            Text(title).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.85))
             Spacer(minLength: 12)
-            Text(keys).font(.system(size: 11, weight: .medium, design: .monospaced)).foregroundStyle(.white.opacity(0.9))
+            Text(keys).font(.system(size: 11, weight: .medium, design: .monospaced)).foregroundStyle(Color.primary.opacity(0.9))
                 .padding(.horizontal, 6).padding(.vertical, 2)
-                .background(RoundedRectangle(cornerRadius: 5).fill(Color.white.opacity(0.12)))
+                .background(RoundedRectangle(cornerRadius: 5).fill(Color.primary.opacity(0.12)))
         }
     }
 
     private func column(_ title: String, _ rows: [(String, String)]) -> some View {
         VStack(alignment: .leading, spacing: 7) {
-            Text(title).font(.system(size: 11, weight: .semibold)).foregroundStyle(.white.opacity(0.45)).textCase(.uppercase)
+            Text(title).font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.45)).textCase(.uppercase)
             ForEach(rows.indices, id: \.self) { row(rows[$0].0, rows[$0].1) }
         }
         .frame(width: 270, alignment: .topLeading)
@@ -28,11 +28,10 @@ private struct ShortcutSheetView: View {
                 column(L("Capture"), capture.map { ($0.title, $0.combo?.display ?? "—") })
                 column(L("Editor tools"), Tool.allCases.map { ($0.title, $0.key.uppercased()) } + [(L("Backdrop"), "K")])
             }
-            Text(L("Press Esc or click to close")).font(.system(size: 11)).foregroundStyle(.white.opacity(0.4))
+            Text(L("Press Esc or click to close")).font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.4))
         }
         .padding(24)
-        .background(Color(nsColor: Theme.window))
-        .preferredColorScheme(.dark)
+        .background(Color(nsColor: Theme.adaptiveWindow))
     }
 }
 

@@ -121,11 +121,11 @@ private struct Card<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             if let title {
-                Text(title).font(.system(size: 11, weight: .semibold)).foregroundStyle(.white.opacity(0.45)).textCase(.uppercase).padding(.leading, 4)
+                Text(title).font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.45)).textCase(.uppercase).padding(.leading, 4)
             }
             VStack(spacing: 0) { content }
-                .background(RoundedRectangle(cornerRadius: 10).fill(Color.white.opacity(0.05)))
-                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.white.opacity(0.07)))
+                .background(RoundedRectangle(cornerRadius: 10).fill(Color.primary.opacity(0.05)))
+                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.primary.opacity(0.07)))
         }
     }
 }
@@ -141,16 +141,16 @@ private struct Row<Control: View>: View {
         VStack(spacing: 0) {
             HStack(alignment: .center, spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(title).font(.system(size: 13)).foregroundStyle(.white.opacity(0.92))
+                    Text(title).font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.92))
                     if let subtitle {
-                        Text(subtitle).font(.system(size: 11)).foregroundStyle(.white.opacity(0.45)).fixedSize(horizontal: false, vertical: true)
+                        Text(subtitle).font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.45)).fixedSize(horizontal: false, vertical: true)
                     }
                 }
                 Spacer(minLength: 12)
                 control
             }
             .padding(.horizontal, 12).padding(.vertical, 9)
-            if !last { Divider().overlay(Color.white.opacity(0.06)).padding(.leading, 12) }
+            if !last { Divider().overlay(Color.primary.opacity(0.06)).padding(.leading, 12) }
         }
     }
 }
@@ -180,7 +180,7 @@ private struct Page<Content: View>: View {
                 HStack(spacing: 10) {
                     Image(systemName: pane.symbol).font(.system(size: 14, weight: .medium)).foregroundStyle(.white)
                         .frame(width: 28, height: 28).background(RoundedRectangle(cornerRadius: 7).fill(pane.tint.gradient))
-                    Text(pane.title).font(.system(size: 20, weight: .bold)).foregroundStyle(.white)
+                    Text(pane.title).font(.system(size: 20, weight: .bold)).foregroundStyle(.primary)
                 }
                 content
             }
@@ -196,12 +196,12 @@ private struct SidebarFooter: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Divider().overlay(Color.white.opacity(0.08)).padding(.horizontal, 2).padding(.bottom, 10)
+            Divider().overlay(Color.primary.opacity(0.08)).padding(.horizontal, 2).padding(.bottom, 10)
             HStack(spacing: 9) {
                 Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 30, height: 30)
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(verbatim: "Snapix").font(.system(size: 12, weight: .semibold)).foregroundStyle(.white.opacity(0.9))
-                    Text(verbatim: "\(L("Version")) \(version)").font(.system(size: 11)).foregroundStyle(.white.opacity(0.45))
+                    Text(verbatim: "Snapix").font(.system(size: 12, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.9))
+                    Text(verbatim: "\(L("Version")) \(version)").font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.45))
                 }
                 Spacer(minLength: 0)
             }
@@ -288,6 +288,7 @@ struct PreferencesView: View {
     @AppStorage("defaultTool") private var defaultTool = "arrow"
     @AppStorage("rememberTool") private var rememberTool = false
     @AppStorage("snapHighlight") private var snapHighlight = true
+    @AppStorage("appearance") private var appearance = "system"
     @AppStorage("configAutoApply") private var configAutoApply = false
     @AppStorage("loupeZoom") private var loupeZoom = "medium"
     @AppStorage("closeAfterDrag") private var closeAfterDrag = false
@@ -351,7 +352,7 @@ struct PreferencesView: View {
     var body: some View {
         HStack(spacing: 0) {
             sidebar
-            Divider().overlay(Color.white.opacity(0.08))
+            Divider().overlay(Color.primary.opacity(0.08))
             Group {
                 switch pane {
                 case .general: general
@@ -369,8 +370,7 @@ struct PreferencesView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(width: 780, height: 580)
-        .background(Color(nsColor: Theme.window))
-        .preferredColorScheme(.dark)
+        .background(Color(nsColor: Theme.adaptiveWindow))
     }
 
     // MARK: Sidebar
@@ -382,11 +382,11 @@ struct PreferencesView: View {
                     HStack(spacing: 9) {
                         Image(systemName: p.symbol).font(.system(size: 11, weight: .medium)).foregroundStyle(.white)
                             .frame(width: 22, height: 22).background(RoundedRectangle(cornerRadius: 6).fill(p.tint.gradient))
-                        Text(p.title).font(.system(size: 13)).foregroundStyle(.white.opacity(pane == p ? 1 : 0.8))
+                        Text(p.title).font(.system(size: 13)).foregroundStyle(Color.primary.opacity(pane == p ? 1 : 0.8))
                         Spacer()
                     }
                     .padding(.horizontal, 8).padding(.vertical, 5)
-                    .background(RoundedRectangle(cornerRadius: 7).fill(Color.white.opacity(pane == p ? 0.12 : 0)))
+                    .background(RoundedRectangle(cornerRadius: 7).fill(Color.primary.opacity(pane == p ? 0.12 : 0)))
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -457,7 +457,7 @@ struct PreferencesView: View {
                 }
             }
             Text("Hover a preview and press ⌘C to copy, ⌘S to save, ⌘E or Return to edit, ⌘P to pin, Delete to remove it, Esc to close.")
-                .font(.system(size: 11)).foregroundStyle(.white.opacity(0.45))
+                .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.45))
             Card(title: "When closing the editor with Esc") {
                 ToggleRow("Copy to clipboard", isOn: $escCopy)
                 ToggleRow("Save to folder", isOn: $escSave, last: true)
@@ -469,6 +469,12 @@ struct PreferencesView: View {
                     .onChange(of: showMenuBarIcon) { _, _ in (NSApp.delegate as? AppDelegate)?.applyMenuBarVisibility() }
                 ToggleRow("Show Snapix in the Dock", isOn: $showDockIcon, last: true)
                     .onChange(of: showDockIcon) { _, _ in NSApp.setActivationPolicy(AppDelegate.restingPolicy) }
+            }
+            Card(title: "Appearance") {
+                Row(title: "Theme", subtitle: "The editor window stays dark, like most image tools.", last: true) {
+                    Picker("", selection: $appearance) { Text("System").tag("system"); Text("Light").tag("light"); Text("Dark").tag("dark") }
+                        .labelsHidden().frame(width: 140).onChange(of: appearance) { _, _ in Pref.applyAppearance() }
+                }
             }
             Card(title: "Confirmations") {
                 Row(title: "Confirmation style", subtitle: "How Snapix tells you a copy, a save or a problem.", last: true) {
@@ -660,7 +666,7 @@ struct PreferencesView: View {
                 }
             }
             Text("Press the shortcut again, or click Stop, to end a recording. The file is saved in your screenshots folder and copied to the clipboard.")
-                .font(.system(size: 11)).foregroundStyle(.white.opacity(0.45))
+                .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.45))
         }
     }
 
@@ -742,7 +748,7 @@ struct PreferencesView: View {
                 shortcutsVersion += 1
             }
             Text("Turn off the macOS screenshot shortcuts in System Settings › Keyboard › Keyboard Shortcuts › Screenshots if they clash.")
-                .font(.system(size: 11)).foregroundStyle(.white.opacity(0.45))
+                .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.45))
         }
     }
 
@@ -862,7 +868,7 @@ struct PreferencesView: View {
                     Row(title: "Authorization header (optional)", last: true) { SecureField("", text: $uploadAuth).textFieldStyle(.roundedBorder).frame(width: 260) }
                 }
                 Text("Images are sent as multipart/form-data. The response (plain URL or JSON with a \"url\" key) is copied to the clipboard.")
-                    .font(.system(size: 11)).foregroundStyle(.white.opacity(0.45))
+                    .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.45))
             }
         }
     }
@@ -917,9 +923,9 @@ struct PreferencesView: View {
             HStack(spacing: 16) {
                 Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 64, height: 64)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Snapix").font(.system(size: 22, weight: .bold)).foregroundStyle(.white)
-                    Text(Self.versionString).font(.system(size: 12)).foregroundStyle(.white.opacity(0.5))
-                    Text("Capture, annotate, polish, read text. Everything stays on your Mac.").font(.system(size: 12)).foregroundStyle(.white.opacity(0.6))
+                    Text("Snapix").font(.system(size: 22, weight: .bold)).foregroundStyle(.primary)
+                    Text(Self.versionString).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.5))
+                    Text("Capture, annotate, polish, read text. Everything stays on your Mac.").font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.6))
                 }
             }
             Card {
@@ -1071,8 +1077,7 @@ enum PreferencesWindow {
             w.styleMask = [.titled, .closable, .fullSizeContentView]
             w.titlebarAppearsTransparent = true
             w.titleVisibility = .hidden
-            w.appearance = NSAppearance(named: .darkAqua)
-            w.backgroundColor = Theme.window
+            w.backgroundColor = Theme.adaptiveWindow
             w.isMovableByWindowBackground = true
             w.isReleasedWhenClosed = false
             w.center()

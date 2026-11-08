@@ -59,10 +59,10 @@ private struct ColorStatsView: View {
         } label: {
             HStack(spacing: 10) {
                 RoundedRectangle(cornerRadius: 6).fill(Color(nsColor: NSColor(hex: hex))).frame(width: 30, height: 30)
-                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.white.opacity(0.25)))
+                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.primary.opacity(0.25)))
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(title).font(.system(size: 11)).foregroundStyle(.white.opacity(0.55))
-                    Text(ColorFormat.hex.string(for: NSColor(hex: hex))).font(.system(size: 12, design: .monospaced)).foregroundStyle(.white)
+                    Text(title).font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.55))
+                    Text(ColorFormat.hex.string(for: NSColor(hex: hex))).font(.system(size: 12, design: .monospaced)).foregroundStyle(.primary)
                 }
                 Spacer()
                 if copied == hex { Image(systemName: "checkmark").font(.system(size: 10, weight: .bold)).foregroundStyle(.green) }
@@ -75,31 +75,30 @@ private struct ColorStatsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Color statistics").font(.system(size: 14, weight: .semibold)).foregroundStyle(.white)
+                Text("Color statistics").font(.system(size: 14, weight: .semibold)).foregroundStyle(.primary)
                 Spacer()
-                Button(action: onClose) { Image(systemName: "xmark").font(.system(size: 11, weight: .semibold)) }.buttonStyle(.plain).foregroundStyle(.white.opacity(0.6))
+                Button(action: onClose) { Image(systemName: "xmark").font(.system(size: 11, weight: .semibold)) }.buttonStyle(.plain).foregroundStyle(Color.primary.opacity(0.6))
             }
             swatch(L("Average"), stats.average)
             swatch(L("Darkest"), stats.darkest)
             swatch(L("Lightest"), stats.lightest)
-            Divider().overlay(Color.white.opacity(0.1))
-            Text("Dominant colors").font(.system(size: 11)).foregroundStyle(.white.opacity(0.55))
+            Divider().overlay(Color.primary.opacity(0.1))
+            Text("Dominant colors").font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.55))
             HStack(spacing: 8) {
                 ForEach(stats.palette, id: \.self) { h in
                     Button {
                         NSPasteboard.general.clearContents(); NSPasteboard.general.setString(ColorFormat.current.string(for: NSColor(hex: h)), forType: .string); copied = h
                     } label: {
                         RoundedRectangle(cornerRadius: 6).fill(Color(nsColor: NSColor(hex: h))).frame(width: 32, height: 32)
-                            .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.white.opacity(copied == h ? 0.9 : 0.25)))
+                            .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.primary.opacity(copied == h ? 0.9 : 0.25)))
                     }
                     .buttonStyle(.plain).help(ColorFormat.hex.string(for: NSColor(hex: h)))
                 }
             }
-            Text("Click a color to copy it").font(.system(size: 10)).foregroundStyle(.white.opacity(0.4))
+            Text("Click a color to copy it").font(.system(size: 10)).foregroundStyle(Color.primary.opacity(0.4))
         }
         .padding(14).frame(width: 280)
-        .background(Color(nsColor: Theme.window))
-        .preferredColorScheme(.dark)
+        .background(Color(nsColor: Theme.adaptiveWindow))
     }
 }
 

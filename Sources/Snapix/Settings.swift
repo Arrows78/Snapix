@@ -13,6 +13,7 @@ enum Pref {
         "previewCorner": "bottomRight",
         "previewSize": "medium",
         "snapHighlight": true,
+        "appearance": "system",
         "configAutoApply": false,
         "loupeZoom": "medium",
         "closeAfterDrag": false,
@@ -170,6 +171,16 @@ enum Pref {
 
     static func resetShortcuts(in store: UserDefaults = .standard) {
         for key in store.dictionaryRepresentation().keys where key.hasPrefix("hotkey.") { store.removeObject(forKey: key) }
+    }
+
+    /// "system", "light" or "dark": applied to the whole app; the editor keeps its own dark look.
+    @MainActor
+    static func applyAppearance() {
+        switch Pref.string("appearance") {
+        case "light": NSApp.appearance = NSAppearance(named: .aqua)
+        case "dark": NSApp.appearance = NSAppearance(named: .darkAqua)
+        default: NSApp.appearance = nil
+        }
     }
 
     /// Chooses the app language ("system", "en" or "fr"); it applies after a relaunch.
