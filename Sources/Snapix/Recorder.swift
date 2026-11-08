@@ -148,6 +148,8 @@ final class Recorder {
     static let shared = Recorder()
     /// Receives the elapsed time every half second while recording, and nil when recording ends (drives the menu bar timer).
     static var onTick: ((String?) -> Void)?
+    /// Set only by the developer checks: receives the finished file instead of the normal save flow.
+    static var outputHook: ((URL) -> Void)?
 
     /// "1:05", or "1:02:03" past an hour.
     nonisolated static func clockText(seconds s: Int) -> String {
@@ -181,6 +183,12 @@ final class Recorder {
         case .window: region = try await Capture.selectWindowRegion()
         }
         guard let (rect, screen) = region else { return }
+        try await begin(format: format, rect: rect, screen: screen)
+    }
+
+    /// Starts recording a region that is already chosen (also used by the developer checks).
+    func begin(format: Format, rect: CGRect, screen: NSScreen) async throws {
+        guard !isRecording else { return }
         let countdown = UserDefaults.standard.integer(forKey: "recordCountdown")
         for n in stride(from: countdown, through: 1, by: -1) {
             Toast.show(LF("Recording in %d…", n), duration: 1)
@@ -261,6 +269,8 @@ final class Recorder {
         let ok = await writer.finish()
         Feedback.recordingChime(start: false)
         guard ok else { Toast.show(L("Nothing was recorded"), symbol: "exclamationmark.triangle.fill"); return }
+        // Developer checks take the raw file instead of the save / review flow.
+        if let hook = Recorder.outputHook { hook(url); return }
         if format == .gif {
             Toast.show(L("Creating the GIF…"), duration: 30)
             let gif = await Self.makeGIF(from: url)

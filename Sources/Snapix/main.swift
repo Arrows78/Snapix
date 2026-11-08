@@ -5,6 +5,11 @@ if let i = CommandLine.arguments.firstIndex(of: "--selftest") {
     exit(MainActor.assumeIsolated { SelfTest.run(outDir: out) })
 }
 
+if let i = CommandLine.arguments.firstIndex(of: "--check") {
+    let rest = Array(CommandLine.arguments[(i + 1)...])
+    exit(MainActor.assumeIsolated { DevChecks.run(rest) })
+}
+
 let app = NSApplication.shared
 let delegate = MainActor.assumeIsolated { AppDelegate() }
 app.delegate = delegate

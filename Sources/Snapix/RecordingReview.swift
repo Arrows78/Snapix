@@ -169,7 +169,7 @@ final class RecordingReview: NSObject, NSWindowDelegate {
     }
 
     /// Re-encodes `range` of the video at `speed`, optionally without sound.
-    private static func render(source: URL, range: CMTimeRange, speed: Double, mute: Bool, to out: URL) async -> Bool {
+    static func render(source: URL, range: CMTimeRange, speed: Double, mute: Bool, to out: URL) async -> Bool {
         let asset = AVURLAsset(url: source)
         let comp = AVMutableComposition()
         do {
