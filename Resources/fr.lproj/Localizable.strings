@@ -199,8 +199,8 @@
 "Play a sound when a screenshot is taken" = "Jouer un son lors d'une capture";
 "Delayed screenshot timer" = "Minuteur de la capture différée";
 "Settings backup" = "Sauvegarde des réglages";
-"Export Settings…" = "Exporter les réglages…";
-"Import Settings…" = "Importer les réglages…";
+"Export settings" = "Exporter les réglages";
+"Import settings" = "Importer les réglages";
 "Backup" = "Sauvegarde";
 "Settings exported" = "Réglages exportés";
 "This file is not a Snapix backup" = "Ce fichier n'est pas une sauvegarde Snapix";
@@ -260,6 +260,7 @@
 "Countdown before recording" = "Compte à rebours avant l'enregistrement";
 "Destination" = "Destination";
 "Diagnostics" = "Diagnostic";
+"Copy diagnostics" = "Copier le diagnostic";
 "Editing" = "Édition";
 "Email addresses" = "Adresses e-mail";
 "Endpoint" = "Point d'accès";

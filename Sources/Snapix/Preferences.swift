@@ -64,7 +64,7 @@ private struct HotkeyRecorder: NSViewRepresentable {
 // MARK: - Layout pieces
 
 private enum Pane: String, CaseIterable, Identifiable {
-    case general, capture, recording, editor, shortcuts, output, upload, backup, permissions, about
+    case general, capture, recording, editor, output, upload, backup, shortcuts, permissions, about
     var id: String { rawValue }
 
     var title: LocalizedStringKey {
@@ -359,10 +359,10 @@ struct PreferencesView: View {
                 case .capture: capture
                 case .recording: recording
                 case .editor: editor
-                case .shortcuts: shortcuts
                 case .output: output
                 case .upload: upload
                 case .backup: backup
+                case .shortcuts: shortcuts
                 case .permissions: permissions
                 case .about: about
                 }
@@ -390,7 +390,8 @@ struct PreferencesView: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                if p == .recording || p == .upload { Spacer().frame(height: 8) }
+                .accessibilityAddTraits(pane == p ? .isSelected : [])
+                if p == .recording || p == .backup { Spacer().frame(height: 8) }
             }
             Spacer()
             SidebarFooter()
@@ -876,10 +877,10 @@ struct PreferencesView: View {
     private var backup: some View {
         Page(pane: .backup) {
             Card(title: "Settings backup") {
-                Row(title: "Export Settings…", subtitle: "A backup holds your preferences, shortcuts and backdrop style. The upload authorization header is never exported.") {
+                Row(title: "Export settings", subtitle: "A backup holds your preferences, shortcuts and backdrop style. The upload authorization header is never exported.") {
                     Button("Export…", action: exportSettings)
                 }
-                Row(title: "Import Settings…", last: true) { Button("Import…", action: importSettings) }
+                Row(title: "Import settings", last: true) { Button("Import…", action: importSettings) }
             }
             Card(title: "config.toml") {
                 Row(title: "Settings file", subtitle: LocalizedStringKey(TomlConfig.defaultURL.path.replacingOccurrences(of: NSHomeDirectory(), with: "~"))) {
@@ -890,7 +891,7 @@ struct PreferencesView: View {
                 }
                 Row(title: "Apply config.toml", subtitle: "Reads the file back. Restart Snapix or reopen Preferences to see every change.") {
                     Button("Apply") {
-                        if let n = Pref.applyConfigFile() { (NSApp.delegate as? AppDelegate)?.reloadHotkeys(); Toast.show(LF("%d setting(s) changed", n), symbol: "checkmark.circle.fill"); PreferencesWindow.close() }
+                        if let n = Pref.applyConfigFile() { (NSApp.delegate as? AppDelegate)?.reloadHotkeys(); applyLiveSettings(); Toast.show(LF("%d setting(s) changed", n), symbol: "checkmark.circle.fill"); PreferencesWindow.close() }
                         else { Toast.show(L("No config.toml found, or nothing usable in it"), symbol: "exclamationmark.triangle.fill") }
                     }
                 }
@@ -945,25 +946,27 @@ struct PreferencesView: View {
                         Button("Welcome Tour") { Onboarding.show() }
                     }
                 }
-                Row(title: "Diagnostics", subtitle: "Copies the version, macOS version and permissions, to paste into a bug report. It contains no personal data.", last: false) {
-                    Button("Copy") {
-                        NSPasteboard.general.clearContents()
-                        NSPasteboard.general.setString(Self.diagnostics, forType: .string)
-                        Toast.show(L("Copied to the clipboard"), symbol: "checkmark.circle.fill")
-                ToggleRow("Keep diagnostic logs", "One small log file per day, stored only on this Mac.", isOn: $diagnosticLogs)
-                Row(title: "Keep logs for") {
-                    Picker("", selection: $logDays) { Text("3 days").tag(3); Text("7 days").tag(7); Text("30 days").tag(30) }.labelsHidden().frame(width: 120)
-                }
-                Row(title: "Logs", last: false) {
-                    HStack {
-                        Button("Open Folder") { try? FileManager.default.createDirectory(at: DiagnosticLog.folder, withIntermediateDirectories: true); NSWorkspace.shared.open(DiagnosticLog.folder) }
-                        Button("Clear", role: .destructive) { DiagnosticLog.clear() }
-                    }
-                }
                 Row(title: "Report a problem", subtitle: "Opens a prefilled GitHub issue with the version, macOS and the last log lines. Review it before sending.", last: true) {
                     Button("Report…") { ProblemReport.open() }
                 }
             }
+            Card(title: "Diagnostics") {
+                Row(title: "Copy diagnostics", subtitle: "Copies the version, macOS version and permissions, to paste into a bug report. It contains no personal data.") {
+                    Button("Copy") {
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(Self.diagnostics, forType: .string)
+                        Toast.show(L("Copied to the clipboard"), symbol: "checkmark.circle.fill")
+                    }
+                }
+                ToggleRow("Keep diagnostic logs", "One small log file per day, stored only on this Mac.", isOn: $diagnosticLogs)
+                Row(title: "Keep logs for") {
+                    Picker("", selection: $logDays) { Text("3 days").tag(3); Text("7 days").tag(7); Text("30 days").tag(30) }.labelsHidden().frame(width: 120)
+                }
+                Row(title: "Logs", last: true) {
+                    HStack {
+                        Button("Open Folder") { try? FileManager.default.createDirectory(at: DiagnosticLog.folder, withIntermediateDirectories: true); NSWorkspace.shared.open(DiagnosticLog.folder) }
+                        Button("Clear", role: .destructive) { DiagnosticLog.clear() }
+                    }
                 }
             }
         }
@@ -998,12 +1001,19 @@ struct PreferencesView: View {
         }
     }
 
+    /// Theme, menu bar icon and Dock icon take effect at once after an import or a reset.
+    private func applyLiveSettings() {
+        Pref.applyAppearance()
+        (NSApp.delegate as? AppDelegate)?.applyMenuBarVisibility()
+    }
+
     private func importSettings() {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.propertyList]
         guard panel.runModal() == .OK, let url = panel.url, let data = try? Data(contentsOf: url) else { return }
         guard Pref.restore(data) != nil else { Toast.show(L("This file is not a Snapix backup"), duration: 3, symbol: "exclamationmark.triangle.fill"); return }
         (NSApp.delegate as? AppDelegate)?.reloadHotkeys()
+        applyLiveSettings()
         Toast.show(L("Settings imported — reopen Preferences to see them"), duration: 3, symbol: "checkmark.circle.fill")
         PreferencesWindow.close()
     }
@@ -1018,6 +1028,7 @@ struct PreferencesView: View {
         guard alert.runModal() == .alertFirstButtonReturn else { return }
         Pref.resetAll()
         (NSApp.delegate as? AppDelegate)?.reloadHotkeys()
+        applyLiveSettings()
         PreferencesWindow.close()
         Toast.show(L("Settings restored"), symbol: "checkmark.circle.fill")
     }

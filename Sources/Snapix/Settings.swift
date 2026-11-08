@@ -136,6 +136,12 @@ enum Pref {
     static func integer(_ k: String) -> Int { UserDefaults.standard.integer(forKey: k) }
     static func double(_ k: String) -> Double { UserDefaults.standard.double(forKey: k) }
 
+    /// The screenshots folder; an empty or blank setting falls back to the default one instead of the working directory.
+    static var saveFolderURL: URL {
+        let p = string("saveFolder").trimmingCharacters(in: .whitespaces)
+        return URL(fileURLWithPath: p.isEmpty ? (defaults["saveFolder"] as? String ?? NSHomeDirectory()) : p, isDirectory: true)
+    }
+
     /// Seconds of the countdown before a delayed capture.
     static var delay: Int { max(1, UserDefaults.standard.integer(forKey: "captureDelay")) }
 
