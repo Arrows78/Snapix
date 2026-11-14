@@ -15,6 +15,7 @@ private final class GripView: NSView {
         for i in 0..<2 { NSBezierPath(ovalIn: NSRect(x: CGFloat(i) * (d + gap) + (d + gap) / 2 + 1 + (d + gap) / 2, y: 2, width: d, height: d)).fill() }
     }
 
+    override var mouseDownCanMoveWindow: Bool { false }
     override func resetCursorRects() { addCursorRect(bounds, cursor: .openHand) }
     override func mouseDown(with event: NSEvent) {}
     override func mouseDragged(with event: NSEvent) { onDrag?(event) }
@@ -35,6 +36,7 @@ private final class ThumbView: NSView {
 
     required init?(coder: NSCoder) { fatalError() }
 
+    override var mouseDownCanMoveWindow: Bool { false }
     override func resetCursorRects() { addCursorRect(bounds, cursor: .pointingHand) }
 
     override func draw(_ dirtyRect: NSRect) {
@@ -133,6 +135,8 @@ final class PreviewController: NSObject {
     private var hidden = false
     /// Extra horizontal travel when a swipe dismissed the card, so it leaves in the swipe direction.
     private var swipeShift: CGFloat = 0
+    /// True once the card was dragged by hand: it then stays where it was dropped.
+    private var moved = false
 
     static func show(_ shot: Shot, persistent: Bool = false) {
         let c = PreviewController(shot: shot, persistent: persistent)
@@ -182,6 +186,11 @@ final class PreviewController: NSObject {
         panel.level = .floating
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.isReleasedWhenClosed = false
+        // Grab the card by its background to move it; the buttons, the grip and the thumbnail keep their own mouse handling.
+        panel.isMovableByWindowBackground = true
+        NotificationCenter.default.addObserver(forName: NSWindow.willMoveNotification, object: panel, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.moved = true }
+        }
         panel.contentView = content
 
         let close = IconButton(symbol: "xmark", tip: L("Close"), target: self, action: #selector(closeTapped), size: NSSize(width: 30, height: 28), pointSize: 13)
@@ -315,6 +324,11 @@ final class PreviewController: NSObject {
         var offsets: [ObjectIdentifier: CGFloat] = [:]
         let corner = Corner()
         for c in open.reversed() where !c.hidden {
+            if c.moved {
+                // Dragged by hand: left where it is, and out of the stack.
+                NSAnimationContext.runAnimationGroup { ctx in ctx.duration = 0.28; c.panel.animator().alphaValue = 1 }
+                continue
+            }
             let key = ObjectIdentifier(c.screen)
             let y = offsets[key] ?? 0
             let vf = c.screen.visibleFrame
@@ -353,7 +367,7 @@ final class PreviewController: NSObject {
         let vf = screen.visibleFrame
         var out = panel.frame
         let corner = Corner()
-        if anchor != nil || anchorPoint != nil || Pref.string("previewAnimation") == "fade" { out.origin.y -= 14 }
+        if moved || anchor != nil || anchorPoint != nil || Pref.string("previewAnimation") == "fade" { out.origin.y -= 14 }
         else if corner.centered { out.origin.y = corner.onBottom ? vf.minY - out.height : vf.maxY }
         else { out.origin.x = corner.onRight ? vf.maxX + 10 : vf.minX - out.width - 10 }
         out.origin.x += swipeShift
