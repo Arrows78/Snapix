@@ -96,7 +96,7 @@ private final class PreviewContent: NSVisualEffectView, NSDraggingSource {
         state = .active
         appearance = NSAppearance(named: .darkAqua)
         wantsLayer = true
-        layer?.cornerRadius = 22
+        layer?.cornerRadius = 16
         layer?.masksToBounds = true
         layer?.borderWidth = 1
         layer?.borderColor = NSColor(white: 1, alpha: 0.14).cgColor
@@ -117,7 +117,8 @@ final class PreviewController: NSObject {
     private static var scaleFactor: CGFloat {
         switch Pref.string("previewSize") { case "small": return 0.8; case "large": return 1.25; default: return 1 }
     }
-    private static var width: CGFloat { (232 * scaleFactor).rounded() }
+    /// Never narrower than six action buttons need, whatever the size setting.
+    private static var width: CGFloat { max(176, (196 * scaleFactor).rounded()) }
     private static let margin: CGFloat = 20
     /// Quick Access (re-shown Library items) stays until dismissed.
     private let persistent: Bool
@@ -168,12 +169,12 @@ final class PreviewController: NSObject {
         let center = shot.screenRect.map { CGPoint(x: $0.midX, y: $0.midY) } ?? NSEvent.mouseLocation
         screen = NSScreen.screens.first { $0.frame.contains(center) } ?? NSScreen.main ?? NSScreen.screens[0]
 
-        // Thumbnail box: fits 208 x 230 keeping the aspect ratio.
+        // Thumbnail box: fits 172 x 120 keeping the aspect ratio.
         let iw = CGFloat(shot.image.width), ih = CGFloat(shot.image.height)
         let f = Self.scaleFactor
-        let k = min(208 * f / iw, 230 * f / ih, 1.5)
+        let k = min(172 * f / iw, 120 * f / ih, 1.5)
         let tw = max(60, (iw * k).rounded()), th = max(40, (ih * k).rounded())
-        height = 52 + th + 18 + 56
+        height = 30 + th + 8 + 44
         let w = Self.width
 
         content = PreviewContent(frame: NSRect(x: 0, y: 0, width: w, height: height))
@@ -193,16 +194,16 @@ final class PreviewController: NSObject {
         }
         panel.contentView = content
 
-        let close = IconButton(symbol: "xmark", tip: L("Close"), target: self, action: #selector(closeTapped), size: NSSize(width: 30, height: 28), pointSize: 13)
+        let close = IconButton(symbol: "xmark", tip: L("Close"), target: self, action: #selector(closeTapped), size: NSSize(width: 24, height: 22), pointSize: 11)
         close.translatesAutoresizingMaskIntoConstraints = true
-        close.frame = NSRect(x: 12, y: height - 40, width: 30, height: 28)
+        close.frame = NSRect(x: 8, y: height - 27, width: 24, height: 22)
         content.addSubview(close)
 
-        let grip = GripView(frame: NSRect(x: (w - 44) / 2, y: height - 38, width: 44, height: 18))
+        let grip = GripView(frame: NSRect(x: (w - 44) / 2, y: height - 25, width: 44, height: 18))
         grip.onDrag = { [weak self] e in self?.beginDrag(e, from: grip) }
         content.addSubview(grip)
 
-        let thumb = ThumbView(frame: NSRect(x: (w - tw) / 2, y: 56 + 4, width: tw, height: th), image: shot.image)
+        let thumb = ThumbView(frame: NSRect(x: (w - tw) / 2, y: 44 + 2, width: tw, height: th), image: shot.image)
         thumb.onClick = { [weak self] in self?.edit() }
         thumb.onDrag = { [weak self] e in self?.beginDrag(e, from: thumb) }
         content.addSubview(thumb)
@@ -223,12 +224,13 @@ final class PreviewController: NSObject {
             case .pin: return ("pin", "Pin to screen", #selector(pinTapped))
             }
         } + [("ellipsis", "More tools and actions", #selector(moreTapped(_:)))]
-        let bw: CGFloat = 32
-        let gap = max(0, (w - 24 - bw * CGFloat(actions.count)) / CGFloat(actions.count - 1))
+        let side: CGFloat = 8
+        let bw = min(26, ((w - 2 * side - 2 * CGFloat(actions.count - 1)) / CGFloat(actions.count)).rounded(.down))
+        let gap = max(0, (w - 2 * side - bw * CGFloat(actions.count)) / CGFloat(actions.count - 1))
         for (i, a) in actions.enumerated() {
-            let b = IconButton(symbol: a.0, tip: L(a.1), target: self, action: a.2, size: NSSize(width: bw, height: 36), pointSize: 15)
+            let b = IconButton(symbol: a.0, tip: L(a.1), target: self, action: a.2, size: NSSize(width: bw, height: 30), pointSize: 13)
             b.translatesAutoresizingMaskIntoConstraints = true
-            b.frame = NSRect(x: 12 + CGFloat(i) * (bw + gap), y: 14, width: bw, height: 36)
+            b.frame = NSRect(x: side + CGFloat(i) * (bw + gap), y: 8, width: bw, height: 30)
             content.addSubview(b)
         }
 
