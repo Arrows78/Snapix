@@ -4,6 +4,18 @@ All notable changes to Snapix are listed here, newest first. The file is generat
 from the commit messages (Conventional Commits) and the `v*` tags: do not edit it by hand. See
 `docs/RELEASING.md`. Versions follow [Semantic Versioning](https://semver.org).
 
+## [1.3.0] - 2026-11-14
+
+### Added
+
+- **preview**: Drag the Quick Access card by its background
+- **preview**: Make the Quick Access card more compact
+
+### Fixed
+
+- **preview**: Shrink the grip dots to match the other icons
+- **preview**: Clip the card's blur to its rounded shape
+
 ## [1.2.0] - 2026-11-08
 
 ### Added
@@ -88,6 +100,7 @@ from the commit messages (Conventional Commits) and the `v*` tags: do not edit i
 
 - Initial release.
 
+[1.3.0]: https://github.com/Arrows78/Snapix/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/Arrows78/Snapix/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/Arrows78/Snapix/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Arrows78/Snapix/releases/tag/v1.0.0
