@@ -96,7 +96,8 @@ private final class PreviewContent: NSVisualEffectView, NSDraggingSource {
         state = .active
         appearance = NSAppearance(named: .darkAqua)
         wantsLayer = true
-        layer?.cornerRadius = 16
+        layer?.cornerRadius = Self.cornerRadius
+        maskImage = Self.roundedMask
         layer?.masksToBounds = true
         layer?.borderWidth = 1
         layer?.borderColor = NSColor(white: 1, alpha: 0.14).cgColor
@@ -104,6 +105,20 @@ private final class PreviewContent: NSVisualEffectView, NSDraggingSource {
     }
 
     required init?(coder: NSCoder) { fatalError() }
+
+    static let cornerRadius: CGFloat = 16
+    /// Clips the blur itself to the rounded shape: rounding only the layer leaves a square of blur at the corners.
+    private static let roundedMask: NSImage = {
+        let r = cornerRadius
+        let image = NSImage(size: NSSize(width: r * 2 + 1, height: r * 2 + 1), flipped: false) { rect in
+            NSColor.black.setFill()
+            NSBezierPath(roundedRect: rect, xRadius: r, yRadius: r).fill()
+            return true
+        }
+        image.capInsets = NSEdgeInsets(top: r, left: r, bottom: r, right: r)
+        image.resizingMode = .stretch
+        return image
+    }()
 
     override func mouseEntered(with event: NSEvent) { window?.makeKey(); window?.makeFirstResponder(self); onEnter?() }
     override func mouseExited(with event: NSEvent) { onExit?() }
@@ -316,6 +331,7 @@ final class PreviewController: NSObject {
         }
         panel.alphaValue = 0
         panel.orderFrontRegardless()
+        panel.invalidateShadow()
         if Pref.bool("quickAccessSounds") { NSSound(named: "Pop")?.play() }
         Self.layoutAll()
         scheduleClose()
