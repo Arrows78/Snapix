@@ -10,9 +10,9 @@ private final class GripView: NSView {
 
     override func draw(_ dirtyRect: NSRect) {
         NSColor(white: 1, alpha: 0.45).setFill()
-        let d: CGFloat = 4, gap: CGFloat = 8
-        for i in 0..<4 { NSBezierPath(ovalIn: NSRect(x: CGFloat(i) * (d + gap) + 1, y: bounds.maxY - d - 2, width: d, height: d)).fill() }
-        for i in 0..<2 { NSBezierPath(ovalIn: NSRect(x: CGFloat(i) * (d + gap) + (d + gap) / 2 + 1 + (d + gap) / 2, y: 2, width: d, height: d)).fill() }
+        let d: CGFloat = 3, gap: CGFloat = 5
+        for i in 0..<4 { NSBezierPath(ovalIn: NSRect(x: CGFloat(i) * (d + gap) + 1, y: bounds.maxY - d - 1, width: d, height: d)).fill() }
+        for i in 0..<2 { NSBezierPath(ovalIn: NSRect(x: CGFloat(i) * (d + gap) + (d + gap) / 2 + 1 + (d + gap) / 2, y: 1, width: d, height: d)).fill() }
     }
 
     override var mouseDownCanMoveWindow: Bool { false }
@@ -199,7 +199,7 @@ final class PreviewController: NSObject {
         close.frame = NSRect(x: 8, y: height - 27, width: 24, height: 22)
         content.addSubview(close)
 
-        let grip = GripView(frame: NSRect(x: (w - 44) / 2, y: height - 25, width: 44, height: 18))
+        let grip = GripView(frame: NSRect(x: (w - 28) / 2, y: height - 22, width: 28, height: 12))
         grip.onDrag = { [weak self] e in self?.beginDrag(e, from: grip) }
         content.addSubview(grip)
 
